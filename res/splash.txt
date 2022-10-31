@@ -1,0 +1,9 @@
+ /\       /\   Monarch OS - Under building
+| * \. ./ * |  (C)2021-2022, TheBigEye
+ \___\X/___/
+ / * /O\ * \
+ \_/     \_/
+
+
+TIP: Type "help" to get an availible commands list
+
