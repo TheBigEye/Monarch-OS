@@ -32,7 +32,7 @@
      </a>
      <a href="https://github.com/TheBigEye#gh-dark-mode-only"> <!-- dark mode -->
           <img 
-               src="https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue&color=4f4f4f" 
+               src="https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=FF9641&color=4f4f4f" 
                Title="Made with C++"  
           />
           <img 
@@ -40,7 +40,7 @@
                Title="Views" 
           />
           <img 
-               src="https://img.shields.io/badge/VSCode-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=blue&color=000000" 
+               src="https://img.shields.io/badge/VSCode-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=FF9641&color=000000" 
                Title="Programmed using VScode" 
           />
      </a>
