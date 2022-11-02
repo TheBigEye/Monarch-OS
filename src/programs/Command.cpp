@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../common/Typedefs.h"
-#include "../common/Colors.h"
-#include "../drivers/Screen.h"
-#include "../Power.cpp"
+#include "../common/typedefs.h"
+#include "../common/colors.h"
+#include "../drivers/display.h"
+#include "../power/power.h"
 #include "../IO.h"
 
 char CommandBuffer[256];

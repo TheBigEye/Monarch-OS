@@ -1,8 +1,8 @@
-#include "Keyboard.h"
+#include "keyboard.h"
 
-#include "Screen.h"
-#include "../common/Typedefs.h"
-#include "../programs/Command.cpp"
+#include "display.h"
+#include "../common/typedefs.h"
+#include "../programs/command.cpp"
 
 bool LeftShiftPressed = false;
 bool RightShiftPressed = false;

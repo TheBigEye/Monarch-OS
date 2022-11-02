@@ -1,7 +1,7 @@
 #ifndef MEMORY_H_
 #define MEMORY_H_
 
-#include "common/Typedefs.h"
+#include "../common/typedefs.h"
 
 void memset(void* start, uint_64 value, uint_64 num);
 void MemorySet(void* start, uint_64 value, uint_64 num);

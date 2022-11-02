@@ -1,13 +1,13 @@
 #include "IDT.h"
 
 #include "IO.h"
-#include "common/Typedefs.h"
-#include "common/Keycodes.h"
-#include "drivers/Screen.h"
+#include "common/typedefs.h"
+#include "common/keycodes.h"
+#include "drivers/display.h"
 
 extern IDT64 _idt[256];
 extern uint_64 isr1;
-extern "C" void LoadIDT();
+extern "C" void Load_IDT();
 
 void(*MainKeyboardHandler)(uint_8 scanCode, uint_8 chr);
 
@@ -25,7 +25,7 @@ void InitializeIDT() {
 
 	outb(0x21, 0xfd);
 	outb(0xa1, 0xff);
-	LoadIDT();
+	Load_IDT();
 }
 
 

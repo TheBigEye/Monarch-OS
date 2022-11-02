@@ -1,13 +1,13 @@
-#ifndef DRIVERS_SCREEN_H_
-#define DRIVERS_SCREEN_H_
+#ifndef DISPLAY_H_
+#define DISPLAY_H_
 
 #include "../IO.h"
-#include "../common/Typedefs.h"
-#include "../common/Colors.h"
+#include "../common/typedefs.h"
+#include "../common/colors.h"
 
 #define VGA_MEMORY (uint_8*) 0xb8000 // THE VGA MEMORY ADDRESS
 #define VGA_WIDTH 80
-#define VGA_HEIGHT 25 // THIS IS NOT USED
+#define VGA_HEIGHT 25
 
 extern uint_16 CursorPosition;
 
@@ -42,4 +42,4 @@ bool CompareString(const char* str1, const char* str2);
 uint_16 getCursorPosition();
 int getVgaWidth();
 
-#endif /* DRIVERS_SCREEN_H_ */
+#endif /* DISPLAY_H_ */

@@ -1,7 +1,7 @@
 ; FUNCTIONS ---------------------------------------------------------------------------------------------------
 
 ; print a string
-print:
+Printf:
     push ax
     push bx
 
@@ -28,4 +28,4 @@ print:
 ; VARIABLES ---------------------------------------------------------------------------------------------------
 
 ; the string to print
-msg_hello:      db 'This is a test string :>', 0
+MSG_hello:      db 'This is a test string :>', 0

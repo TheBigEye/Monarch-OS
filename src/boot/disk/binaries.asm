@@ -1,4 +1,4 @@
-%macro IncBin 2
+%macro Include_BIN 2
   SECTION .rodata                       ; create a new section
   GLOBAL %1                             ; make the symbol global
 
@@ -11,6 +11,6 @@
 %endmacro
 
 ; include the splash screen
-IncBin Splash, "res/splash.txt"
+Include_BIN Splash, "res/splash.txt"
 
-; NOTE: you can include more files to be used, an example can be found in Kernel.cpp
+; NOTE: you can include more files to be used, an example can be found in kernel.cpp

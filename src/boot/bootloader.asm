@@ -1,29 +1,38 @@
-; START -------------------------------------------------------------------------------------------------------
-
-[org 0x7c00]                ; set the origin of the program to 0x7c00
+[org 0x7c00]                ; Set the origin of the program to 0x7c00
 
 mov [BOOT_DISK], dl
 
-; set up the stack
-mov bp, 0x7c00              ; set the base pointer to 0x7c00
-mov sp, bp                  ; set the stack pointer to the base pointer
+; Setup the stack
+mov bp, 0x7c00              ; Set the base pointer to 0x7c00
+mov sp, bp                  ; Set the stack pointer to the base pointer
 
+call cls                    ; Clear the BIOS screen
 
-; CODE --------------------------------------------------------------------------------------------------------
+mov bx, MSG_bootloader_version
+call Printf
 
-; read the disk
-call read_disk
+mov bx, nl
+call Printf
 
+; -----------------------------------------------------------------------------------------------------------------------------
+
+; Read the disk sectors
+call Read_disk
+
+; Access extended memory
 jmp PROGRAM_SPACE
 
-%include "src/boot/print.asm"
-%include "src/boot/diskRead.asm"
+%include "src/boot/screen/print.asm"
+%include "src/boot/screen/mode.asm"
+%include "src/boot/disk/disk.asm"
 
+MSG_bootloader_version:     db 'Butterfly bootloader v1', 0
+nl: db 0x0A, 0x0D, 0
 
-; END ---------------------------------------------------------------------------------------------------------
+; -----------------------------------------------------------------------------------------------------------------------------
 
-; fill the rest of the sector with zeros
+; Fill the rest of the sector with zeros
 times 510-($-$$) db 0
 
-; magic number
-dw 0xaa55 ; set the last two bytes to 0xaa55
+; Magic number
+dw 0xaa55 ; Set the last two bytes to 0xaa55

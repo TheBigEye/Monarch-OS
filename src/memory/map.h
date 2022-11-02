@@ -1,7 +1,7 @@
-#ifndef MEMORYMAP_H_
-#define MEMORYMAP_H_
+#ifndef MAP_H_
+#define MAP_H_
 
-#include "common/Typedefs.h"
+#include "../common/typedefs.h"
 
 struct MemoryMapEntry {
     uint_64 BaseAddress;
@@ -16,4 +16,4 @@ extern uint_8 UsableMemoryRegionCount;
 void PrintMemoryMap(MemoryMapEntry* memoryMap, uint_16 position);
 MemoryMapEntry** GetUsableMemoryRegions();
 
-#endif /* MEMORYMAP_H_ */
+#endif /* MAP_H_ */

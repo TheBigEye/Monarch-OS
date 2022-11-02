@@ -7,6 +7,6 @@ memory: host=32, guest=32
 romimage: file="C:/msys64/mingw64/share/bochs/BIOS-bochs-latest", address=0xfffe0000
 vgaromimage: file="C:/msys64/mingw64/share/bochs/VGABIOS-lgpl-latest"
 boot: floppy
-floppya: type=1_2, 1_2="./build/MonarchOS.img", status=inserted
+floppya: type=1_2, 1_2="./build/Monarch-OS.img", status=inserted
 
 vga: extension=vbe, update_freq=30, realtime=1, ddc=builtin

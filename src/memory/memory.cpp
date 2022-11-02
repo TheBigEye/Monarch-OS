@@ -1,5 +1,5 @@
-#include "Memory.h"
-#include "common/Typedefs.h"
+#include "memory.h"
+#include "../common/typedefs.h"
 
 void memset(void* start, uint_64 value, uint_64 num) {
     if (num <= 8) {
@@ -56,4 +56,3 @@ void memcpy(void* destination, void* source, uint_64 num) {
         srcptr8++;
     }
 }
-

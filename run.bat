@@ -6,4 +6,4 @@
 ::bochs -q -f ./bochs/bochsconfig -rc ./bochs/commands.txt
 
 echo [r] Starting qemu emulation ...
-qemu-system-x86_64 -fda build/MonarchOS.img -vga std
+qemu-system-x86_64 -fda build/Monarch-OS.img -vga std

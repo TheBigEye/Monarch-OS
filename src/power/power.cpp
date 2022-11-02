@@ -1,7 +1,7 @@
-#pragma once
+#include "power.h"
 
-#include "IO.h"
-#include "common/Typedefs.h"
+#include "../IO.h"
+#include "../common/typedefs.h"
 
 /**
  * Reboot the computer

@@ -1,8 +1,8 @@
-#ifndef DRIVERS_KEYBOARD_H_
-#define DRIVERS_KEYBOARD_H_
+#ifndef KEYBOARD_H_
+#define KEYBOARD_H_
 
-#include "Screen.h"
-#include "../common/Typedefs.h"
+#include "display.h"
+#include "../common/typedefs.h"
 
 /*
 #define KEY_ESC 0x01
@@ -48,4 +48,4 @@ void KeyboardHandlerEx(uint_8 scanCode);
 void KeyboardHandler(uint_8 scanCode, uint_8 chr);
 
 
-#endif /* DRIVERS_KEYBOARD_H_ */
+#endif /* KEYBOARD_H_ */

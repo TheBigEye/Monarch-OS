@@ -3,20 +3,21 @@ OUTPUT_FORMAT(binary)
 ENTRY (_start)
 
 INPUT (
-    ./build/ExtendedProgram.o
-    ./build/Kernel.o
+    ./build/main.o
+    ./build/binaries.o
+    ./build/kernel.o
     ./build/IDT.o
     ./build/IO.o
-    ./build/MemoryMap.o
-    ./build/Heap.o
-    ./build/Memory.o
-    ./build/Keyboard.o
-    ./build/Screen.o
-    ./build/binaries.o
+    ./build/map.o
+    ./build/heap.o
+    ./build/memory.o
+    ./build/keyboard.o
+    ./build/display.o
+    ./build/power.o
 )
 
 OUTPUT (
-    ./build/Kernel.bin
+    ./build/kernel.bin
 )
 
 SECTIONS {

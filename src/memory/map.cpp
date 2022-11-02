@@ -1,7 +1,7 @@
-#include "MemoryMap.h"
+#include "map.h"
 
-#include "common/Typedefs.h"
-#include "drivers/Screen.h"
+#include "../common/typedefs.h"
+#include "../drivers/display.h"
 
 uint_8 UsableMemoryRegionCount;
 MemoryMapEntry* UsableMemoryRegions[10];

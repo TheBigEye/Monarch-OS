@@ -1,9 +1,9 @@
-#include "drivers/Screen.h"
-#include "drivers/Keyboard.h"
+#include "drivers/display.h"
+#include "drivers/keyboard.h"
 
 #include "IDT.h"
-#include "MemoryMap.h"
-#include "Heap.h"
+#include "memory/map.h"
+#include "memory/heap.h"
 
 extern const char Splash[];
 

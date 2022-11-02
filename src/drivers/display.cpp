@@ -1,8 +1,8 @@
-#include "screen.h"
+#include "display.h"
 
 #include "../IO.h"
-#include "../common/Typedefs.h"
-#include "../common/Colors.h"
+#include "../common/typedefs.h"
+#include "../common/colors.h"
 
 uint_16 CursorPosition;
 

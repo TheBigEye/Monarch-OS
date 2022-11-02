@@ -1,8 +1,8 @@
 #ifndef HEAP_H_
 #define HEAP_H_
 
-#include "common/Typedefs.h"
-#include "Memory.h"
+#include "../common/typedefs.h"
+#include "memory.h"
 
 struct MemorySegmentHeader {
     uint_64 MemoryLength;

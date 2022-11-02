@@ -1,7 +1,7 @@
 #ifndef IO_H_
 #define IO_H_
 
-#include "common/Typedefs.h"
+#include "common/typedefs.h"
 
 #define PIC1_COMMAND 0x20
 #define PIC1_DATA 0x21

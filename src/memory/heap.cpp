@@ -1,7 +1,7 @@
-#include "Heap.h"
+#include "heap.h"
 
-#include "common/Typedefs.h"
-#include "Memory.h"
+#include "../common/typedefs.h"
+#include "memory.h"
 
 MemorySegmentHeader* FirstFreeMemorySegment;
 

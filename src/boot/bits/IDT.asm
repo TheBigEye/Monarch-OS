@@ -33,8 +33,8 @@ isr1:
     iretq
     GLOBAL isr1
 
-LoadIDT:
+Load_IDT:
     lidt[IDT_descriptor]
     sti
     ret
-    GLOBAL LoadIDT
+    GLOBAL Load_IDT

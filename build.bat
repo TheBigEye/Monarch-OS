@@ -9,7 +9,7 @@
 :: - in the environment variable you put the location of the compiler binaries, example: /usr/bin/local/x86_64elfgcc/bin
 :: - and here, in GCC you put, for example: wsl $WSLENV/x86_64-elf-gcc
 set ASM= nasm
-set GCC= wsl $WSLENV/x86_64-elf-gcc
+set GCC= wsl $WSLENV/x86_64-elf-gcc -w -Os
 set LD= wsl $WSLENV/x86_64-elf-ld
 
 echo [-] Pre-cleaning build folder ...
@@ -21,22 +21,23 @@ if exist build\*.tmp    (del /s /q build\*.tmp)
 
 echo [-] Assembling project code ...
 %ASM% src/boot/bootloader.asm -f bin -o build/bootloader.bin
-%ASM% src/core/ExtendedProgram.asm -f elf64 -o build/ExtendedProgram.o
-%ASM% src/boot/binaries.asm -f elf64 -o build/binaries.o
+%ASM% src/boot/main.asm -f elf64 -o build/main.o
+%ASM% src/boot/disk/binaries.asm -f elf64 -o build/binaries.o
 
 echo [-] Compiling project code ...
 :: NOTE: change or add objects require modify also INPUT on Kernel.ld
-%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/Kernel.cpp" -o "build/Kernel.o"
-%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/IDT.cpp" -o "build/IDT.o"
-%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/IO.cpp" -o "build/IO.o"
-%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/MemoryMap.cpp" -o "build/MemoryMap.o"
-%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/Heap.cpp" -o "build/Heap.o"
-%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/Memory.cpp" -o "build/Memory.o"
-%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/drivers/Keyboard.cpp" -o "build/Keyboard.o"
-%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/drivers/Screen.cpp" -o "build/Screen.o"
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/kernel.cpp"           -o "build/kernel.o"
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/IDT.cpp"              -o "build/IDT.o"
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/IO.cpp"               -o "build/IO.o"
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/memory/map.cpp"       -o "build/map.o"
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/memory/heap.cpp"      -o "build/heap.o"
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/memory/memory.cpp"    -o "build/memory.o"
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/drivers/keyboard.cpp" -o "build/keyboard.o"
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/drivers/display.cpp"  -o "build/display.o"
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/power/power.cpp"      -o "build/power.o"
 
 echo [-] Linking kernel ...
-%LD% -T"Kernel.ld"
+%LD% -T"src/kernel.ld"
 
 cd ./build
 
@@ -45,6 +46,6 @@ cd ./build
 echo [-] Making floppy image ...
 echo:
 echo [o] Output:
-copy /b bootloader.bin+kernel.bin MonarchOS.img
+copy /b bootloader.bin+kernel.bin Monarch-OS.img
 cd ..
-echo copied into MonarchOS.img
+echo copied into Monarch-OS.img
