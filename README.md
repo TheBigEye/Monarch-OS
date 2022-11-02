@@ -32,7 +32,7 @@
      </a>
      <a href="https://github.com/TheBigEye#gh-dark-mode-only"> <!-- dark mode -->
           <img 
-               src="https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=FF9641&color=4f4f4f" 
+               src="https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=FF9641&color=4f4f4f" 
                Title="Made with C++"  
           />
           <img 
