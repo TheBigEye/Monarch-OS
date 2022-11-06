@@ -12,18 +12,23 @@
 #define ICW1_ICW4 0x01
 #define ICW4_8086 0x01
 
-void io_wait();
-unsigned char inb(unsigned short port);
-void outb(unsigned short port, unsigned char value);
-void outw(unsigned short port, unsigned short value);
+class IO {
+    public:
+        static void wait();
+        static uint_8 inb(uint_16 port);
+        static void outb(uint_16 port, uint_8 value);
+        static void outw(uint_16 port, uint_16 value);
 
-unsigned char io_in_byte(unsigned short port);
-void io_out_byte(unsigned short port, unsigned short value);
-void io_out_word(unsigned short port, unsigned short value);
+        static uint_8 in_byte(uint_16 port);
+        static void out_byte(uint_16 port, uint_8 value);
+        static void out_word(uint_16 port, uint_16 value);
+};
 
+void sleep(uint_32 miliseconds);
 void RemapPic();
 
-uint_32 get_ram_size();
+void beep(uint_32 frequency, uint_32 duration);
 
+void cpuid(uint_32 code, uint_32* a, uint_32* b, uint_32* c, uint_32* d);
 
 #endif /* IO_H_ */

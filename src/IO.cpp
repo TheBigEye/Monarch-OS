@@ -10,40 +10,42 @@
 #define ICW1_ICW4 0x01
 #define ICW4_8086 0x01
 
-void io_wait() {
-    asm volatile("outb %%al, $0x80" : : "a"(0));
+
+
+void IO::wait() {
+	asm volatile("outb %%al, $0x80" : : "a"(0));
 }
 
 // OLD (compatibility only) ---------------------------------------------------------------------------------------------------
-unsigned char inb(unsigned short port){
-	unsigned char value;
+uint_8 IO::inb(uint_16 port){
+	uint_8 value;
 	asm volatile ("inb %1, %0" : "=a"(value) : "Nd"(port));
 
-	io_wait();
+	wait();
 	return value;
 }
 
-void outb(unsigned short port, unsigned char value){
+void IO::outb(uint_16 port, uint_8 value){
 	asm volatile ("outb %0, %1" : : "a"(value), "Nd"(port));
-	io_wait();
+	wait();
 }
 
-void outw(unsigned short port, unsigned short value) {
+void IO::outw(uint_16 port, uint_16 value) {
 	asm volatile ("outw %0, %1" : : "a"(value), "Nd"(port));
-	io_wait();
+	wait();
 }
 
 
 // Extended (new) -------------------------------------------------------------------------------------------------------------
-unsigned char io_in_byte(unsigned short port) {
+uint_8 IO::in_byte(uint_16 port) {
 	return inb(port);
 }
 
-void io_out_byte(unsigned short port, unsigned short value) {
+void IO::out_byte(uint_16 port, uint_8 value) {
 	outb(port, value);
 }
 
-void io_out_word(unsigned short port, unsigned short value) {
+void IO::out_word(uint_16 port, uint_16 value) {
 	outw(port, value);
 }
 
@@ -51,25 +53,41 @@ void io_out_word(unsigned short port, unsigned short value) {
 void RemapPic(){
 	uint_8 a1, a2;
 
-	a1 = inb(PIC1_DATA);
-	a2 = inb(PIC2_DATA);
+	a1 = IO::inb(PIC1_DATA);
+	a2 = IO::inb(PIC2_DATA);
 
-	outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);
-	outb(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4);
-	outb(PIC1_DATA, 0);
-	outb(PIC2_DATA, 8);
-	outb(PIC1_DATA, 4);
-	outb(PIC2_DATA, 2);
-	outb(PIC1_DATA, ICW4_8086);
-	outb(PIC2_DATA, ICW4_8086);
+	IO::outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);
+	IO::outb(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4);
+	IO::outb(PIC1_DATA, 0);
+	IO::outb(PIC2_DATA, 8);
+	IO::outb(PIC1_DATA, 4);
+	IO::outb(PIC2_DATA, 2);
+	IO::outb(PIC1_DATA, ICW4_8086);
+	IO::outb(PIC2_DATA, ICW4_8086);
 
-	outb(PIC1_DATA, a1);
-	outb(PIC2_DATA, a2);
+	IO::outb(PIC1_DATA, a1);
+	IO::outb(PIC2_DATA, a2);
 }
 
-uint_32 get_ram_size(){
-	uint_32 eax, ebx, ecx, edx;
-	eax = 0x80000005;
-	asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(eax));
-	return (ecx >> 24);
+void sleep(uint_32 miliseconds) {
+	uint_32 i;
+	for (i = 0; i < miliseconds * 1000; i++) {
+		asm volatile("outb %%al, $0x80" : : "a"(0));
+	}
+}
+
+
+
+void cpuid(uint_32 code, uint_32* a, uint_32* b, uint_32* c, uint_32* d) {
+    asm volatile("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(code));
+}
+
+void beep(uint_32 frequency, uint_32 duration) {
+	uint_32 divisor = 1193180 / frequency;
+	IO::outb(0x43, 0xB6);
+	IO::outb(0x42, (uint_8) (divisor & 0xFF));
+	IO::outb(0x42, (uint_8) (divisor >> 8));
+	IO::outb(0x61, IO::inb(0x61) | 3);
+	sleep(duration);
+	IO::outb(0x61, IO::inb(0x61) & 0xFC);
 }

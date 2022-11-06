@@ -23,15 +23,15 @@ void InitializeIDT() {
 
 	RemapPic();
 
-	outb(0x21, 0xfd);
-	outb(0xa1, 0xff);
+	IO::outb(0x21, 0xfd);
+	IO::outb(0xa1, 0xff);
 	Load_IDT();
 }
 
 
 
 extern "C" void isr1_handler() {
-    uint_8 scanCode = inb(0x60);
+    uint_8 scanCode = IO::inb(0x60);
     uint_8 chr = 0;
 
     if (scanCode < 0x3A) {
@@ -40,6 +40,6 @@ extern "C" void isr1_handler() {
     if (MainKeyboardHandler != 0) {
         MainKeyboardHandler(scanCode, chr);
     }
-	outb(0x20, 0x20);
-	outb(0xa0, 0x20);
+	IO::outb(0x20, 0x20);
+	IO::outb(0xa0, 0x20);
 }

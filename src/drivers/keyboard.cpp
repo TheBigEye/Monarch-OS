@@ -1,6 +1,7 @@
 #include "keyboard.h"
 
 #include "display.h"
+#include "../IO.h"
 #include "../common/typedefs.h"
 #include "../programs/command.cpp"
 
@@ -8,15 +9,19 @@ bool LeftShiftPressed = false;
 bool RightShiftPressed = false;
 uint_8 LastScancode;
 
+bool is_key_pressed() {
+    return (IO::inb(0x64) & 0x1);
+}
+
 void StandardKeyboardHandler(uint_8 scanCode, uint_8 chr) {
     if (chr != 0) {
         switch (LeftShiftPressed | RightShiftPressed) {
             case true:
-                PrintChar(chr - 32);
+                display::print_char(chr - 32);
                 CommandBuffer[CommandBufferIndex++] = chr - 32;
                 break;
             case false:
-                PrintChar(chr);
+                display::print_char(chr);
                 CommandBuffer[CommandBufferIndex++] = chr;
                 break;
         }
@@ -24,9 +29,9 @@ void StandardKeyboardHandler(uint_8 scanCode, uint_8 chr) {
         switch (scanCode) {
             case 0x8E: // Backspace.
                 if (CommandBufferIndex > 0) {
-                    SetCursorPosition(getCursorPosition() - 1);
-                    PrintChar(' ');
-                    SetCursorPosition(getCursorPosition() - 1);
+                    display::set_cursor_pos(get_cursor_pos() - 1);
+                    display::print_char(' ');
+                    display::set_cursor_pos(get_cursor_pos() - 1);
                     CommandBuffer[--CommandBufferIndex] = 0;
                 }
                 break;
@@ -35,15 +40,18 @@ void StandardKeyboardHandler(uint_8 scanCode, uint_8 chr) {
             case 0xAA: LeftShiftPressed = false; break; // Left shift released
             case 0x36: RightShiftPressed = true; break; // Right shift
             case 0xB6: RightShiftPressed = false; break; // Right shift released
-            case 0x9C: runCommand(); break; // Enter executes a command
+            case 0x9C:
+                display::print_string("\n\r");
+                CommandHandler(); // Enter executes a command
+                break;
         }
     }
 }
 
 void KeyboardHandlerEx(uint_8 scanCode) {
     switch (LastScancode) {
-        case 0x50: SetCursorPosition(getCursorPosition() + getVgaWidth()); break;
-        case 0x48: SetCursorPosition(getCursorPosition() - getVgaWidth()); break;
+        case 0x50: display::set_cursor_pos(get_cursor_pos() + getVgaWidth()); break;
+        case 0x48: display::set_cursor_pos(get_cursor_pos() - getVgaWidth()); break;
         default:
            break;
     }

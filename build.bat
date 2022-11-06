@@ -12,6 +12,8 @@ set ASM= nasm
 set GCC= wsl $WSLENV/x86_64-elf-gcc -w -Os
 set LD= wsl $WSLENV/x86_64-elf-ld
 
+:: ----------------------------------------------------------------------------------------------------------------------------
+
 echo [-] Pre-cleaning build folder ...
 if not exist build      (mkdir build)
 if exist build\*.bin    (del /s /q build\*.bin)
@@ -19,10 +21,12 @@ if exist build\*.img    (del /s /q build\*.img)
 if exist build\*.o      (del /s /q build\*.o)
 if exist build\*.tmp    (del /s /q build\*.tmp)
 
+:: ----------------------------------------------------------------------------------------------------------------------------
+
 echo [-] Assembling project code ...
-%ASM% src/boot/bootloader.asm -f bin -o build/bootloader.bin
-%ASM% src/boot/main.asm -f elf64 -o build/main.o
-%ASM% src/boot/disk/binaries.asm -f elf64 -o build/binaries.o
+%ASM% src/boot/bootloader.asm -f bin                                                -o build/bootloader.bin
+%ASM% src/boot/main.asm -f elf64                                                    -o build/main.o
+%ASM% src/boot/disk/binaries.asm -f elf64                                           -o build/binaries.o
 
 echo [-] Compiling project code ...
 :: NOTE: change or add objects require modify also INPUT on Kernel.ld
@@ -36,12 +40,17 @@ echo [-] Compiling project code ...
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/drivers/display.cpp"  -o "build/display.o"
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/power/power.cpp"      -o "build/power.o"
 
+:: Standard Library
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/common/math.cpp"      -o "build/math.o"
+
+:: ----------------------------------------------------------------------------------------------------------------------------
+
 echo [-] Linking kernel ...
 %LD% -T"src/kernel.ld"
 
 cd ./build
 
-:: TODO: make an real floppy image :(
+:: TODO: make an valid floppy image for Virtual Box :(
 
 echo [-] Making floppy image ...
 echo:
@@ -49,3 +58,5 @@ echo [o] Output:
 copy /b bootloader.bin+kernel.bin Monarch-OS.img
 cd ..
 echo copied into Monarch-OS.img
+
+:: ----------------------------------------------------------------------------------------------------------------------------

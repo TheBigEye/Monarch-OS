@@ -9,37 +9,50 @@
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 
-extern uint_16 CursorPosition;
+#define CURSOR_BLOCK 0x0f
+#define CURSOR_LINE 0x0e
+#define CURSOR_UNDERLINE 0x0d
+#define CURSOR_BLINKING 0x0c
+#define CURSOR_HIDDEN 0x0b
+#define CURSOR_NORMAL 0x0a
 
-void ClearScreen(uint_64 ClearColor = BACKGROUND_BLACK | FOREGROUND_WHITE);
-void SetCursorPosition(uint_16 position);
-uint_16 PositionFromCoords(uint_8 x, uint_8 y);
-void ScrollScreen();
-void PrintString(const char* str, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
-void PrintChar(char chr, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
-
-const char* HexToString(uint_8 value);
-const char* HexToString(uint_16 value);
-const char* HexToString(uint_32 value);
-const char* HexToString(uint_64 value);
-const char* HexToString(char value);
-const char* HexToString(short value);
-const char* HexToString(int value);
-const char* HexToString(long long value);
-
-const char* IntegerToString(uint_8 value);
-const char* IntegerToString(uint_16 value);
-const char* IntegerToString(uint_32 value);
-const char* IntegerToString(uint_64 value);
-const char* IntegerToString(char value);
-const char* IntegerToString(short value);
-const char* IntegerToString(int value);
-const char* IntegerToString(long long value);
-
-const char* FloatToString(float value, uint_8 decimalPlaces);
-
-bool CompareString(const char* str1, const char* str2);
-uint_16 getCursorPosition();
+uint_16 get_cursor_pos();
+uint_16 coords(uint_8 x, uint_8 y);
+bool compare_string(const char* str1, const char* str2);
+int length(const char* str);
 int getVgaWidth();
+
+const char* hex_to_string(uint_8 value);
+const char* hex_to_string(uint_16 value);
+const char* hex_to_string(uint_32 value);
+const char* hex_to_string(uint_64 value);
+const char* hex_to_string(char value);
+const char* hex_to_string(short value);
+const char* hex_to_string(int value);
+const char* hex_to_string(long long value);
+
+const char* int_to_string(uint_8 value);
+const char* int_to_string(uint_16 value);
+const char* int_to_string(uint_32 value);
+const char* int_to_string(uint_64 value);
+const char* int_to_string(char value);
+const char* int_to_string(short value);
+const char* int_to_string(int value);
+const char* int_to_string(long long value);
+
+const char* float_to_string(float value, uint_8 decimalPlaces);
+
+class display {
+    public:
+        static void initialize(uint_8 cursor_x, uint_8 cursor_y, uint_64 bg_color);
+        static void clear_display(uint_64 clear_color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+        static void set_cursor_pos(uint_16 position);
+        static void set_cursor_shape(uint_8 shape);
+        static void scroll_display();
+
+        static void print_string(const char* str, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+        static void print_string_centered(const char* str, uint_8 y, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+        static void print_char(char chr, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+};
 
 #endif /* DISPLAY_H_ */

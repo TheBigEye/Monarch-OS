@@ -4,33 +4,50 @@
 #include "../common/typedefs.h"
 #include "../common/colors.h"
 
-uint_16 CursorPosition;
+uint_16 cursor_pos;
 
-void ClearScreen(uint_64 ClearColor) {
+void display::initialize(uint_8 cursor_x, uint_8 cursor_y, uint_64 bg_color) {
+    clear_display(bg_color);
+    set_cursor_pos(coords(cursor_x, cursor_y));
+    set_cursor_shape(CURSOR_NORMAL);
+
+}
+
+void display::set_cursor_shape(uint_8 shape) {
+    IO::outb(0x3D4, 0xA); // low cursor shape register
+    IO::outb(0x3D5, shape); // bits 6-7 unused, bit 5 disables the cursor, bits 0-4 control the cursor shape
+}
+
+void display::clear_display(uint_64 clear_color) {
     uint_64 value = 0;
-    value += ClearColor << 8;
-    value += ClearColor << 24;
-    value += ClearColor << 40;
-    value += ClearColor << 56;
+    value += clear_color << 8;
+    value += clear_color << 24;
+    value += clear_color << 40;
+    value += clear_color << 56;
     for (uint_64* i = (uint_64*) VGA_MEMORY; i < (uint_64*)(VGA_MEMORY + 4000); i++) {
         *i = value;
     }
 }
 
-void SetCursorPosition(uint_16 position) {
-    outb(0x3D4, 0x0F);
-    outb(0x3D5, (uint_8)(position & 0xFF));
-    outb(0x3D4, 0x0E);
-    outb(0x3D5, (uint_8)((position >> 8) & 0xFF));
+void display::set_cursor_pos(uint_16 position) {
+    IO::outb(0x3D4, 0x0F);
+    IO::outb(0x3D5, (uint_8)(position & 0xFF));
+    IO::outb(0x3D4, 0x0E);
+    IO::outb(0x3D5, (uint_8)((position >> 8) & 0xFF));
 
-    CursorPosition = position;
+    cursor_pos = position;
 }
 
-uint_16 PositionFromCoords(uint_8 x, uint_8 y) {
+
+uint_16 get_cursor_pos() {
+    return cursor_pos;
+}
+
+uint_16 coords(uint_8 x, uint_8 y) {
     return y * VGA_WIDTH + x;
 }
 
-void ScrollScreen() {
+void display::scroll_display() {
     for (uint_16 i = 0; i < VGA_WIDTH * (VGA_HEIGHT - 1); i++) {
         *(VGA_MEMORY + i * 2) = *(VGA_MEMORY + (i + VGA_WIDTH) * 2);
         *(VGA_MEMORY + i * 2 + 1) = *(VGA_MEMORY + (i + VGA_WIDTH) * 2 + 1);
@@ -41,76 +58,82 @@ void ScrollScreen() {
     }
 }
 
-void PrintString(const char* str, uint_8 color) {
-    uint_8* charPtr = (uint_8*) str;
-    uint_16 index = CursorPosition;
+void display::print_string(const char* str, uint_8 color) {
+    uint_8* char_pointer = (uint_8*) str;
+    uint_16 index = cursor_pos;
 
-    while (*charPtr != 0) {
-        switch (*charPtr) {
+    while (*char_pointer != 0) {
+        switch (*char_pointer) {
             case 10: // \n
                 index += VGA_WIDTH;
                 if (index >= VGA_WIDTH * VGA_HEIGHT) {
-                    ScrollScreen();
+                    scroll_display();
                     index -= VGA_WIDTH;
                 }
                 break;
-            case 13: index -= index % VGA_WIDTH; break;     // \r
+            case 13: index -= index % VGA_WIDTH; break; // \r
             default:
-                *(VGA_MEMORY + index * 2) = *charPtr;
+                *(VGA_MEMORY + index * 2) = *char_pointer;
                 *(VGA_MEMORY + index * 2 + 1) = color;
                 index++;
         }
-        charPtr++;
+        char_pointer++;
     }
 
-    SetCursorPosition(index);
+    set_cursor_pos(index);
+}
+void display::print_string_centered(const char* str, uint_8 y, uint_8 color) {
+    set_cursor_pos(coords((VGA_WIDTH - length(str)) / 2, y));
+    print_string(str, color);
 }
 
-void PrintChar(char chr, uint_8 color) {
-    *(VGA_MEMORY + CursorPosition * 2) = chr;
-    *(VGA_MEMORY + CursorPosition * 2 + 1) = color;
 
-    SetCursorPosition(CursorPosition + 1);
+void display::print_char(char chr, uint_8 color) {
+    *(VGA_MEMORY + cursor_pos * 2) = chr;
+    *(VGA_MEMORY + cursor_pos * 2 + 1) = color;
+
+    set_cursor_pos(cursor_pos + 1);
 }
 
-char hexToStringOutput[128];
+
+char hex_to_stringOutput[128];
 template<typename T>
-const char* HexToString(T value) {
+const char* hex_to_string(T value) {
     T* valPtr = &value;
-    uint_8* ptr;
-    uint_8 temp;
     uint_8 size = (sizeof(T)) * 2 - 1;
-    uint_8 i;
-    for (i = 0; i < size; i++) {
-        ptr = ((uint_8*)valPtr + i);
-        temp = ((*ptr & 0xF0) >> 4);
-        hexToStringOutput[size - (i * 2 + 1)] = temp + (temp > 9 ? 55 : 48);
+
+    for (uint_8 i = 0; i < size; i++) {
+        uint_8* ptr = ((uint_8*)valPtr + i);
+        uint_8 temp = ((*ptr & 0xF0) >> 4);
+
+        hex_to_stringOutput[size - (i * 2 + 1)] = temp + (temp > 9 ? 55 : 48);
         temp = ((*ptr & 0x0F));
-        hexToStringOutput[size - (i * 2 + 0)] = temp + (temp > 9 ? 55 : 48);
+        hex_to_stringOutput[size - (i * 2 + 0)] = temp + (temp > 9 ? 55 : 48);
     }
-    hexToStringOutput[size + 1] = 0;
-    return hexToStringOutput;
+
+    hex_to_stringOutput[size + 1] = 0;
+    return hex_to_stringOutput;
 }
 
-const char* HexToString(uint_8 value) { return HexToString<uint_8>(value); }
-const char* HexToString(uint_16 value) { return HexToString<uint_16>(value); }
-const char* HexToString(uint_32 value) { return HexToString<uint_32>(value); }
-const char* HexToString(uint_64 value) { return HexToString<uint_64>(value); }
-const char* HexToString(char value) { return HexToString<char>(value); }
-const char* HexToString(short value) { return HexToString<short>(value); }
-const char* HexToString(int value) { return HexToString<int>(value); }
-const char* HexToString(long long value) { return HexToString<long long>(value); }
+const char* hex_to_string(uint_8 value)     { return hex_to_string<uint_8>(value); }
+const char* hex_to_string(uint_16 value)    { return hex_to_string<uint_16>(value); }
+const char* hex_to_string(uint_32 value)    { return hex_to_string<uint_32>(value); }
+const char* hex_to_string(uint_64 value)    { return hex_to_string<uint_64>(value); }
+const char* hex_to_string(char value)       { return hex_to_string<char>(value); }
+const char* hex_to_string(short value)      { return hex_to_string<short>(value); }
+const char* hex_to_string(int value)        { return hex_to_string<int>(value); }
+const char* hex_to_string(long long value)  { return hex_to_string<long long>(value); }
 
-char integerToStringOutput[128];
+char int_to_stringOutput[128];
 template<typename T>
-const char* IntegerToString(T value) {
+const char* int_to_string(T value) {
 
     uint_8 isNegative = 0;
 
     if (value < 0) {
         isNegative = 1;
         value *= -1;
-        integerToStringOutput[0] = '-';
+        int_to_stringOutput[0] = '-';
     }
 
     uint_8 size = 0;
@@ -125,30 +148,30 @@ const char* IntegerToString(T value) {
     while (newValue / 10 > 0) {
         uint_8 remainder = newValue % 10;
         newValue /= 10;
-        integerToStringOutput[isNegative + size - index] = remainder + 48;
+        int_to_stringOutput[isNegative + size - index] = remainder + 48;
         index++;
     }
 
     uint_8 remainder = newValue % 10;
-    integerToStringOutput[isNegative + size - index] = remainder + 48;
-    integerToStringOutput[isNegative + size + 1] = 0;
+    int_to_stringOutput[isNegative + size - index] = remainder + 48;
+    int_to_stringOutput[isNegative + size + 1] = 0;
 
-    return integerToStringOutput;
+    return int_to_stringOutput;
 }
 
-const char* IntegerToString(uint_8 value) { return IntegerToString<uint_8>(value); }
-const char* IntegerToString(uint_16 value) { return IntegerToString<uint_16>(value); }
-const char* IntegerToString(uint_32 value) { return IntegerToString<uint_32>(value); }
-const char* IntegerToString(uint_64 value) { return IntegerToString<uint_64>(value); }
-const char* IntegerToString(char value) { return IntegerToString<char>(value); }
-const char* IntegerToString(short value) { return IntegerToString<short>(value); }
-const char* IntegerToString(int value) { return IntegerToString<int>(value); }
-const char* IntegerToString(long long value) { return IntegerToString<long long>(value); }
+const char* int_to_string(uint_8 value)     { return int_to_string<uint_8>(value); }
+const char* int_to_string(uint_16 value)    { return int_to_string<uint_16>(value); }
+const char* int_to_string(uint_32 value)    { return int_to_string<uint_32>(value); }
+const char* int_to_string(uint_64 value)    { return int_to_string<uint_64>(value); }
+const char* int_to_string(char value)       { return int_to_string<char>(value); }
+const char* int_to_string(short value)      { return int_to_string<short>(value); }
+const char* int_to_string(int value)        { return int_to_string<int>(value); }
+const char* int_to_string(long long value)  { return int_to_string<long long>(value); }
 
-char floatToStringOputput[128];
-const char* FloatToString(float value, uint_8 decimalPlaces) {
-    char* intPtr = (char*) IntegerToString((int)value);
-    char* floatPtr = floatToStringOputput;
+char float_to_stringOputput[128];
+const char* float_to_string(float value, uint_8 decimalPlaces) {
+    char* intPtr = (char*) int_to_string((int)value);
+    char* floatPtr = float_to_stringOputput;
 
     if (value < 0) {
         value *= -1;
@@ -173,11 +196,11 @@ const char* FloatToString(float value, uint_8 decimalPlaces) {
 
     *floatPtr = 0;
 
-    return floatToStringOputput;
+    return float_to_stringOputput;
 }
 
 
-bool CompareString(const char* str1, const char* str2) {
+bool compare_string(const char* str1, const char* str2) {
     while (*str1 != 0 && *str2 != 0) {
         if (*str1 != *str2) {
             return false;
@@ -188,10 +211,20 @@ bool CompareString(const char* str1, const char* str2) {
     return *str1 == *str2;
 }
 
-uint_16 getCursorPosition() {
-    return CursorPosition;
+
+int length(const char* str) {
+    int length = 0;
+    while (*str != 0) {
+        length++;
+        str++;
+    }
+    return length;
 }
 
 int getVgaWidth() {
     return VGA_WIDTH;
+}
+
+int getVgaHeight() {
+    return VGA_HEIGHT;
 }

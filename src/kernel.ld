@@ -14,6 +14,7 @@ INPUT (
     ./build/keyboard.o
     ./build/display.o
     ./build/power.o
+    ./build/math.o
 )
 
 OUTPUT (

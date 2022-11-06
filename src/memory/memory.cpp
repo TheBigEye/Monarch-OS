@@ -6,7 +6,7 @@ void memset(void* start, uint_64 value, uint_64 num) {
         uint_8* valPtr = (uint_8*)&value;
         for (uint_8* ptr = (uint_8*)start; ptr < (uint_8*)((uint_64)start + num); ptr++) {
             *ptr = *valPtr;
-            valPtr;
+            valPtr++;
         }
 
         return;
@@ -22,7 +22,7 @@ void memset(void* start, uint_64 value, uint_64 num) {
     uint_8* valPtr = (uint_8*)&value;
     for (uint_8* ptr = (uint_8*)((uint_64)start + newnum); ptr < (uint_8*)((uint_64)start + num); ptr++) {
         *ptr = *valPtr;
-        valPtr;
+        valPtr++;
     }
 }
 
