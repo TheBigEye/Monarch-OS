@@ -8,9 +8,10 @@
 :: - In your distro's terminal, type "explorer.exe ." that will open the file explorer into the location of your distro files
 :: - in the environment variable you put the location of the compiler binaries, example: /usr/bin/local/x86_64elfgcc/bin
 :: - and here, in GCC you put, for example: wsl $WSLENV/x86_64-elf-gcc
+
 set ASM= nasm
-set GCC= wsl $WSLENV/x86_64-elf-gcc -w -Os
-set LD= wsl $WSLENV/x86_64-elf-ld
+set GCC= x86_64-elf-gcc -w -Os
+set LD= x86_64-elf-ld
 
 :: ----------------------------------------------------------------------------------------------------------------------------
 
@@ -33,6 +34,7 @@ echo [-] Compiling project code ...
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/kernel.cpp"           -o "build/kernel.o"
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/IDT.cpp"              -o "build/IDT.o"
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/IO.cpp"               -o "build/IO.o"
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/CPU.cpp"               -o "build/CPU.o"
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/memory/map.cpp"       -o "build/map.o"
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/memory/heap.cpp"      -o "build/heap.o"
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/memory/memory.cpp"    -o "build/memory.o"

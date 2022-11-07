@@ -10,9 +10,18 @@ void display::initialize(uint_8 cursor_x, uint_8 cursor_y, uint_64 bg_color) {
     clear_display(bg_color);
     set_cursor_pos(coords(cursor_x, cursor_y));
     set_cursor_shape(CURSOR_NORMAL);
-
 }
 
+
+
+/**
+ * @brief Sets or changes the shape/size of the shell cursor.
+ *
+ * @details shape of the cursor varies in 4 bits values ​​from 0 to 15 (hexadecimal).
+ * @param shape Hexadecimal cursor shape value.
+ *
+ * @see https://wiki.osdev.org/Text_Mode_Cursor
+ */
 void display::set_cursor_shape(uint_8 shape) {
     IO::outb(0x3D4, 0xA); // low cursor shape register
     IO::outb(0x3D5, shape); // bits 6-7 unused, bit 5 disables the cursor, bits 0-4 control the cursor shape
@@ -95,6 +104,21 @@ void display::print_char(char chr, uint_8 color) {
     set_cursor_pos(cursor_pos + 1);
 }
 
+void display::testColors() {
+    for (uint_16 i = 0; i < 256; i++) {
+        print_string("A", i);
+    }
+}
+
+
+void display::testChars() {
+    for (uint_16 i = 0; i < 256; i++) {
+        print_string(int_to_string(i), FOREGROUND_YELLOW);
+        print_string(" ", FOREGROUND_YELLOW);
+        print_char(i, FOREGROUND_WHITE);
+        print_string("  ", FOREGROUND_YELLOW);
+    }
+}
 
 char hex_to_stringOutput[128];
 template<typename T>

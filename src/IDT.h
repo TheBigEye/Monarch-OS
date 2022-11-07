@@ -17,6 +17,7 @@ struct IDT64 {
 };
 
 extern void(*MainKeyboardHandler)(uint_8 scanCode, uint_8 chr);
+extern void(*MainCommandsHandler)(uint_8 scanCode, uint_8 chr);
 void InitializeIDT();
 
 #endif /* IDT_H_ */

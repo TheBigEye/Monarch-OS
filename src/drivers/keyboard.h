@@ -43,8 +43,6 @@ extern bool LeftShiftPressed;
 extern bool RightShiftPressed;
 extern uint_8 LastScancode;
 
-bool is_key_pressed();
-
 void StandardKeyboardHandler(uint_8 scanCode, uint_8 chr);
 void KeyboardHandlerEx(uint_8 scanCode);
 void KeyboardHandler(uint_8 scanCode, uint_8 chr);

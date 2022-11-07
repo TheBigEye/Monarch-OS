@@ -8,6 +8,7 @@ INPUT (
     ./build/kernel.o
     ./build/IDT.o
     ./build/IO.o
+    ./build/CPU.o
     ./build/map.o
     ./build/heap.o
     ./build/memory.o

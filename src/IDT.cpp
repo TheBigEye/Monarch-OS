@@ -10,6 +10,7 @@ extern uint_64 isr1;
 extern "C" void Load_IDT();
 
 void(*MainKeyboardHandler)(uint_8 scanCode, uint_8 chr);
+void(*MainCommandsHandler)(uint_8 scanCode, uint_8 chr);
 
 void InitializeIDT() {
 
@@ -28,8 +29,6 @@ void InitializeIDT() {
 	Load_IDT();
 }
 
-
-
 extern "C" void isr1_handler() {
     uint_8 scanCode = IO::inb(0x60);
     uint_8 chr = 0;
@@ -40,6 +39,10 @@ extern "C" void isr1_handler() {
     if (MainKeyboardHandler != 0) {
         MainKeyboardHandler(scanCode, chr);
     }
+	if (MainCommandsHandler != 0) {
+        MainCommandsHandler(scanCode, chr);
+    }
+
 	IO::outb(0x20, 0x20);
 	IO::outb(0xa0, 0x20);
 }

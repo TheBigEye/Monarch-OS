@@ -4,6 +4,9 @@
 #include "IDT.h"
 #include "memory/map.h"
 #include "memory/heap.h"
+#include "programs/command.cpp"
+
+#include "CPU.h"
 
 #include "power/power.h"
 
@@ -14,16 +17,20 @@ void Panic(uint_32 rebootTime);
 void InitializeShell() {
     display::initialize(0, 0,                                                                                      BACKGROUND_BLACK | FOREGROUND_WHITE);
     display::set_cursor_pos(coords(0, 0));  display::print_string(Splash,                                          BACKGROUND_BLACK | FOREGROUND_BROWN);
-    display::set_cursor_pos(coords(15, 0)); display::print_string("Monarch OS - Under building\n\r",               BACKGROUND_BLACK | FOREGROUND_WHITE);
-    display::set_cursor_pos(coords(15, 1)); display::print_string("(C)2021-2022, TheBigEye\n\r",                   BACKGROUND_BLACK | FOREGROUND_WHITE);
+    display::set_cursor_pos(coords(15, 0)); display::print_string("Monarch OS - Under building",                   BACKGROUND_BLACK | FOREGROUND_WHITE);
+    display::set_cursor_pos(coords(15, 1)); display::print_string("(C)2021-2022, TheBigEye",                       BACKGROUND_BLACK | FOREGROUND_WHITE);
     display::set_cursor_pos(coords(0, 6));  display::print_string("TIP:",                                          BACKGROUND_BLACK | FOREGROUND_YELLOW);
     display::set_cursor_pos(coords(5, 6));  display::print_string("Type 'help' to get an availible commands list", BACKGROUND_BLACK | FOREGROUND_LIGHTGRAY);
     display::set_cursor_pos(coords(0, 8));  display::print_string("$",                                             BACKGROUND_BLACK | FOREGROUND_GREEN);
 }
 
 extern "C" void _start() {
-    InitializeIDT();
-    MainKeyboardHandler = KeyboardHandler;
+    InitializeIDT(); // Initialize Interrupt Descriptor Table
+
+    MainKeyboardHandler = KeyboardHandler; // Start keyboad handler
+    MainCommandsHandler = CommandsHandler; // Start commands handler
+
+    InitializeShell(); // Initialize shell
 
     //Panic(5000);
 
@@ -31,7 +38,7 @@ extern "C" void _start() {
 
     //InitializeHeap(0x100000, 0x100000);
 
-    InitializeShell();
+    // display::testChars();
 
     return;
 }

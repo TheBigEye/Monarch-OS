@@ -49,6 +49,21 @@ void IO::out_word(uint_16 port, uint_16 value) {
 	outw(port, value);
 }
 
+void IO::write_8(uint_32 io_port, uint_8 val) {
+	*((volatile uint_8 *)io_port) = val;
+}
+
+void IO::write_16(uint_32 io_port, uint_16 val) {
+	*((volatile uint_16 *)io_port) = val;
+}
+
+void IO::write_32(uint_32 io_port, uint_32 val) {
+	*((volatile uint_32 *)io_port) = val;
+}
+
+uint_32 IO::read(uint_32 io_port) {
+	return *((volatile uint_32 *)io_port);
+}
 
 void RemapPic(){
 	uint_8 a1, a2;

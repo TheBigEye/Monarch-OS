@@ -22,6 +22,11 @@ class IO {
         static uint_8 in_byte(uint_16 port);
         static void out_byte(uint_16 port, uint_8 value);
         static void out_word(uint_16 port, uint_16 value);
+
+        static void write_8(uint_32 io_port, uint_8 val);
+        static void write_16(uint_32 io_port, uint_16 val);
+        static void write_32(uint_32 io_port, uint_32 val);
+        static uint_32 read(uint_32 io_port);
 };
 
 void sleep(uint_32 miliseconds);

@@ -9,18 +9,19 @@
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 
-#define CURSOR_BLOCK 0x0f
-#define CURSOR_LINE 0x0e
-#define CURSOR_UNDERLINE 0x0d
-#define CURSOR_BLINKING 0x0c
-#define CURSOR_HIDDEN 0x0b
-#define CURSOR_NORMAL 0x0a
+// Cursor
+#define CURSOR_FULL_BLOCK 0x00
+#define CURSOR_HALF_BLOCK 0x07
+#define CURSOR_NORMAL 0x0A
+#define CURSOR_UNDERLINE 0x0F
 
 uint_16 get_cursor_pos();
 uint_16 coords(uint_8 x, uint_8 y);
 bool compare_string(const char* str1, const char* str2);
 int length(const char* str);
 int getVgaWidth();
+
+
 
 const char* hex_to_string(uint_8 value);
 const char* hex_to_string(uint_16 value);
@@ -53,6 +54,9 @@ class display {
         static void print_string(const char* str, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
         static void print_string_centered(const char* str, uint_8 y, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
         static void print_char(char chr, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+
+        static void testColors();
+        static void testChars();
 };
 
 #endif /* DISPLAY_H_ */
