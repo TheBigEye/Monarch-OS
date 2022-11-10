@@ -3,6 +3,7 @@
 #include "../common/typedefs.h"
 #include "../common/colors.h"
 #include "../drivers/display.h"
+#include "../drivers/keyboard.h"
 #include "../power/power.h"
 #include "../IO.h"
 #include "../CPU.h"

@@ -34,7 +34,7 @@ echo [-] Compiling project code ...
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/kernel.cpp"           -o "build/kernel.o"
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/IDT.cpp"              -o "build/IDT.o"
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/IO.cpp"               -o "build/IO.o"
-%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/CPU.cpp"               -o "build/CPU.o"
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/CPU.cpp"              -o "build/CPU.o"
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/memory/map.cpp"       -o "build/map.o"
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/memory/heap.cpp"      -o "build/heap.o"
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/memory/memory.cpp"    -o "build/memory.o"
@@ -42,13 +42,14 @@ echo [-] Compiling project code ...
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/drivers/display.cpp"  -o "build/display.o"
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/power/power.cpp"      -o "build/power.o"
 
-:: Standard Library
+:: Standard (common) Library
 %GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/common/math.cpp"      -o "build/math.o"
+%GCC% -Ttext 0x8000 -ffreestanding -mno-red-zone -m64 -c "src/common/logging.cpp"   -o "build/logging.o"
 
 :: ----------------------------------------------------------------------------------------------------------------------------
 
 echo [-] Linking kernel ...
-%LD% -T"src/kernel.ld"
+%LD% -T "src/kernel.ld"
 
 cd ./build
 

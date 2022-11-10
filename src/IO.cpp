@@ -91,13 +91,11 @@ void sleep(uint_32 miliseconds) {
 	}
 }
 
-
-
 void cpuid(uint_32 code, uint_32* a, uint_32* b, uint_32* c, uint_32* d) {
     asm volatile("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(code));
 }
 
-void beep(uint_32 frequency, uint_32 duration) {
+/*void beep(uint_32 frequency, uint_32 duration) {
 	uint_32 divisor = 1193180 / frequency;
 	IO::outb(0x43, 0xB6);
 	IO::outb(0x42, (uint_8) (divisor & 0xFF));
@@ -105,4 +103,4 @@ void beep(uint_32 frequency, uint_32 duration) {
 	IO::outb(0x61, IO::inb(0x61) | 3);
 	sleep(duration);
 	IO::outb(0x61, IO::inb(0x61) & 0xFC);
-}
+}*/

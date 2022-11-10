@@ -1,7 +1,5 @@
 @echo off
 
-:: NOTE: you also can try on Virtual Box :)
-
 ::echo [r] Starting bochs debugger ...
 ::bochs -q -f ./bochs/bochsconfig -rc ./bochs/commands.txt
 

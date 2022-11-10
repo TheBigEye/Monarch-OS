@@ -16,6 +16,7 @@ INPUT (
     ./build/display.o
     ./build/power.o
     ./build/math.o
+    ./build/logging.o
 )
 
 OUTPUT (

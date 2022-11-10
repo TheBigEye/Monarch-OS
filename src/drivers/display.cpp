@@ -13,7 +13,6 @@ void display::initialize(uint_8 cursor_x, uint_8 cursor_y, uint_64 bg_color) {
 }
 
 
-
 /**
  * @brief Sets or changes the shape/size of the shell cursor.
  *

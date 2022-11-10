@@ -1,3 +1,5 @@
+#include "common/logging.h"
+
 #include "drivers/display.h"
 #include "drivers/keyboard.h"
 
@@ -12,10 +14,34 @@
 
 extern const char Splash[];
 
-void Panic(uint_32 rebootTime);
+void InitializeKernel();
+void InitializeShell();
+void panic(uint_32 rebootTime);
+
+extern "C" void _start() {
+    InitializeKernel();
+    return;
+}
+
+extern "C" void _end() {
+    return;
+}
+
+void InitializeKernel() {
+    display::initialize(0, 0, BACKGROUND_BLACK | FOREGROUND_WHITE);
+    logger::process("Initializing kernel"); sleep(1000);
+
+    InitializeIDT();                        logger::success("IDT initialized");               sleep(1000); // Initialize Interrupt Descriptor Table
+    MainKeyboardHandler = KeyboardHandler;  logger::success("Keyboard handler initialized");  sleep(1000); // Initialize Keyboard Handler
+    MainCommandsHandler = CommandsHandler;  logger::success("Commands handler initialized");  sleep(1000); // Initialize Commands handler
+
+    logger::process("Initializing shell"); sleep(1000);
+    InitializeShell(); // Initialize shell
+}
 
 void InitializeShell() {
-    display::initialize(0, 0,                                                                                      BACKGROUND_BLACK | FOREGROUND_WHITE);
+    display::initialize(0, 0, BACKGROUND_BLACK | FOREGROUND_WHITE);
+
     display::set_cursor_pos(coords(0, 0));  display::print_string(Splash,                                          BACKGROUND_BLACK | FOREGROUND_BROWN);
     display::set_cursor_pos(coords(15, 0)); display::print_string("Monarch OS - Under building",                   BACKGROUND_BLACK | FOREGROUND_WHITE);
     display::set_cursor_pos(coords(15, 1)); display::print_string("(C)2021-2022, TheBigEye",                       BACKGROUND_BLACK | FOREGROUND_WHITE);
@@ -24,30 +50,7 @@ void InitializeShell() {
     display::set_cursor_pos(coords(0, 8));  display::print_string("$",                                             BACKGROUND_BLACK | FOREGROUND_GREEN);
 }
 
-extern "C" void _start() {
-    InitializeIDT(); // Initialize Interrupt Descriptor Table
-
-    MainKeyboardHandler = KeyboardHandler; // Start keyboad handler
-    MainCommandsHandler = CommandsHandler; // Start commands handler
-
-    InitializeShell(); // Initialize shell
-
-    //Panic(5000);
-
-    //MemoryMapEntry** UsableMemoryMaps = GetUsableMemoryRegions();
-
-    //InitializeHeap(0x100000, 0x100000);
-
-    // display::testChars();
-
-    return;
-}
-
-extern "C" void _end() {
-    return;
-}
-
-void Panic(uint_32 rebootTime) {
+void panic(uint_32 rebootTime) {
     string title = " Monarch OS ";
 
     string msg_line_1 = "A fatal exception 0E has ocurred at 0028:C0011E36 in VXD VMM(01) +";
