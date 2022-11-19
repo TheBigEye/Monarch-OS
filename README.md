@@ -51,7 +51,7 @@
 It has been created from scratch using several videos from Youtube as a base, and https://wiki.osdev.org, with the aim of trying to make a real OS, currently still under development :)
 
 ## How do I build this?
-To build, you will need NASM and GCC, optionally you can use a Linux environment such as Ubuntu or Debian, (although the BATCH scripts should be re-adapted to BASH or Make), alternatively you can use WSL or just MSYS2 on Windows.
+To build, you will need NASM, GCC and a 64 bit processor, optionally you can use a Linux environment such as Ubuntu or Debian, (although the BATCH scripts should be re-adapted to BASH or Make), alternatively you can use WSL or just MSYS2 on Windows.
 
 #### MSYS2 (Windows):
 - Download and install [**MSYS2**](https://www.msys2.org/), once installed and updated, you will need to install some packages under the MINGW64 shell, `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-nasm`, once the packages are installed, you must add `C:\msys64\mingw64\bin` to the Windows PATH so that it can be used externally, for that, you open the taskbar search box and type `env`, you should see the option to edit system environment variables, in the pop-up window you click `Environment variables`, in the next window you select `Path` of System section, and there you add that path to the bin folder, now typing `gcc --version` in CMD should work :)
