@@ -10,7 +10,7 @@
   %1_size: dq %1_size - %1              ; define the size of the file
 %endmacro
 
-; include the splash screen
+; include the ascii art
 Include_BIN Splash, "res/splash.txt"
 
 ; NOTE: you can include more files to be used, an example can be found in kernel.cpp

@@ -50,8 +50,8 @@ void StandardKeyboardHandler(uint_8 scanCode, uint_8 chr) {
 
 void KeyboardHandlerEx(uint_8 scanCode) {
     switch (LastScancode) {
-        case 0x50: display::set_cursor_pos(get_cursor_pos() + getVgaWidth()); break;
-        case 0x48: display::set_cursor_pos(get_cursor_pos() - getVgaWidth()); break;
+        case 0x50: display::set_cursor_pos(get_cursor_pos() + VGA_HEIGHT); break;
+        case 0x48: display::set_cursor_pos(get_cursor_pos() - VGA_WIDTH); break;
         default:
            break;
     }

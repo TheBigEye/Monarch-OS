@@ -4,14 +4,12 @@
 #include "drivers/keyboard.h"
 
 #include "IDT.h"
-#include "memory/map.h"
-#include "memory/heap.h"
 #include "programs/command.cpp"
 
 #include "CPU.h"
-
 #include "power/power.h"
 
+// Include the splash.txt
 extern const char Splash[];
 
 void InitializeKernel();
@@ -31,9 +29,9 @@ void InitializeKernel() {
     display::initialize(0, 0, BACKGROUND_BLACK | FOREGROUND_WHITE);
     logger::process("Initializing kernel"); sleep(1000);
 
-    InitializeIDT();                        logger::success("IDT initialized");               sleep(1000); // Initialize Interrupt Descriptor Table
-    MainKeyboardHandler = KeyboardHandler;  logger::success("Keyboard handler initialized");  sleep(1000); // Initialize Keyboard Handler
-    MainCommandsHandler = CommandsHandler;  logger::success("Commands handler initialized");  sleep(1000); // Initialize Commands handler
+    InitializeIDT();                        logger::success("IDT initialized");               sleep(512); // Initialize Interrupt Descriptor Table
+    MainKeyboardHandler = KeyboardHandler;  logger::success("Keyboard handler initialized");  sleep(512); // Initialize Keyboard Handler
+    MainCommandsHandler = CommandsHandler;  logger::success("Commands handler initialized");  sleep(512); // Initialize Commands handler
 
     logger::process("Initializing shell"); sleep(1000);
     InitializeShell(); // Initialize shell

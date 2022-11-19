@@ -11,6 +11,10 @@ class math {
         static uint_32 max(uint_32 a, uint_32 b);
         static uint_32 log(int_32 x, int_32 n);
         static uint_32 pow(int_32 x, int_32 p);
+
+        static uint_32 abs(int_32 x);
+        static float sqrt(float x);
+        static uint_32 sqr(uint_32 x);
 };
 
 #endif /* MATH_H_ */

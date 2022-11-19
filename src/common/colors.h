@@ -1,6 +1,8 @@
 #ifndef COMMON_COLORS_H_
 #define COMMON_COLORS_H_
 
+/** @see https://wiki.osdev.org/Text_mode#Colours **/
+
 #define FOREGROUND_BLACK            0x00 // 0
 #define FOREGROUND_BLUE             0x01 // 1
 #define FOREGROUND_GREEN            0x02 // 2
