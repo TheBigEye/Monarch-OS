@@ -53,12 +53,12 @@ It has been created from scratch using several videos from Youtube as a base, an
 ## How do I build this?
 To build, you will need NASM, GCC and a 64 bit processor, optionally you can use a Linux environment such as Ubuntu or Debian, (although the BATCH scripts should be re-adapted to BASH or Make), alternatively you can use WSL or just MSYS2 on Windows.
 
-#### MSYS2 (Windows):
+### MSYS2 (Windows):
 - Download and install [**MSYS2**](https://www.msys2.org/), once installed and updated, you will need to install some packages under the MINGW64 shell, `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-nasm`, once the packages are installed, you must add `C:\msys64\mingw64\bin` to the Windows PATH so that it can be used externally, for that, you open the taskbar search box and type `env`, you should see the option to edit system environment variables, in the pop-up window you click `Environment variables`, in the next window you select `Path` of System section, and there you add that path to the bin folder, now typing `gcc --version` in CMD should work :)
-- and... what happens if I want to use a cross-compiler like elf?, To avoid complications, download the zip corresponding to your architecture and system from [**here**](https://github.com/lordmilko/i686-elf-tools/releases/tag/7.1.0) (remember x86_64 is 64 bit, and i686 is 32 bit, in this case we are using 64 bit), once downloaded, go to the following path `C:\msys64\mingw64`, drag the zip folders into the mingw64 folder, and that will be it, you can try running `x86_64-elf-gcc --version` from CMD to check if works.
+- And... what happens if i want to use a cross-compiler like ELF?, To avoid complications, download the zip corresponding to your architecture and system from [**here**](https://github.com/lordmilko/i686-elf-tools/releases/tag/7.1.0) (remember x86_64 is 64 bit, and i686 is 32 bit, in this case we are using 64 bit), once downloaded, go to the following path `C:\msys64\mingw64`, drag the zip folders into the mingw64 folder, and that will be it, you can try running `x86_64-elf-gcc --version` from CMD to check if works.
 
 
-Once the compilers and tools are configured, run the **build.bat** script, it should generate a floppy image.
+Once the compilers and tools are configured, run the **build.bat** script, it should generate a floppy image (Monarch-OS.img) on Build folder.
 
 <!-- ## Features
 
