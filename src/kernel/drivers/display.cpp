@@ -1,45 +1,53 @@
 #include "display.h"
 
-#include "../IO.h"
-#include "../common/typedefs.h"
-#include "../common/colors.h"
+#include "../../common/libc/string.h"
+#include "../../common/typedefs.h"
+#include "../../common/colors.h"
+#include "../cpu/IO.h"
+#include "../memory/memory.h"
+
+// NOTICE: this will be refactored soon, moving some functions to another file (tty.h / tty.cpp)
 
 /**
- * @brief Make a new clean display
- * @param cursor_x The new cursor's x position
- * @param cursor_y The new cursor's y position
- * @param bg_color The new background color
+ * Make a new clean display
+ *
+ * @param x The new cursor's x position
+ * @param y The new cursor's y position
+ * @param color The new color scheme for the display
 */
-void display::initialize(uint_8 cursor_x, uint_8 cursor_y, uint_64 bg_color) {
-    display::clear_display(bg_color);
-    display::set_cursor_pos(coords(cursor_x, cursor_y));
-    display::set_cursor_shape(CURSOR_NORMAL);
+void display::initialize(uint_8 x, uint_8 y, uint_64 color) {
+    display::cleanup(color);
+    display::set_cursor_pos(coords(x, y));
+    display::set_cursor_shape(0x00);
 }
 
 /**
- * @brief Clears the display with the specified background color.
- * @param clear_color Screen colors to be used to clear the display.
- * @example clear_display(BACKGROUND_BLACK | FOREGROUND_WHITE);
+ * Clears the display with the specified background color.
+ *
+ * @param color Screen colors to be used to clear the display.
+ * @example cleanup(BACKGROUND_BLACK | FOREGROUND_WHITE);
 */
-void display::clear_display(uint_64 clear_color) {
+void display::cleanup(uint_64 color) {
     uint_64 value = 0;
 
     // TODO: optimize this using memset
-    value += clear_color << 8;
-    value += clear_color << 24;
-    value += clear_color << 40;
-    value += clear_color << 56;
+    value += color << 8;
+    value += color << 24;
+    value += color << 40;
+    value += color << 56;
 
-    for (uint_64* i = (uint_64*) VGA_MEMORY; i < (uint_64*)(VGA_MEMORY + 4000); i++) {
+    for (uint_64* i = (uint_64*) VGA_MEMORY; i < (uint_64*)(VGA_MEMORY + 8000); i++) {
         *i = value;
     }
 }
 
 /**
- * @brief Sets or changes the shape/size of the screen cursor.
- * @param shape Hexadecimal cursor shape value.
+ * Sets or changes the shape/size of the screen cursor.
+ *
  * @note The cursor's shape varies in 4 bits values ​​from 0 to 15 (hexadecimal).
  * @see https://wiki.osdev.org/Text_Mode_Cursor
+ *
+ * @param shape Hexadecimal cursor shape value.
 */
 void display::set_cursor_shape(uint_8 shape) {
     IO::outb(0x3D4, 0xA); // low cursor shape register
@@ -47,10 +55,12 @@ void display::set_cursor_shape(uint_8 shape) {
 }
 
 /**
- * @brief Sets the cursor position.
- * @param position Cursor position.
+ * Sets the cursor position.
+ *
  * @note The cursor position is a 2-byte value, where the first byte is the X coordinate and the second byte is the Y coordinate.
  * @see https://wiki.osdev.org/Text_Mode_Cursor
+ *
+ * @param position Cursor position.
 */
 void display::set_cursor_pos(uint_16 position) {
     IO::outb(0x3D4, 0x0F); IO::outb(0x3D5, (uint_8)(position & 0xFF));
@@ -58,9 +68,11 @@ void display::set_cursor_pos(uint_16 position) {
 }
 
 /**
- * @brief Gets the cursor position.
- * @return Cursor position.
+ * Gets the cursor position.
+ *
  * @see https://wiki.osdev.org/Text_Mode_Cursor#Get_Cursor_Position
+ *
+ * @return Cursor position.
 */
 uint_16 get_cursor_pos() {
     uint_16 position = 0;
@@ -70,18 +82,22 @@ uint_16 get_cursor_pos() {
 }
 
 /**
- * @brief Traslates x and y coordinates to the cursor position format
+ * Traslates x and y coordinates to the cursor position format
+ *
+ * @see https://wiki.osdev.org/Text_mode#Video_Memory
+ *
  * @param x X coordinate, 0 to 127.
  * @param y Y coordinate, 0 to 127.
+ *
  * @return Cursor position.
- * @see https://wiki.osdev.org/Text_mode#Video_Memory
 */
 uint_16 coords(uint_8 x, uint_8 y) {
     return y * VGA_WIDTH + x;
 }
 
 /**
- * @brief Put a character on the screen.
+ * Put a character on the screen.
+ *
  * @param x X coordinate, 0 to 127.
  * @param y Y coordinate, 0 to 127.
  * @param chr Character to be displayed.
@@ -94,9 +110,11 @@ void display::putchar(uint_8 x, uint_8 y, char chr, uint_8 color) {
 }
 
 /**
- * @brief Gets a character from a position on the screen.
+ * Gets a character from a position on the screen.
+ *
  * @param x X coordinate, 0 to 127.
  * @param y Y coordinate, 0 to 127.
+ *
  * @return Character.
 */
 char display::getchar(uint_8 x, uint_8 y) {
@@ -105,7 +123,8 @@ char display::getchar(uint_8 x, uint_8 y) {
 }
 
 /**
- * @brief Put a color attribute on the screen.
+ * Put a color attribute on the screen.
+ *
  * @param x X coordinate, 0 to 127.
  * @param y Y coordinate, 0 to 127.
  * @param color Color values to be displayed in the position
@@ -116,9 +135,11 @@ void display::putcolor(uint_8 x, uint_8 y, uint_8 color) {
 }
 
 /**
- * @brief Gets a color attribute from a position on the screen.
+ * Gets a color attribute from a position on the screen.
+ *
  * @param x X coordinate, 0 to 127.
  * @param y Y coordinate, 0 to 127.
+ *
  * @return Color values.
 */
 uint_8 display::getcolor(uint_8 x, uint_8 y) {
@@ -127,20 +148,22 @@ uint_8 display::getcolor(uint_8 x, uint_8 y) {
 }
 
 /**
- * @brief Scrolls the screen up.
+ * Scrolls the screen up.
+ *
  * @see https://wiki.osdev.org/Text_mode#Scrolling
 */
-void display::scroll_display() {
+void display::scroll() {
     // TODO: if the text goes out of the buffer, the screen should scroll
     // move the cursor to a new line and continue the typing
 
-    // Move the screen up
+    // Move the lines up
     for (uint_8 y = 1; y < VGA_HEIGHT; y++) {
         for (uint_8 x = 0; x < VGA_WIDTH; x++) {
             putchar(x, y - 1, getchar(x, y));
             putcolor(x, y - 1, getcolor(x, y));
         }
     }
+
     // Clear the last line
     for (uint_8 x = 0; x < VGA_WIDTH; x++) {
         putchar(x, VGA_HEIGHT - 1, 32); // 32 is space
@@ -148,7 +171,7 @@ void display::scroll_display() {
     }
 }
 
-void display::print_string(const char* str, uint_8 color) {
+void display::print(const char* str, uint_8 color) {
     uint_8* char_pointer = (uint_8*) str;
     uint_16 position = get_cursor_pos();
 
@@ -158,7 +181,7 @@ void display::print_string(const char* str, uint_8 color) {
             case 10: // \n
                 position += VGA_WIDTH;
                 if (position>= VGA_WIDTH * VGA_HEIGHT) {
-                    scroll_display();
+                    display::scroll();
                     position -= VGA_WIDTH;
                 }
                 break;
@@ -173,24 +196,19 @@ void display::print_string(const char* str, uint_8 color) {
                 putcolor(position % VGA_WIDTH, position / VGA_WIDTH, color);
                 position++;
 
-                // If the cursor is out of the screen, scroll the screen
+                // If the cursor is out of the screen, scroll the screen and move the cursor to a new line to continue typing
                 if (position >= VGA_WIDTH * VGA_HEIGHT) {
-                    scroll_display();
+                    display::scroll();
                     position -= VGA_WIDTH;
                 }
+
         }
         char_pointer++;
     }
     set_cursor_pos(position);
 }
 
-void display::print_string_centered(const char* str, uint_8 y, uint_8 color) {
-    set_cursor_pos(coords((VGA_WIDTH - length(str)) / 2, y));
-    print_string(str, color);
-}
-
-
-void display::print_char(char chr, uint_8 color) {
+void display::print(char chr, uint_8 color) {
     uint_16 cursor_pos = get_cursor_pos();
     *(VGA_MEMORY + cursor_pos * 2) = chr;
     *(VGA_MEMORY + cursor_pos * 2 + 1) = color;
@@ -198,18 +216,38 @@ void display::print_char(char chr, uint_8 color) {
     set_cursor_pos(cursor_pos + 1);
 }
 
-void display::testColors() {
-    for (uint_16 i = 0; i < 256; i++) {
-        print_string("A", i);
+void display::print_centered(const char* str, uint_8 y, uint_8 color) {
+    set_cursor_pos(coords((VGA_WIDTH - length(str)) / 2, y));
+    print(str, color);
+}
+
+void display::print_centered(char chr, uint_8 y, uint_8 color) {
+    set_cursor_pos(coords((VGA_WIDTH - 1) / 2, y));
+    print(chr, color);
+}
+
+void display::colorize(uint_8 x, uint_8 y, uint_16 w, uint_16 h, char chr, uint_8 color) {
+    // search the printed char (chr) ont the screen area (x,y,w,h), if the char is found,
+    // change the color of the char to color
+    for (uint_16 i = 0; i < w * h; i++) {
+        if (*(VGA_MEMORY + (y * VGA_WIDTH + x) * 2 + i * 2) == chr) {
+            *(VGA_MEMORY + (y * VGA_WIDTH + x) * 2 + i * 2 + 1) = color;
+        }
     }
 }
 
-void display::testChars() {
+void display::colors() {
     for (uint_16 i = 0; i < 256; i++) {
-        print_string(int_to_string(i), FOREGROUND_YELLOW);
-        print_string(" ", FOREGROUND_YELLOW);
-        print_char(i, FOREGROUND_WHITE);
-        print_string("  ", FOREGROUND_YELLOW);
+        print("A", i);
+    }
+}
+
+void display::chars() {
+    for (uint_16 i = 0; i < 256; i++) {
+        print(int_to_string(i), FOREGROUND_YELLOW);
+        print(" ", FOREGROUND_YELLOW);
+        print(i, FOREGROUND_WHITE);
+        print("  ", FOREGROUND_YELLOW);
     }
 }
 

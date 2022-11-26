@@ -2,9 +2,10 @@
 #define IDT_H_
 
 #include "IO.h"
-#include "common/typedefs.h"
-#include "common/keycodes.h"
-#include "drivers/display.h"
+
+#include "../../common/typedefs.h"
+#include "../../common/keycodes.h"
+#include "../drivers/display.h"
 
 struct IDT64 {
     uint_16 offset_low;

@@ -4,6 +4,7 @@
 #include "typedefs.h"
 
 typedef struct { uint_32 X; uint_32 Y; } coord;
+typedef struct { uint_32 X; uint_32 Y; } point;
 
 class math {
     public:

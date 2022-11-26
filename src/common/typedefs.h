@@ -1,6 +1,9 @@
 #ifndef COMMON_TYPEDEFS_H_
 #define COMMON_TYPEDEFS_H_
 
+
+/// STDINT
+
 /*
 typedef struct { unsigned value : 1; } uint_1;  // 1 bit    0 to 1
 typedef struct { unsigned value : 4; } uint_4;  // 1 Nibble 0 to 15
@@ -21,6 +24,15 @@ typedef signed short        int_16;             // 2 byte, from -32,768 to 32,76
 typedef signed int          int_32;             // 4 byte, from -2,147,483,648 to 2,147,483,647
 typedef signed long long    int_64;             // 8 byte, from -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
 
-typedef char* string;
+// GCC COMPATIBILITY ONLY
+typedef unsigned char       uint8_t;            // 1 byte, from 0 to
+typedef unsigned short      uint16_t;           // 2 byte, from 0 to
+typedef unsigned int        uint32_t;           // 4 byte, from 0
+typedef unsigned long long  uint64_t;           // 8 byte, from 0
+
+typedef signed char         int8_t;             // 1 byte, from -128 to 127
+typedef signed short        int16_t;            // 2 byte, from -32,768 to 32,767
+typedef signed int          int32_t;            // 4 byte, from -2,147,483,648 to 2,147,483,647
+typedef signed long long    int64_t;            // 8 byte, from -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
 
 #endif /* COMMON_TYPEDEFS_H_ */

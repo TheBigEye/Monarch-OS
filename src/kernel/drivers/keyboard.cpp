@@ -1,8 +1,8 @@
 #include "keyboard.h"
-
 #include "display.h"
-#include "../IO.h"
-#include "../common/typedefs.h"
+
+#include "../../common/typedefs.h"
+#include "../cpu/IO.h"
 
 bool LeftShiftPressed = false;
 bool RightShiftPressed = false;
@@ -16,11 +16,11 @@ void StandardKeyboardHandler(uint_8 scanCode, uint_8 chr) {
     if (chr != 0) {
         switch (LeftShiftPressed | RightShiftPressed) {
             case true:
-                display::print_char(chr - 32);
+                display::print(chr - 32);
                 KeyboardBuffer[KeyboardBufferIndex++] = chr - 32;
                 break;
             case false:
-                display::print_char(chr);
+                display::print(chr);
                 KeyboardBuffer[KeyboardBufferIndex++] = chr;
                 break;
         }
@@ -29,7 +29,7 @@ void StandardKeyboardHandler(uint_8 scanCode, uint_8 chr) {
             case 0x8E: // Backspace.
                 if (KeyboardBufferIndex > 0) {
                     display::set_cursor_pos(get_cursor_pos() - 1);
-                    display::print_char(' ');
+                    display::print(' ');
                     display::set_cursor_pos(get_cursor_pos() - 1);
                     KeyboardBuffer[--KeyboardBufferIndex] = 0;
                 }
@@ -40,7 +40,7 @@ void StandardKeyboardHandler(uint_8 scanCode, uint_8 chr) {
             case 0x36: RightShiftPressed = true; break; // Right shift
             case 0xB6: RightShiftPressed = false; break; // Right shift released
             case 0x9C:
-                display::print_string("\n\r");
+                display::print("\n\r");
                 KeyboardBuffer[KeyboardBufferIndex] = 0;
                 KeyboardBufferIndex = 0;
                 break; // Enter

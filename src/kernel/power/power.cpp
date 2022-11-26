@@ -1,12 +1,12 @@
 #include "power.h"
 
-#include "../IO.h"
-#include "../common/typedefs.h"
+#include "../cpu/IO.h"
+#include "../../common/typedefs.h"
 
 /**
  * Reboot the computer
  */
-void Power::reboot(uint_32 time) {
+void power::reboot(uint_32 time) {
     sleep(time);
 
     // Wait until the input buffer is empty
@@ -24,7 +24,7 @@ void Power::reboot(uint_32 time) {
 /**
  * Shutdown the computer
  */
-void Power::shutdown(uint_32 time) {
+void power::shutdown(uint_32 time) {
     sleep(time);
 
     IO::out_word(0xB004, 0x2000); // Bochs (BIOS)

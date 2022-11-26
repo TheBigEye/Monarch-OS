@@ -8,6 +8,11 @@ mov sp, bp                  ; Set the stack pointer to the base pointer
 
 call cls                    ; Clear the BIOS screen
 
+; if you want, disable thse two for normal text mode 80x25 (VGA_WIDTH and VGA_HEIGHT will be also modified on display.h)
+call video_mode             ; essential for scalling
+call text_mode              ; 80x50 display size, 8x8 font
+;call disable_cursor        ; disable the console cursor
+
 mov bx, MSG_bootloader_version
 call Printf
 

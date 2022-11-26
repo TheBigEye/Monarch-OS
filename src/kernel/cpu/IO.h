@@ -1,7 +1,7 @@
 #ifndef IO_H_
 #define IO_H_
 
-#include "common/typedefs.h"
+#include "../../common/typedefs.h"
 
 #define PIC1_COMMAND 0x20
 #define PIC1_DATA 0x21
@@ -30,10 +30,8 @@ class IO {
 };
 
 void sleep(uint_32 miliseconds);
-void RemapPic();
+void remap_PIC();
 
 void beep(uint_32 frequency, uint_32 duration);
-
-void cpuid(uint_32 code, uint_32* a, uint_32* b, uint_32* c, uint_32* d);
 
 #endif /* IO_H_ */

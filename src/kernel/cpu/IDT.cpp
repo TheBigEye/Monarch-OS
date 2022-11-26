@@ -1,9 +1,9 @@
 #include "IDT.h"
-
 #include "IO.h"
-#include "common/typedefs.h"
-#include "common/keycodes.h"
-#include "drivers/display.h"
+
+#include "../../common/typedefs.h"
+#include "../../common/keycodes.h"
+#include "../drivers/display.h"
 
 extern IDT64 _idt[256];
 extern uint_64 isr1;
@@ -22,7 +22,7 @@ void InitializeIDT() {
 	_idt[1].selector = 0x08;
 	_idt[1].types_attr = 0x8e;
 
-	RemapPic();
+	remap_PIC();
 
 	IO::outb(0x21, 0xfd);
 	IO::outb(0xa1, 0xff);

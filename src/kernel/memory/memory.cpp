@@ -1,5 +1,6 @@
 #include "memory.h"
-#include "../common/typedefs.h"
+
+#include "../../common/typedefs.h"
 
 void memset(void* start, uint_64 value, uint_64 num) {
     if (num <= 8) {

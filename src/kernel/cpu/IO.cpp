@@ -1,16 +1,6 @@
 #include "IO.h"
-#include "common/typedefs.h"
 
-#define PIC1_COMMAND 0x20
-#define PIC1_DATA 0x21
-#define PIC2_COMMAND 0xA0
-#define PIC2_DATA 0xA1
-
-#define ICW1_INIT 0x10
-#define ICW1_ICW4 0x01
-#define ICW4_8086 0x01
-
-
+#include "../../common/typedefs.h"
 
 void IO::wait() {
 	asm volatile("outb %%al, $0x80" : : "a"(0));
@@ -65,7 +55,7 @@ uint_32 IO::read(uint_32 io_port) {
 	return *((volatile uint_32 *)io_port);
 }
 
-void RemapPic(){
+void remap_PIC(){
 	uint_8 a1, a2;
 
 	a1 = IO::inb(PIC1_DATA);
@@ -90,17 +80,3 @@ void sleep(uint_32 miliseconds) {
 		asm volatile("outb %%al, $0x80" : : "a"(0));
 	}
 }
-
-void cpuid(uint_32 code, uint_32* a, uint_32* b, uint_32* c, uint_32* d) {
-    asm volatile("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(code));
-}
-
-/*void beep(uint_32 frequency, uint_32 duration) {
-	uint_32 divisor = 1193180 / frequency;
-	IO::outb(0x43, 0xB6);
-	IO::outb(0x42, (uint_8) (divisor & 0xFF));
-	IO::outb(0x42, (uint_8) (divisor >> 8));
-	IO::outb(0x61, IO::inb(0x61) | 3);
-	sleep(duration);
-	IO::outb(0x61, IO::inb(0x61) & 0xFC);
-}*/

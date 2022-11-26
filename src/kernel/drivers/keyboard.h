@@ -2,7 +2,7 @@
 #define KEYBOARD_H_
 
 #include "display.h"
-#include "../common/typedefs.h"
+#include "../../common/typedefs.h"
 
 /*
 #define KEY_ESC 0x01
