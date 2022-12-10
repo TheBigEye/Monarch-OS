@@ -38,8 +38,6 @@ Once the compilers and tools are configured, run the **build.bat** script, it sh
 ## How do I run this?
 Currently for now Virtual Box or VMware will not work because the generated floppy file does not have the proper format, to run the system it is necessary to use QEMU or Bochs
 
-#
-
 <!-- -------------------------------------------------------------------------- Credits ------------------------------------------------------------------------------>
 <!-- Header and footer svgs --- kyechan99/capsule-render -->
 <!-- Views counter --- antonkomarev/github-profile-views-counter -->
