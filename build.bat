@@ -1,3 +1,7 @@
+::
+:: This script is TOO important, compile all the code and make the OS floppy image
+::
+
 @echo off
 
 :: Why batch? Cmake sucks, ok no
@@ -17,16 +21,16 @@ set ASM= nasm
 set GCC= x86_64-elf-gcc
 set LD= x86_64-elf-ld
 
-:: ----------------------------------------------------------------------------------------------------------------------------
+:: --------------------------------------------------------------------------------------------------------------------------------
 
+cls
+
+:: WARNING: this remove all from inside of build folder
 echo [-] Pre-cleaning build folder ...
 if not exist build      (mkdir build)
-if exist build\*.bin    (del /s /q build\*.bin)
-if exist build\*.img    (del /s /q build\*.img)
-if exist build\*.o      (del /s /q build\*.o)
-if exist build\*.tmp    (del /s /q build\*.tmp)
+if exist build          (del /s /q build\*.*)
 
-:: ----------------------------------------------------------------------------------------------------------------------------
+:: --------------------------------------------------------------------------------------------------------------------------------
 
 echo [-] Assembling bootloader ...
 %ASM% src/boot/bootloader.asm -f bin                                                             -o build/bootloader.bin
@@ -60,7 +64,7 @@ echo [-] Compiling system kernel ...
 %GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/common/libc/stdio.cpp"             -o "build/stdio.o"
 %GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/common/libc/string.cpp"            -o "build/string.o"
 
-:: ----------------------------------------------------------------------------------------------------------------------------
+:: --------------------------------------------------------------------------------------------------------------------------------
 
 echo [-] Linking kernel ...
 %LD% %LDFLAGS% -T "src/kernel/linker.ld"
@@ -75,4 +79,4 @@ echo [o] Output file: Monarch-OS.img
 echo:
 cd ..
 
-:: ----------------------------------------------------------------------------------------------------------------------------
+:: --------------------------------------------------------------------------------------------------------------------------------
