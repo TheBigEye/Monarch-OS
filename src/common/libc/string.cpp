@@ -1,6 +1,5 @@
 #include "string.h"
 
-
 string strcat(string s1, string s2) {
     int i, j;
     for (i = 0; s1[i] != '\0'; i++);
@@ -28,10 +27,20 @@ int strcmp(string s1, string s2) {
     return s1[i] - s2[i];
 }
 
-int strlen(string s) {
-    int i;
-    for (i = 0; s[i] != '\0'; i++);
-    return i;
+unsigned long long strlen(string str) {
+	unsigned long long len = 0;
+	while (str[len]) {
+		len++;
+    }
+	return len;
+}
+
+unsigned long long strlen(const char *str) {
+	unsigned long long len = 0;
+	while (str[len]) {
+		len++;
+    }
+	return len;
 }
 
 string strrev(string s) {

@@ -1,7 +1,6 @@
 #include "stdio.h"
 #include "stdarg.h"
 
-#include "../typedefs.h"
 #include "../../kernel/drivers/display.h"
 
 const char hex_chars[] = "0123456789abcdef";

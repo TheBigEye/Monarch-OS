@@ -1,7 +1,6 @@
-#pragma once
+#include "command.h"
 
-#include "../../common/colors.h"
-#include "../../common/typedefs.h"
+#include "../../common/monarch.h"
 #include "../cpu/CPU.h"
 #include "../cpu/IO.h"
 #include "../drivers/display.h"
@@ -13,9 +12,11 @@
 char CommandBuffer[256];
 uint_8 CommandBufferIndex = 0;
 
+const char *prompt = "[$] ";
+
 void cls() {
     display::cleanup();
-    display::set_cursor_pos(0);
+    display::set_cursor_pos(coords(0, 1));
 }
 
 void cpuinfo() {
@@ -32,12 +33,12 @@ void help() {
 }
 
 void shutdown()  {
-    display::print("Shutting down...", BACKGROUND_BLACK | FOREGROUND_YELLOW);
+    display::print("Shutting down ...", BACKGROUND_BLACK | FOREGROUND_YELLOW);
     power::shutdown();
 }
 
 void reboot() {
-    display::print("Rebooting...", BACKGROUND_BLACK | FOREGROUND_YELLOW);
+    display::print("Rebooting ...", BACKGROUND_BLACK | FOREGROUND_YELLOW);
     power::reboot();
 }
 
@@ -65,13 +66,13 @@ void CheckCommand(char* command) {
     for (uint_8 i = 0; i < COMMAND_COUNT; i++) {
         if (compare_string(command, Commands[i]) == true) { // If the command is found
             CommandFunctions[i](); // Run the asociated function
-            display::print("$", BACKGROUND_BLACK | FOREGROUND_GREEN); // Print the prompt
+            display::print(prompt, BACKGROUND_BLACK | FOREGROUND_GREEN); // Print the prompt
             return;
         }
     }
     // If the command is not found
     display::print("Unknown command. Type help for a list of available commands\n\r", BACKGROUND_BLACK | FOREGROUND_LIGHTGRAY);
-    display::print("$", BACKGROUND_BLACK | FOREGROUND_GREEN);
+    display::print(prompt, BACKGROUND_BLACK | FOREGROUND_GREEN);
 
 }
 
@@ -95,4 +96,11 @@ void CommandsHandler(uint_8 scanCode, uint_8 chr) {
                 break;
         }
     }
+
+    // Render and Update the top taskbar
+    for (uint_8 i = 0; i < VGA_WIDTH; i++) {
+        display::putchar(i, 0, ' ', BACKGROUND_BROWN | FOREGROUND_WHITE);
+    }
+    // Print the last pressed key
+    display::putstr(VGA_WIDTH - 1 - strlen(getLastKeyPressed()), 0, getLastKeyPressed(), BACKGROUND_BROWN | FOREGROUND_YELLOW);
 }

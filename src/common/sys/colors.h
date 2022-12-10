@@ -1,5 +1,5 @@
-#ifndef COMMON_COLORS_H_
-#define COMMON_COLORS_H_
+#ifndef COLORS_H_
+#define COLORS_H_
 
 /** @see https://wiki.osdev.org/Text_mode#Colours **/
 
@@ -37,4 +37,4 @@
 #define BACKGROUND_BLINKINGYELLOW   0xE0 // 224
 #define BACKGROUND_BLINKINGWHITE    0xF0 // 240
 
-#endif /* COMMON_COLORS_H_ */
+#endif /* COLORS_H_ */

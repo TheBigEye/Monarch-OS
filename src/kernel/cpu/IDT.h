@@ -3,8 +3,7 @@
 
 #include "IO.h"
 
-#include "../../common/typedefs.h"
-#include "../../common/keycodes.h"
+#include "../../common/monarch.h"
 #include "../drivers/display.h"
 
 struct IDT64 {

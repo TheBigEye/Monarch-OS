@@ -1,7 +1,7 @@
 #ifndef LOGGING_H_
 #define LOGGING_H_
 
-#include "typedefs.h"
+#include "types.h"
 
 class logger {
     public:

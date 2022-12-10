@@ -1,7 +1,7 @@
 #ifndef IO_H_
 #define IO_H_
 
-#include "../../common/typedefs.h"
+#include "../../common/monarch.h"
 
 #define PIC1_COMMAND 0x20
 #define PIC1_DATA 0x21

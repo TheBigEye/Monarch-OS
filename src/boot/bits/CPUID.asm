@@ -16,7 +16,7 @@ Is_CPUID_supported:
 	push ecx
 	popfd
 
-	xor eax,ecx
+	xor eax, ecx
 	jz No_CPUID_supported
 	ret
 

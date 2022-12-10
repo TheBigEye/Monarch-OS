@@ -1,7 +1,7 @@
 #ifndef POWER_H_
 #define POWER_H_
 
-#include "../../common/typedefs.h"
+#include "../../common/monarch.h"
 
 class power {
     public:

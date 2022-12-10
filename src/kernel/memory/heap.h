@@ -2,9 +2,7 @@
 #define HEAP_H_
 
 #include "memory.h"
-
-#include "../../common/typedefs.h"
-
+#include "../../common/monarch.h"
 
 struct MemorySegmentHeader {
     uint_64 MemoryLength;

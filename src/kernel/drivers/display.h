@@ -1,13 +1,13 @@
 #ifndef DISPLAY_H_
 #define DISPLAY_H_
 
-#include "../../common/libc/string.h"
-#include "../../common/typedefs.h"
-#include "../../common/colors.h"
+#include "../../common/monarch.h"
+#include "../../common/stdlib.h"
+
 #include "../cpu/IO.h"
 
-#define VGA_MEMORY (uint_8*) 0xB8000 // THE VGA (TEXT MODE) MEMORY ADDRESS
-#define VID_MEMORY (uint_8*) 0xA0000 // THE VGA (VIDEO MODE) MEMORY ADDRESS
+#define VGA_ADDRESS (uint_8*) 0xB8000 // THE VGA (TEXT MODE) MEMORY ADDRESS
+#define EGA_ADDRESS (uint_8*) 0xA0000 // THE EGA/VGA (VIDEO MODE) MEMORY ADDRESS
 
 // Also supports 80x25 video mode, but bootloader.asm will be modified for this
 #define VGA_WIDTH 80
@@ -29,6 +29,8 @@ class display {
 
         static void putchar(uint_8 x, uint_8 y, char chr, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
         static char getchar(uint_8 x, uint_8 y);
+
+        static void putstr(uint_8 x, uint_8 y, const char *str, uint_8 color  = BACKGROUND_BLACK | FOREGROUND_WHITE);
 
         static void putcolor(uint_8 x, uint_8 y, uint_8 color);
         static uint_8 getcolor(uint_8 x, uint_8 y);

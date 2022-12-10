@@ -1,6 +1,6 @@
 #include "IO.h"
 
-#include "../../common/typedefs.h"
+#include "../../common/monarch.h"
 
 void IO::wait() {
 	asm volatile("outb %%al, $0x80" : : "a"(0));

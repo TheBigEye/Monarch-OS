@@ -1,12 +1,10 @@
 #include "display.h"
 
-#include "../../common/libc/string.h"
-#include "../../common/typedefs.h"
-#include "../../common/colors.h"
+#include "../../common/monarch.h"
+#include "../../common/stdlib.h"
+
 #include "../cpu/IO.h"
 #include "../memory/memory.h"
-
-// NOTICE: this will be refactored soon, moving some functions to another file (tty.h / tty.cpp)
 
 /**
  * Make a new clean display
@@ -36,7 +34,7 @@ void display::cleanup(uint_64 color) {
     value += color << 40;
     value += color << 56;
 
-    for (uint_64* i = (uint_64*) VGA_MEMORY; i < (uint_64*)(VGA_MEMORY + 8000); i++) {
+    for (uint_64* i = (uint_64*) VGA_ADDRESS; i < (uint_64*)(VGA_ADDRESS + 8000); i++) {
         *i = value;
     }
 }
@@ -105,8 +103,27 @@ uint_16 coords(uint_8 x, uint_8 y) {
 */
 void display::putchar(uint_8 x, uint_8 y, char chr, uint_8 color) {
     uint_16 position = coords(x, y);
-    *(VGA_MEMORY + position * 2) = chr;
-    *(VGA_MEMORY + position * 2 + 1) = color;
+    *(VGA_ADDRESS + position * 2) = chr;
+    *(VGA_ADDRESS + position * 2 + 1) = color;
+}
+
+
+/**
+ * Prints a string on the screen.
+ *
+ * @param x X coordinate, 0 to 127.
+ * @param y Y coordinate, 0 to 127.
+ * @param str String to be displayed.
+ * @param color Character color.
+*/
+void display::putstr(uint_8 x, uint_8 y, const char *str, uint_8 color) {
+    uint_16 position = coords(x, y);
+    while (*str) {
+        *(VGA_ADDRESS + position * 2) = *str;
+        *(VGA_ADDRESS + position * 2 + 1) = color;
+        position++;
+        str++;
+    }
 }
 
 /**
@@ -119,7 +136,7 @@ void display::putchar(uint_8 x, uint_8 y, char chr, uint_8 color) {
 */
 char display::getchar(uint_8 x, uint_8 y) {
     uint_16 position = coords(x, y);
-    return (char) *(VGA_MEMORY + position * 2);
+    return (char) *(VGA_ADDRESS + position * 2);
 }
 
 /**
@@ -131,7 +148,7 @@ char display::getchar(uint_8 x, uint_8 y) {
 */
 void display::putcolor(uint_8 x, uint_8 y, uint_8 color) {
     uint_16 position = coords(x, y);
-    *(VGA_MEMORY + position * 2 + 1) = color;
+    *(VGA_ADDRESS + position * 2 + 1) = color;
 }
 
 /**
@@ -144,7 +161,7 @@ void display::putcolor(uint_8 x, uint_8 y, uint_8 color) {
 */
 uint_8 display::getcolor(uint_8 x, uint_8 y) {
     uint_16 position = coords(x, y);
-    return *(VGA_MEMORY + position * 2 + 1);
+    return *(VGA_ADDRESS + position * 2 + 1);
 }
 
 /**
@@ -157,7 +174,7 @@ void display::scroll() {
     // move the cursor to a new line and continue the typing
 
     // Move the lines up
-    for (uint_8 y = 1; y < VGA_HEIGHT; y++) {
+    for (uint_8 y = 2; y < VGA_HEIGHT; y++) {
         for (uint_8 x = 0; x < VGA_WIDTH; x++) {
             putchar(x, y - 1, getchar(x, y));
             putcolor(x, y - 1, getcolor(x, y));
@@ -210,8 +227,8 @@ void display::print(const char* str, uint_8 color) {
 
 void display::print(char chr, uint_8 color) {
     uint_16 cursor_pos = get_cursor_pos();
-    *(VGA_MEMORY + cursor_pos * 2) = chr;
-    *(VGA_MEMORY + cursor_pos * 2 + 1) = color;
+    *(VGA_ADDRESS + cursor_pos * 2) = chr;
+    *(VGA_ADDRESS + cursor_pos * 2 + 1) = color;
 
     set_cursor_pos(cursor_pos + 1);
 }
@@ -230,8 +247,8 @@ void display::colorize(uint_8 x, uint_8 y, uint_16 w, uint_16 h, char chr, uint_
     // search the printed char (chr) ont the screen area (x,y,w,h), if the char is found,
     // change the color of the char to color
     for (uint_16 i = 0; i < w * h; i++) {
-        if (*(VGA_MEMORY + (y * VGA_WIDTH + x) * 2 + i * 2) == chr) {
-            *(VGA_MEMORY + (y * VGA_WIDTH + x) * 2 + i * 2 + 1) = color;
+        if (*(VGA_ADDRESS + (y * VGA_WIDTH + x) * 2 + i * 2) == chr) {
+            *(VGA_ADDRESS + (y * VGA_WIDTH + x) * 2 + i * 2 + 1) = color;
         }
     }
 }

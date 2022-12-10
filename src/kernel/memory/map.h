@@ -1,7 +1,7 @@
 #ifndef MAP_H_
 #define MAP_H_
 
-#include "../../common/typedefs.h"
+#include "../../common/monarch.h"
 
 struct MemoryMapEntry {
     uint_64 BaseAddress;

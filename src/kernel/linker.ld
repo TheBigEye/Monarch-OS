@@ -27,14 +27,14 @@ INPUT (
     ./build/shell.o
     ./build/kernel.o
     ./build/kmain.o
-
 )
 
-OUTPUT (
-    ./build/kernel.bin
-)
+OUTPUT (./build/kernel.bin)
+
+/* Valid definitions... 0x8000 = 1M | 0x1000 = 4K, 4096 */
 
 SECTIONS {
+    /* Kernel */
     . = 0x8000;
 
     .text : ALIGN(0x1000) {
@@ -46,14 +46,14 @@ SECTIONS {
         . = . + 0x1000;
     }
 
-    /* Read-write data (initialized) */
-    .data : ALIGN(0x1000) {
-        *(.data)
-    }
-
-    /* Read-only data. */
+    /* Read only data */
     .rodata : ALIGN(0x1000) {
         *(.rodata)
+    }
+
+    /* Read-write data */
+    .data : ALIGN(0x1000) {
+        *(.data)
     }
 
     /* Read-write data (uninitialized) and stack */

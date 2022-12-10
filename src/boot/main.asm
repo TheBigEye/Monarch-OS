@@ -1,25 +1,31 @@
 jmp Protected_mode
 
 %include "src/boot/bits/GDT.asm"
+%include "src/boot/screen/print.asm"
 %include "src/boot/memory/memory.asm"
 
 Protected_mode:
 	call DetectMemory
-    call Enable_a20
+    call Enable_A20
+
+	; Disable interrupts
     cli
     lgdt [GDT_descriptor]
+
+	; Change last bit of cr0 to 1
     mov eax, cr0
     or eax, 1
-    mov cr0, eax
+    mov cr0, eax ; Yay!, 32 bits mode
+
     jmp CODE_SEGMENT:Protected_mode_main
 
-Enable_a20:
+Enable_A20:
     in al, 0x92
     or al, 2
     out 0x92, al
     ret
 
-[bits 32]
+[BITS 32]
 
 %include "src/boot/bits/CPUID.asm"
 %include "src/boot/memory/paging.asm"
@@ -38,17 +44,17 @@ Protected_mode_main:
     call Load_GDT_64_bits
     jmp CODE_SEGMENT:Long_mode_main
 
-[bits 64]
+[BITS 64]
 [extern _start]
 
 %include "src/boot/bits/IDT.asm"
 
 Long_mode_main:
-	mov edi, 0xb8000
-	mov rax, 0x1f201f201f201f20
+	mov edi, 0xB8000
+	mov rax, 0x1F201F201F201F20
 	mov ecx, 500
-
     rep stosq
+
 	call ActivateSSE
 	call _start
 
@@ -66,5 +72,4 @@ ActivateSSE:
 
 	ret
 
-
-times 2048-($-$$) db 0
+times 512-($-$$) db 0

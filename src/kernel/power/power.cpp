@@ -1,7 +1,8 @@
 #include "power.h"
 
+#include "../../common/monarch.h"
 #include "../cpu/IO.h"
-#include "../../common/typedefs.h"
+
 
 /**
  * Reboot the computer

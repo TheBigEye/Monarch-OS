@@ -1,7 +1,7 @@
 #include "logging.h"
 
-#include "typedefs.h"
-#include "../kernel/drivers/display.h"
+#include "types.h"
+#include "../../kernel/drivers/display.h"
 
 void logger::log(const char* decorator, uint_8 dec_color, const char* message, uint_8 msg_color) {
     display::print(decorator, dec_color);

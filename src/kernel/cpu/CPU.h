@@ -1,8 +1,8 @@
 #ifndef CPU_H_
 #define CPU_H_
 
-#include "../../common/libc/string.h"
-#include "../../common/typedefs.h"
+#include "../../common/monarch.h"
+#include "../../common/stdlib.h"
 
 #define cpuid(in, a, b, c, d) __asm__("cpuid": "=a" (a), "=b" (b), "=c" (c), "=d" (d) : "a" (in));
 

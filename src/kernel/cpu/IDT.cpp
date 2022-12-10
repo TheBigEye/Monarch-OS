@@ -1,8 +1,7 @@
 #include "IDT.h"
 #include "IO.h"
 
-#include "../../common/typedefs.h"
-#include "../../common/keycodes.h"
+#include "../../common/monarch.h"
 #include "../drivers/display.h"
 
 extern IDT64 _idt[256];
@@ -13,7 +12,6 @@ void(*MainKeyboardHandler)(uint_8 scanCode, uint_8 chr);
 void(*MainCommandsHandler)(uint_8 scanCode, uint_8 chr);
 
 void InitializeIDT() {
-
 	_idt[1].zero = 0;
 	_idt[1].offset_low = (uint_16)(((uint_64)&isr1 & 0x000000000000ffff));
 	_idt[1].offset_mid = (uint_16)(((uint_64)&isr1 & 0x00000000ffff0000) >> 16);
@@ -30,7 +28,7 @@ void InitializeIDT() {
 }
 
 extern "C" void isr1_handler() {
-    uint_8 scanCode = IO::inb(0x60);
+    uint_8 scanCode = IO::inb(0x60); // 0x60 keyboard port
     uint_8 chr = 0;
 
     if (scanCode < 0x3A) {

@@ -1,6 +1,6 @@
 #include "map.h"
 
-#include "../../common/typedefs.h"
+#include "../../common/monarch.h"
 #include "../drivers/display.h"
 
 uint_8 UsableMemoryRegionCount = 0;
