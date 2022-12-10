@@ -1,17 +1,18 @@
 #include "stdio.h"
 #include "stdarg.h"
+#include "stdint.h"
 
 #include "../../kernel/drivers/display.h"
 
 const char hex_chars[] = "0123456789abcdef";
 
-void printf_unsigned(unsigned long long number, int radix) {
+void printf_unsigned(uint64_t number, int radix) {
     char buffer[32];
     int pos = 0;
 
     // convert number to ASCII
     do {
-        unsigned long long rem = number % radix;
+        uint64_t rem = number % radix;
         number /= radix;
         buffer[pos++] = hex_chars[rem];
     } while (number > 0);
@@ -22,7 +23,7 @@ void printf_unsigned(unsigned long long number, int radix) {
     }
 }
 
-void printf_signed(long long number, int radix) {
+void printf_signed(int64_t number, int radix) {
     if (number < 0) {
         display::print('-');
         printf_unsigned(-number, radix);
@@ -45,6 +46,7 @@ void printf(const char* format, ...) {
     int state = PRINTF_STATE_NORMAL;
     int length = PRINTF_LENGTH_DEFAULT;
     int radix = 10;
+
     bool sign = false;
     bool number = false;
 
@@ -135,7 +137,7 @@ void printf(const char* format, ...) {
                             case PRINTF_LENGTH_SHORT:
                             case PRINTF_LENGTH_DEFAULT:     printf_unsigned(va_arg(args, unsigned int), radix); break;
                             case PRINTF_LENGTH_LONG:        printf_unsigned(va_arg(args, unsigned long), radix); break;
-                            case PRINTF_LENGTH_LONG_LONG:   printf_unsigned(va_arg(args, unsigned long long), radix); break;
+                            case PRINTF_LENGTH_LONG_LONG:   printf_unsigned(va_arg(args, uint64_t), radix); break;
                         }
                     }
                 }

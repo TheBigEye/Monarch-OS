@@ -1,14 +1,16 @@
 #ifndef STRING_H_
 #define STRING_H_
 
+#include "stdint.h"
+
 typedef char* string;           // String of chars
 
 string strcat(string s1, string s2);
 string strcpy(string s1, string s2);
 int strcmp(string s1, string s2);
 
-unsigned long long strlen(string s);
-unsigned long long strlen(const char *s);
+size_t strlen(string s);
+size_t strlen(const char *s);
 
 string strrev(string s);
 

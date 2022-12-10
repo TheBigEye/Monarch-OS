@@ -1,4 +1,5 @@
 #include "string.h"
+#include "stdint.h"
 
 string strcat(string s1, string s2) {
     int i, j;
@@ -27,16 +28,16 @@ int strcmp(string s1, string s2) {
     return s1[i] - s2[i];
 }
 
-unsigned long long strlen(string str) {
-	unsigned long long len = 0;
+size_t strlen(string str) {
+	size_t len = 0;
 	while (str[len]) {
 		len++;
     }
 	return len;
 }
 
-unsigned long long strlen(const char *str) {
-	unsigned long long len = 0;
+size_t strlen(const char *str) {
+	size_t len = 0;
 	while (str[len]) {
 		len++;
     }

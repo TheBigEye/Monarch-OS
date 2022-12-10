@@ -5,5 +5,6 @@
 #include "libc/stdarg.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
+#include "libc/stdint.h"
 
-#endif
+#endif /* STDLIB_H_ */
