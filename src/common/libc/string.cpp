@@ -1,69 +1,69 @@
 #include "string.h"
 #include "stdint.h"
 
-string strcat(string s1, string s2) {
+// STRCAT() equivalent
+char* concatenateStrings(char* str1, const char* str2) {
+    // Find the end of the first string
+    int index1;
+    for (index1 = 0; str1[index1] != '\0'; index1++);
+
+    // Copy the characters from the second const char *to the end of the first
+    // Initialize index1 to the value of index1 after the first loop
+    for (int index2 = 0; str2[index2] != '\0'; index2++, index1++) {
+        str1[index1] = str2[index2];
+    }
+
+    // Append the null character to the end of the first string
+    str1[index1] = '\0';
+    return str1;
+}
+
+// STRCPY() equivalent
+char* copyString(char* str1, const char* str2) {
+    // Copy the characters from str2 to str1
+    for (int index = 0; str2[index] != '\0'; index++) {
+        str1[index] = str2[index];
+
+        // Append the null character to the end of the first string
+        if (str2[index] == '\0') {
+            str1[index] = '\0';
+        }
+    }
+    return str1;
+}
+
+// STRCMP() equivalent
+bool stringsEqual(const char* str1, const char* str2) {
+    // Compare the characters in str1 and str2 one by one
+    for (int index = 0; str1[index] == str2[index]; index++) {
+        // If we reach the end of the const char *(indicated by the null character '\0'), return true
+        if (str1[index] == '\0') {
+            return true;
+        }
+    }
+
+    // If any of the characters are different or the end of the const char *is not reached, return false
+    return false;
+}
+
+size_t stringLength(const char* str) {
+    // Initialize the length to 0
+    size_t length = 0;
+
+    // Count the number of characters in the string
+    // Stop when we reach the end of the const char *(indicated by the null character '\0')
+    while (str[length] != '\0') {
+        length++;
+    }
+
+    // Return the length of the string
+    return length;
+}
+
+char* strrev(const char* s) {
     int i, j;
-    for (i = 0; s1[i] != '\0'; i++);
-    for (j = 0; s2[j] != '\0'; j++, i++) {
-        s1[i] = s2[j];
-    }
-    s1[i] = '\0';
-    return s1;
-}
-
-string strcpy(string s1, string s2) {
-    int i;
-    for (i = 0; s2[i] != '\0'; i++) {
-        s1[i] = s2[i];
-    }
-    s1[i] = '\0';
-    return s1;
-}
-
-int strcmp(string s1, string s2) {
-    int i;
-    for (i = 0; s1[i] == s2[i]; i++) {
-        if (s1[i] == '\0') { return 0; }
-    }
-    return s1[i] - s2[i];
-}
-
-size_t strlen(string str) {
-	size_t len = 0;
-	while (str[len] != '\0') {
-		len++;
-    }
-	return len;
-}
-
-size_t strlen(const char *str) {
-	size_t len = 0;
-	while (str[len] != '\0') {
-		len++;
-    }
-	return len;
-}
-
-size_t length(string str) {
-    size_t len = 0;
-    while (str[len] != 0) {
-        len++;
-    }
-    return len;
-}
-
-size_t length(const char* str) {
-    size_t len = 0;
-    while (str[len] != 0) {
-        len++;
-    }
-    return len;
-}
-
-string strrev(string s) {
-    int i, j;
-    string s1;
-    for (i = 0, j = strlen(s) - 1; i < j; i++, j--) {
+    char *s1;
+    for (i = 0, j = stringLength(s) - 1; i < j; i++, j--) {
         s1[i] = s[j];
         s1[j] = s[i];
     }
@@ -71,8 +71,8 @@ string strrev(string s) {
     return s1;
 }
 
-string to_string(int n) {
-    string s = "";
+char* to_string(int n) {
+    char* s = "";
     int i = 0;
     while (n != 0) {
         s[i++] = n % 10 + '0';
@@ -82,41 +82,47 @@ string to_string(int n) {
     return strrev(s);
 }
 
-string to_string(unsigned int n) {
-    string s = "";
-    int i = 0;
-    while (n != 0) {
-        s[i++] = n % 10 + '0';
-        n /= 10;
+char* strncat(char* dest, const char* src, int n) {
+    // Initialize the index variables
+    int destIndex = 0;
+    int srcIndex = 0;
+
+    // Find the end of the dest string
+    while (dest[destIndex] != '\0') {
+        destIndex++;
     }
-    s[i] = '\0';
-    return strrev(s);
+
+    // Append up to n characters from the src string
+    // to the end of the dest string
+    while (src[srcIndex] != '\0' && srcIndex < n) {
+        dest[destIndex] = src[srcIndex];
+        destIndex++;
+        srcIndex++;
+    }
+
+    // Append the null character to the end of the dest string
+    dest[destIndex] = '\0';
+
+    // Return a pointer to the dest string
+    return dest;
 }
 
-string to_string(unsigned char n) {
-    string s = "";
-    int i = 0;
-    while (n != 0) {
-        s[i++] = n % 10 + '0';
-        n /= 10;
-    }
-    s[i] = '\0';
-    return strrev(s);
-}
+char* strncpy(char* dest, const char* src, int n) {
+    // Initialize the index variables
+    int destIndex = 0;
+    int srcIndex = 0;
 
-string strncat(string s1, string s2, int n) {
-    int i, j;
-    for (i = 0; s1[i] != '\0'; i++);
-    for (j = 0; s2[j] != '\0' && j < n; j++, i++) {
-        s1[i] = s2[j];
+    // Copy up to n characters from the src string
+    // to the dest string
+    while (src[srcIndex] != '\0' && srcIndex < n) {
+        dest[destIndex] = src[srcIndex];
+        destIndex++;
+        srcIndex++;
     }
-    s1[i] = '\0';
-    return s1;
-}
 
-string strncpy(string s1, string s2, int n) {
-    for (int i = 0; i < n && i < strlen(s2); i++) {
-        s1[i] = s2[i];
-    }
-    return s1;
+    // Append the null character to the end of the dest string
+    dest[destIndex] = '\0';
+
+    // Return a pointer to the dest string
+    return dest;
 }

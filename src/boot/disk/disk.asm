@@ -5,8 +5,8 @@ disk_read:
     mov bx, PROGRAM_SPACE  ; Buffer to be read
     mov dh, 64             ; Sectors to read (change it if you want)
 
-    mov ah, 0x02
-    mov al, dh
+    mov ah, 0x02           ; BIOS disk service: read disk sectors
+    mov al, dh             ; Sectors number
     mov ch, 0x00           ; Cylinder number
     mov dh, 0x00           ; Head number
     mov cl, 0x02           ; Sector number

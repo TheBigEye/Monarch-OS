@@ -3,21 +3,16 @@
 
 #include "stdint.h"
 
-typedef char* string;           // String of chars
+char* concatenateStrings(char* str1, const char* str2); // strcat
+char* copyString(char* str1, const char* str2); // strcpy
+bool stringsEqual(const char* str1, const char* str2); // strcmp
 
-string strcat(string s1, string s2);
-string strcpy(string s1, string s2);
-int strcmp(string s1, string s2);
+size_t stringLength(const char* s);
 
-size_t strlen(string s);
-size_t strlen(const char *s);
-size_t length(string str);
-size_t length(const char *str);
+char* strrev(const char* s);
 
-string strrev(string s);
-
-string to_string(int n);
-string strncat(string s1, string s2, int n);
-string strncpy(string s1, string s2, int n);
+char* to_string(int n);
+char* strncat(char* dest, const char* src, int n);
+char* strncpy(char* dest, const char* src, int n);
 
 #endif /* STRING_H_ */

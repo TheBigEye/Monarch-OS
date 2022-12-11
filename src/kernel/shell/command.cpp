@@ -12,7 +12,7 @@
 char CommandBuffer[256];
 uint_8 CommandBufferIndex = 0;
 
-const char *prompt = "[$] ";
+const char* prompt = "[$] ";
 
 void cls() {
     display::cleanup();
@@ -64,7 +64,7 @@ void (*CommandFunctions[COMMAND_COUNT])() = {
 
 void CheckCommand(char* command) {
     for (uint_8 i = 0; i < COMMAND_COUNT; i++) {
-        if (compare_string(command, Commands[i]) == true) { // If the command is found
+        if (stringsEqual(command, Commands[i]) == true) { // If the command is found
             CommandFunctions[i](); // Run the asociated function
             display::print(prompt, BACKGROUND_BLACK | FOREGROUND_GREEN); // Print the prompt
             return;
@@ -99,8 +99,8 @@ void CommandsHandler(uint_8 scanCode, uint_8 chr) {
 
     // Render and Update the top taskbar
     for (uint_8 i = 0; i < VGA_WIDTH; i++) {
-        display::putchar(i, 0, ' ', BACKGROUND_BROWN | FOREGROUND_WHITE);
+        display::putstr(i, 0, " ", BACKGROUND_BROWN | FOREGROUND_WHITE);
     }
     // Print the last pressed key
-    display::putstr(VGA_WIDTH - 1 - strlen(getLastKeyPressed()), 0, getLastKeyPressed(), BACKGROUND_BROWN | FOREGROUND_YELLOW);
+    display::putstr(VGA_WIDTH - 1 - stringLength(getLastKeyPressed()), 0, getLastKeyPressed(), BACKGROUND_BROWN | FOREGROUND_YELLOW);
 }

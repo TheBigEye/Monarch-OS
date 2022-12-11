@@ -115,7 +115,7 @@ char *get_brandstring(){
 	/// (values 0x80000002 to 0x80000004), then we'll use that information to return the brand information.
 	/// Otherwise, we'll refer back to the brand tables above for backwards compatibility with older processors.
 	/// According to the Sept. 2006 Intel Arch Software Developer's Guide, if extended eax values are supported,
-	/// then all 3 values for the processor brand string are supported, but we'll test just to make sure and be safe.
+	/// then all 3 values for the processor brand const char *are supported, but we'll test just to make sure and be safe.
 	if (max_eax >= 0x80000004) {
 		if (max_eax >= 0x80000002) {
 			cpuid(0x80000002, eax, ebx, ecx, edx);

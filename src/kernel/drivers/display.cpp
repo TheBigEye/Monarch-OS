@@ -28,7 +28,6 @@ void display::initialize(uint_8 x, uint_8 y, uint_64 color) {
 void display::cleanup(uint_64 color) {
     uint_64 value = 0;
 
-    // TODO: optimize this using memset
     value += color << 8;
     value += color << 24;
     value += color << 40;
@@ -103,8 +102,9 @@ uint_16 coords(uint_8 x, uint_8 y) {
 */
 void display::putchar(uint_8 x, uint_8 y, char chr, uint_8 color) {
     uint_16 position = coords(x, y);
-    *(VGA_ADDRESS + position * 2) = chr;
-    *(VGA_ADDRESS + position * 2 + 1) = color;
+    uint_8* vga = VGA_ADDRESS; // Store the VGA address in a local variable for efficient access.
+    uint_8 data = (color << 8) | chr;  // Use a local variable to store the character and color.
+    *(vga + (position << 1)) = data;  // Use bit shift operators instead of multiplication for efficient memory access.
 }
 
 
@@ -136,7 +136,8 @@ void display::putstr(uint_8 x, uint_8 y, const char *str, uint_8 color) {
 */
 char display::getchar(uint_8 x, uint_8 y) {
     uint_16 position = coords(x, y);
-    return (char) *(VGA_ADDRESS + position * 2);
+    uint_8* VGA = VGA_ADDRESS; // Store the VGA address in a local variable for efficient access.
+    return (uint_8) *(VGA + (position << 1)); // Use a bit shift operator instead of multiplication for efficient memory access.
 }
 
 /**
@@ -186,25 +187,25 @@ void display::scroll() {
 }
 
 void display::print(const char* str, uint_8 color) {
-    uint_8* char_pointer = (uint_8*) str;
+    uint_8* str_pointer = (uint_8*) str;
     uint_16 position = get_cursor_pos();
 
-    while (*char_pointer != 0) {
-        if (*char_pointer == 10) { // \n
+    while (*str_pointer != 0) {
+        if (*str_pointer == 10) { // \n
             position += VGA_WIDTH;
-            if (position>= VGA_WIDTH * VGA_HEIGHT) {
+            if (position >= VGA_WIDTH * VGA_HEIGHT) {
                 display::scroll();
                 position -= VGA_WIDTH;
             }
-        } else if (*char_pointer == 13) { // \r
+        } else if (*str_pointer == 13) { // \r
             position -= position % VGA_WIDTH;
-        } else if (*char_pointer == 9) { // \t
+        } else if (*str_pointer == 9) { // \t
             position += 8 - (position % 8);
-        } else if (*char_pointer == 8) { // \b UNUSED FOR NOW
+        } else if (*str_pointer == 8) { // \b UNUSED FOR NOW
             position--;
             putchar(position % VGA_WIDTH, position / VGA_WIDTH, ' ');
         } else {
-            putchar(position % VGA_WIDTH, position / VGA_WIDTH, *char_pointer);
+            putchar(position % VGA_WIDTH, position / VGA_WIDTH, *str_pointer);
             putcolor(position % VGA_WIDTH, position / VGA_WIDTH, color);
             position++;
 
@@ -214,11 +215,10 @@ void display::print(const char* str, uint_8 color) {
                 position -= VGA_WIDTH;
             }
         }
-        char_pointer++;
+        str_pointer++;
     }
     set_cursor_pos(position);
 }
-
 void display::print(char chr, uint_8 color) {
     uint_16 cursor_pos = get_cursor_pos();
     *(VGA_ADDRESS + cursor_pos * 2) = chr;
@@ -227,8 +227,8 @@ void display::print(char chr, uint_8 color) {
     set_cursor_pos(cursor_pos + 1);
 }
 
-void display::print_centered(const char* str, uint_8 y, uint_8 color) {
-    set_cursor_pos(coords((VGA_WIDTH - length(str)) / 2, y));
+void display::print_centered(const char * str, uint_8 y, uint_8 color) {
+    set_cursor_pos(coords((VGA_WIDTH - stringLength(str)) / 2, y));
     print(str, color);
 }
 
@@ -263,7 +263,7 @@ void display::chars() {
 
 char hex_to_stringOutput[128];
 template<typename T>
-const char* hex_to_string(T value) {
+const char * hex_to_string(T value) {
     T* valPtr = &value;
     uint_8 size = (sizeof(T)) * 2 - 1;
 
@@ -291,7 +291,7 @@ const char* hex_to_string(long long value)  { return hex_to_string<long long>(va
 
 char int_to_stringOutput[128];
 template<typename T>
-const char* int_to_string(T value) {
+const char * int_to_string(T value) {
 
     uint_8 isNegative = 0;
 
@@ -334,7 +334,7 @@ const char* int_to_string(int value)        { return int_to_string<int>(value); 
 const char* int_to_string(long long value)  { return int_to_string<long long>(value); }
 
 char float_to_stringOputput[128];
-const char* float_to_string(float value, uint_8 decimalPlaces) {
+const char * float_to_string(float value, uint_8 decimalPlaces) {
     char* intPtr = (char*) int_to_string((int)value);
     char* floatPtr = float_to_stringOputput;
 
@@ -362,15 +362,4 @@ const char* float_to_string(float value, uint_8 decimalPlaces) {
     *floatPtr = 0;
 
     return float_to_stringOputput;
-}
-
-bool compare_string(const char* str1, const char* str2) {
-    while (*str1 != 0 && *str2 != 0) {
-        if (*str1 != *str2) {
-            return false;
-        }
-        str1++;
-        str2++;
-    }
-    return *str1 == *str2;
 }

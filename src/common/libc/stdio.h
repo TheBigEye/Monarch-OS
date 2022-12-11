@@ -15,6 +15,6 @@
 
 void printf(const char* fmt, ...);
 void putc(int c);
-void puts(const char *s);
+void puts(const char* s);
 
 #endif /* STDIO_H */

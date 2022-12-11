@@ -30,7 +30,7 @@ class display {
         static void putchar(uint_8 x, uint_8 y, char chr, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
         static char getchar(uint_8 x, uint_8 y);
 
-        static void putstr(uint_8 x, uint_8 y, const char *str, uint_8 color  = BACKGROUND_BLACK | FOREGROUND_WHITE);
+        static void putstr(uint_8 x, uint_8 y, const char* str, uint_8 color  = BACKGROUND_BLACK | FOREGROUND_WHITE);
 
         static void putcolor(uint_8 x, uint_8 y, uint_8 color);
         static uint_8 getcolor(uint_8 x, uint_8 y);
@@ -50,8 +50,6 @@ class display {
 
 uint_16 get_cursor_pos();
 uint_16 coords(uint_8 x, uint_8 y);
-
-bool compare_string(const char* str1, const char* str2);
 
 const char* hex_to_string(uint_8 value);
 const char* hex_to_string(uint_16 value);

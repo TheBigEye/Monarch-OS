@@ -13,8 +13,8 @@
 :: - in the environment variable you put the location of the compiler binaries, example: /usr/bin/local/x86_64elfgcc/bin
 :: - and here, in GCC you put, for example: wsl $WSLENV/x86_64-elf-gcc
 
-set CFLAGS= -ffunction-sections -w -Os
-set LDFLAGS= -nostdlib -z max-page-size=0x1000 -Ttext 0x8000 -gc-sections
+set CFLAGS= -ffunction-sections -fdata-sections -w -Os -Wl,--gc-sections
+set LDFLAGS= -nostdlib -z max-page-size=0x1000 -Ttext 0x8000
 set ARCH= -m64
 
 set ASM= nasm

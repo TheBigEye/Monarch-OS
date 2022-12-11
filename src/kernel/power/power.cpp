@@ -3,7 +3,6 @@
 #include "../../common/monarch.h"
 #include "../cpu/IO.h"
 
-
 /**
  * Reboot the computer
  */
@@ -11,7 +10,7 @@ void power::reboot(uint_32 time) {
     sleep(time);
 
     // Wait until the input buffer is empty
-    uint_8 good = 0x02;
+    bool good = true;
     while (good & 0x02) {
         good = IO::in_byte(0x64);
     }
