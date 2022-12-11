@@ -11,6 +11,8 @@ int strcmp(string s1, string s2);
 
 size_t strlen(string s);
 size_t strlen(const char *s);
+size_t length(string str);
+size_t length(const char *str);
 
 string strrev(string s);
 

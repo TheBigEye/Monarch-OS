@@ -32,6 +32,5 @@ class IO {
 void sleep(uint_32 miliseconds);
 void remap_PIC();
 
-void beep(uint_32 frequency, uint_32 duration);
 
 #endif /* IO_H_ */

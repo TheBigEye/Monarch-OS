@@ -52,7 +52,6 @@ uint_16 get_cursor_pos();
 uint_16 coords(uint_8 x, uint_8 y);
 
 bool compare_string(const char* str1, const char* str2);
-int length(const char* str);
 
 const char* hex_to_string(uint_8 value);
 const char* hex_to_string(uint_16 value);

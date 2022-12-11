@@ -30,7 +30,7 @@ int strcmp(string s1, string s2) {
 
 size_t strlen(string str) {
 	size_t len = 0;
-	while (str[len]) {
+	while (str[len] != '\0') {
 		len++;
     }
 	return len;
@@ -38,10 +38,26 @@ size_t strlen(string str) {
 
 size_t strlen(const char *str) {
 	size_t len = 0;
-	while (str[len]) {
+	while (str[len] != '\0') {
 		len++;
     }
 	return len;
+}
+
+size_t length(string str) {
+    size_t len = 0;
+    while (str[len] != 0) {
+        len++;
+    }
+    return len;
+}
+
+size_t length(const char* str) {
+    size_t len = 0;
+    while (str[len] != 0) {
+        len++;
+    }
+    return len;
 }
 
 string strrev(string s) {
@@ -99,10 +115,8 @@ string strncat(string s1, string s2, int n) {
 }
 
 string strncpy(string s1, string s2, int n) {
-    int i;
-    for (i = 0; s2[i] != '\0' && i < n; i++) {
+    for (int i = 0; i < n && i < strlen(s2); i++) {
         s1[i] = s2[i];
     }
-    s1[i] = '\0';
     return s1;
 }

@@ -75,8 +75,11 @@ void remap_PIC(){
 }
 
 void sleep(uint_32 miliseconds) {
-	uint_32 i;
-	for (i = 0; i < miliseconds * 1000; i++) {
-		asm volatile("outb %%al, $0x80" : : "a"(0));
-	}
+    // calculate the number of iterations needed to sleep for the specified number of milliseconds
+    uint_32 iterations = miliseconds * 1000;
+
+    // sleep for the specified number of iterations by executing a busy-wait loop
+    for (uint_32 i = 0; i < iterations; i++) {
+        asm volatile("outb %%al, $0x80" : : "a"(0));
+    }
 }

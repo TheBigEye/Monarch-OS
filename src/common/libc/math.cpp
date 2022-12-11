@@ -38,23 +38,15 @@ unsigned int math::abs(signed int x) {
 }
 
 float math::sqrt(float x) {
-    float x1, x2, guess = 0;
+    // Use the average of 0 and x as the initial guess
+    float x1 = 0.5 * (0 + x);
 
-    while((guess * guess) <= x) {
-        guess += 0.1F;
+    // Use a more efficient algorithm such as the Newton-Raphson method
+    for (int i = 0; i < 100; i++) {
+        x1 = 0.5 * (x1 + x / x1);
     }
 
-    x1 = guess;
-
-    for(int j = 0; j < 10; j++) {
-        x2 =  x;
-        x2 /= x1;
-        x2 += x1;
-        x2 /= 2;
-        x1 =  x2;
-    }
-
-    return x2;
+    return x1;
 }
 
 unsigned int math::sqr(unsigned int x) {

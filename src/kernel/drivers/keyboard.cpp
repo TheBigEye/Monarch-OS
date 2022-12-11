@@ -14,19 +14,14 @@ uint_8 KeyboardBufferIndex = 0;
 
 void StandardKeyboardHandler(uint_8 scanCode, uint_8 chr) {
     if (chr != 0) {
-        switch (LeftShiftPressed | RightShiftPressed) {
-            case true:
-                display::print(chr - 32);
-                KeyboardBuffer[KeyboardBufferIndex++] = chr - 32;
-                break;
-            case false:
-                display::print(chr);
-                KeyboardBuffer[KeyboardBufferIndex++] = chr;
-                break;
-        }
+        // handle printable characters
+        chr = (LeftShiftPressed | RightShiftPressed) ? chr - 32 : chr;
+        display::print(chr);
+        KeyboardBuffer[KeyboardBufferIndex++] = chr;
     } else {
+        // handle non-printable characters
         switch (scanCode) {
-            case 0x8E: // Backspace.
+            case 0x8E: // Backspace
                 if (KeyboardBufferIndex > 0) {
                     display::set_cursor_pos(get_cursor_pos() - 1);
                     display::print(' ');
@@ -34,16 +29,15 @@ void StandardKeyboardHandler(uint_8 scanCode, uint_8 chr) {
                     KeyboardBuffer[--KeyboardBufferIndex] = 0;
                 }
                 break;
-
             case 0x2A: LeftShiftPressed = true; break; // Left shift
             case 0xAA: LeftShiftPressed = false; break; // Left shift released
             case 0x36: RightShiftPressed = true; break; // Right shift
             case 0xB6: RightShiftPressed = false; break; // Right shift released
-            case 0x9C:
+            case 0x9C: // Enter
                 display::print("\n\r");
                 KeyboardBuffer[KeyboardBufferIndex] = 0;
                 KeyboardBufferIndex = 0;
-                break; // Enter
+                break;
         }
     }
     LastScancode = scanCode;

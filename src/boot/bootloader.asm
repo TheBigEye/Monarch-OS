@@ -3,7 +3,7 @@
 mov [BOOT_DISK], dl
 
 ; Setup the stack
-mov bp, 0x7C00              ; Set the base pointer to 0x7C00
+mov bp, 0x7c00            ; Set the base pointer to 0x7C00
 mov sp, bp                  ; Set the stack pointer to the base pointer
 
 call cls                    ; Clear the BIOS screen

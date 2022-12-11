@@ -170,9 +170,6 @@ uint_8 display::getcolor(uint_8 x, uint_8 y) {
  * @see https://wiki.osdev.org/Text_mode#Scrolling
 */
 void display::scroll() {
-    // TODO: if the text goes out of the buffer, the screen should scroll
-    // move the cursor to a new line and continue the typing
-
     // Move the lines up
     for (uint_8 y = 2; y < VGA_HEIGHT; y++) {
         for (uint_8 x = 0; x < VGA_WIDTH; x++) {
@@ -192,33 +189,30 @@ void display::print(const char* str, uint_8 color) {
     uint_8* char_pointer = (uint_8*) str;
     uint_16 position = get_cursor_pos();
 
-    // TODO: simplify this with IFs instead
     while (*char_pointer != 0) {
-        switch (*char_pointer) {
-            case 10: // \n
-                position += VGA_WIDTH;
-                if (position>= VGA_WIDTH * VGA_HEIGHT) {
-                    display::scroll();
-                    position -= VGA_WIDTH;
-                }
-                break;
-            case 13: position -= position % VGA_WIDTH; break; // \r
-            case 9: position += 8 - (position % 8); break; // \t
-            case 8:
-                position--;
-                putchar(position % VGA_WIDTH, position / VGA_WIDTH, ' ');
-                break; // \b UNUSED FOR NOW
-            default:
-                putchar(position % VGA_WIDTH, position / VGA_WIDTH, *char_pointer);
-                putcolor(position % VGA_WIDTH, position / VGA_WIDTH, color);
-                position++;
+        if (*char_pointer == 10) { // \n
+            position += VGA_WIDTH;
+            if (position>= VGA_WIDTH * VGA_HEIGHT) {
+                display::scroll();
+                position -= VGA_WIDTH;
+            }
+        } else if (*char_pointer == 13) { // \r
+            position -= position % VGA_WIDTH;
+        } else if (*char_pointer == 9) { // \t
+            position += 8 - (position % 8);
+        } else if (*char_pointer == 8) { // \b UNUSED FOR NOW
+            position--;
+            putchar(position % VGA_WIDTH, position / VGA_WIDTH, ' ');
+        } else {
+            putchar(position % VGA_WIDTH, position / VGA_WIDTH, *char_pointer);
+            putcolor(position % VGA_WIDTH, position / VGA_WIDTH, color);
+            position++;
 
-                // If the cursor is out of the screen, scroll the screen and move the cursor to a new line to continue typing
-                if (position >= VGA_WIDTH * VGA_HEIGHT) {
-                    display::scroll();
-                    position -= VGA_WIDTH;
-                }
-
+            // If the cursor is out of the screen, scroll the screen and move the cursor to a new line to continue typing
+            if (position >= VGA_WIDTH * VGA_HEIGHT) {
+                display::scroll();
+                position -= VGA_WIDTH;
+            }
         }
         char_pointer++;
     }
@@ -244,8 +238,7 @@ void display::print_centered(char chr, uint_8 y, uint_8 color) {
 }
 
 void display::colorize(uint_8 x, uint_8 y, uint_16 w, uint_16 h, char chr, uint_8 color) {
-    // search the printed char (chr) ont the screen area (x,y,w,h), if the char is found,
-    // change the color of the char to color
+    // search the printed char (chr) ont the screen area (x,y,w,h), if the char is found, change the color of the char to color
     for (uint_16 i = 0; i < w * h; i++) {
         if (*(VGA_ADDRESS + (y * VGA_WIDTH + x) * 2 + i * 2) == chr) {
             *(VGA_ADDRESS + (y * VGA_WIDTH + x) * 2 + i * 2 + 1) = color;
@@ -380,14 +373,4 @@ bool compare_string(const char* str1, const char* str2) {
         str2++;
     }
     return *str1 == *str2;
-}
-
-
-int length(const char* str) {
-    int length = 0;
-    while (*str != 0) {
-        length++;
-        str++;
-    }
-    return length;
 }
