@@ -1,5 +1,5 @@
-#ifndef STDARG_H
-#define STDARG_H
+#ifndef CSTDARG_H
+#define CSTDARG_H
 
 /**
  * Type to hold information about variable arguments.

@@ -1,5 +1,5 @@
-#include "string.h"
-#include "stdint.h"
+#include "cstring.h"
+#include "cstddef.h"
 
 // STRCAT() equivalent
 char* concatenateStrings(char* str1, const char* str2) {

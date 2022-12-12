@@ -1,5 +1,5 @@
-#ifndef MATH_H_
-#define MATH_H_
+#ifndef CMATH_H_
+#define CMATH_H_
 
 typedef struct { unsigned int X; unsigned int Y; } coord;
 typedef struct { unsigned int X; unsigned int Y; } point;
@@ -16,4 +16,4 @@ class math {
         static unsigned int sqr(unsigned int x);
 };
 
-#endif /* MATH_H_ */
+#endif /* CMATH_H_ */

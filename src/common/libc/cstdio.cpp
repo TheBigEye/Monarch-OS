@@ -1,6 +1,6 @@
-#include "stdio.h"
-#include "stdarg.h"
-#include "stdint.h"
+#include "cstdio.h"
+#include "cstdarg.h"
+#include "cstdint.h"
 
 #include "../../kernel/drivers/display.h"
 

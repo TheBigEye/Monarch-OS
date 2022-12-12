@@ -1,7 +1,7 @@
-#ifndef STRING_H_
-#define STRING_H_
+#ifndef CSTRING_H_
+#define CSTRING_H_
 
-#include "stdint.h"
+#include "cstddef.h"
 
 char* concatenateStrings(char* str1, const char* str2); // strcat
 char* copyString(char* str1, const char* str2); // strcpy
@@ -15,4 +15,4 @@ char* to_string(int n);
 char* strncat(char* dest, const char* src, int n);
 char* strncpy(char* dest, const char* src, int n);
 
-#endif /* STRING_H_ */
+#endif /* CSTRING_H_ */

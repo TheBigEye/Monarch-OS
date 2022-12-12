@@ -1,9 +1,9 @@
 PROGRAM_SPACE equ 0x8000   ; Kernel address
 
-; BUG BUG: CANNOT READ BEYOND 64 SECTORS :(
+; BUG BUG: CANNOT READ BEYOND 64 SECTORS :( (38kb)
 disk_read:
     mov bx, PROGRAM_SPACE  ; Buffer to be read
-    mov dh, 64             ; Sectors to read (change it if you want)
+    mov dh, 64             ; Sectors to read
 
     mov ah, 0x02           ; BIOS disk service: read disk sectors
     mov al, dh             ; Sectors number
@@ -12,7 +12,7 @@ disk_read:
     mov cl, 0x02           ; Sector number
     mov dl, [BOOT_DISK]    ; Disk to be read
 
-    int 0x13
+    int 0x13               ; BIOS interrupt: read the disk (limited to 57 sectors?)
 
     jc disk_read_fail
     call disk_read_success

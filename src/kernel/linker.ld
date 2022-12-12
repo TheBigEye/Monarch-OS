@@ -8,10 +8,10 @@ INPUT (
     ./build/binaries.o
 
     /* libc */
-    ./build/math.o
+    ./build/cmath.o
     ./build/logging.o
-    ./build/stdio.o
-    ./build/string.o
+    ./build/cstdio.o
+    ./build/cstring.o
 
     /* kernel */
     ./build/IDT.o

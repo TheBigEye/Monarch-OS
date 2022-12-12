@@ -60,9 +60,9 @@ echo [-] Compiling system kernel ...
 %GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/common/sys/logging.cpp"            -o "build/logging.o"
 
 :: libc
-%GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/common/libc/math.cpp"              -o "build/math.o"
-%GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/common/libc/stdio.cpp"             -o "build/stdio.o"
-%GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/common/libc/string.cpp"            -o "build/string.o"
+%GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/common/libc/cmath.cpp"              -o "build/cmath.o"
+%GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/common/libc/cstdio.cpp"             -o "build/cstdio.o"
+%GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/common/libc/cstring.cpp"            -o "build/cstring.o"
 
 :: --------------------------------------------------------------------------------------------------------------------------------
 

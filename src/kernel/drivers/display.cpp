@@ -219,6 +219,7 @@ void display::print(const char* str, uint_8 color) {
     }
     set_cursor_pos(position);
 }
+
 void display::print(char chr, uint_8 color) {
     uint_16 cursor_pos = get_cursor_pos();
     *(VGA_ADDRESS + cursor_pos * 2) = chr;

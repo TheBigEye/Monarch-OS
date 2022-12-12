@@ -26,15 +26,6 @@ void* calloc(uint_64 num, uint_64 size) {
     return calloc(num * size);
 }
 
-void* CleanAllocate(uint_64 size) {
-    return calloc(size);
-}
-
-void* CleanAllocate(uint_64 num, uint_64 size) {
-    return calloc(num, size);
-}
-
-
 void* realloc(void* address, uint_64 newSize) {
     MemorySegmentHeader* oldSegmentHeader;
 
@@ -111,11 +102,6 @@ void* malloc(uint_64 size) {
     }
     return 0; // We should never get here JEJE
 }
-
-void* MemoryAllocate(uint_64 size) {
-    return malloc(size);
-}
-
 
 void CombineFreeSegments(MemorySegmentHeader* a, MemorySegmentHeader* b) {
     if (a == 0) return;

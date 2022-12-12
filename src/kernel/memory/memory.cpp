@@ -27,10 +27,6 @@ void memset(void* start, uint_64 value, uint_64 num) {
     }
 }
 
-void MemorySet(void* start, uint_64 value, uint_64 num) {
-    memset(start, value, num);
-}
-
 void memcpy(void* destination, void* source, uint_64 num) {
     if (num <= 8) {
         uint_8* valPtr = (uint_8*)source;

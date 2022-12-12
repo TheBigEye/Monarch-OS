@@ -1,5 +1,5 @@
-#ifndef STDIO_H_
-#define STDIO_H_
+#ifndef CSTDIO_H_
+#define CSTDIO_H_
 
 #define PRINTF_STATE_NORMAL         0
 #define PRINTF_STATE_LENGTH         1
@@ -17,4 +17,4 @@ void printf(const char* fmt, ...);
 void putc(int c);
 void puts(const char* s);
 
-#endif /* STDIO_H */
+#endif /* CSTDIO_H */
