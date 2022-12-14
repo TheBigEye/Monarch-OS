@@ -101,9 +101,9 @@ uint_16 coords(uint_8 x, uint_8 y) {
 */
 void display::putchar(uint_8 x, uint_8 y, char chr, uint_8 color) {
     uint_16 position = coords(x, y);
-    uint_8* vga = VGA_ADDRESS; // Store the VGA address in a local variable for efficient access.
-    uint_8 data = (color << 8) | chr;  // Use a local variable to store the character and color.
-    *(vga + (position << 1)) = data;  // Use bit shift operators instead of multiplication for efficient memory access.
+    uint_8* vga = VGA_ADDRESS; // Store the VGA address
+    uint_8 data = (color << 8) | chr;  // store the character and color.
+    *(vga + (position << 1)) = data;  // Apply the new char data to the position
 }
 
 
@@ -135,8 +135,8 @@ void display::putstr(uint_8 x, uint_8 y, const char *str, uint_8 color) {
 */
 char display::getchar(uint_8 x, uint_8 y) {
     uint_16 position = coords(x, y);
-    uint_8* VGA = VGA_ADDRESS; // Store the VGA address in a local variable for efficient access.
-    return (uint_8) *(VGA + (position << 1)); // Use a bit shift operator instead of multiplication for efficient memory access.
+    uint_8* VGA = VGA_ADDRESS; // Store the VGA address
+    return (uint_8) *(VGA + (position << 1)); // Return the char data from the position
 }
 
 /**
