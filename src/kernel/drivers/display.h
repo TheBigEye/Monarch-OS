@@ -21,8 +21,8 @@
 
 class display {
     public:
-        static void initialize(uint_8 x, uint_8 y, uint_64 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
-        static void cleanup(uint_64 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+        static void initialize(uint_8 x, uint_8 y, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+        static void cleanup(uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
 
         static void set_cursor_pos(uint_16 position);
         static void set_cursor_shape(uint_8 shape);

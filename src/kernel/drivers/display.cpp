@@ -13,27 +13,26 @@
  * @param y The new cursor's y position
  * @param color The new color scheme for the display
 */
-void display::initialize(uint_8 x, uint_8 y, uint_64 color) {
+void display::initialize(uint_8 x, uint_8 y, uint_8 color) {
     display::cleanup(color);
     display::set_cursor_pos(coords(x, y));
     display::set_cursor_shape(0x00);
 }
 
-/**
- * Clears the display with the specified background color.
- *
- * @param color Screen colors to be used to clear the display.
- * @example cleanup(BACKGROUND_BLACK | FOREGROUND_WHITE);
-*/
-void display::cleanup(uint_64 color) {
-    uint_64 value = 0;
+// Clears the display with the specified background color.
+//
+// @param color Screen colors to be used to clear the display.
+// @example cleanup(BACKGROUND_BLACK | FOREGROUND_WHITE);
+void display::cleanup(uint_8 color) {
+    // Create a value with the specified color repeated 4 times
+    uint_64 value = (color << 8) | (color << 24) | (color << 40) | (color << 56);
 
-    value += color << 8;
-    value += color << 24;
-    value += color << 40;
-    value += color << 56;
+    // Get a pointer to the start of the VGA address space
+    uint_64* vga = (uint_64*) VGA_ADDRESS;
 
-    for (uint_64* i = (uint_64*) VGA_ADDRESS; i < (uint_64*)(VGA_ADDRESS + 8000); i++) {
+    // Loop over all memory locations in the VGA address space
+    for (uint_64* i = vga; i < vga + 8000; i++) {
+        // Set the current memory location to the specified color
         *i = value;
     }
 }

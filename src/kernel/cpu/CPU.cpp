@@ -16,7 +16,7 @@ uint_8 LIGHTRED = (BACKGROUND_BLACK | FOREGROUND_LIGHTRED);
 * Get and print the CPU info (vendor, model, stepping, features)
 */
 int detect_cpu(void) {
-	DWORD ebx, unused;
+	uint_32 ebx, unused;
 	cpuid(0, unused, ebx, unused, unused);
 	switch (ebx) {
 		case 0x756e6547: do_intel(); break; /* Intel Magic Code */
@@ -97,7 +97,7 @@ void regs2string(int eax, int ebx, int ecx, int edx, char *buf) {
 char brandstring[50] = {0};
 
 char *get_brandstring(){
-	DWORD eax, ebx, ecx, edx, max_eax, signature, unused;
+	uint_32 eax, ebx, ecx, edx, max_eax, signature, unused;
 	int model, family, type, brand, stepping, reserved;
 
 	cpuid(0x80000000, max_eax, unused, unused, unused);
@@ -147,7 +147,7 @@ char *get_brandstring(){
 int do_intel(void) {
 	display::print("Intel Specific Features:\n\r", YELLOW);
 
-	DWORD eax, ebx, ecx, edx, max_eax, signature, unused;
+	uint_32 eax, ebx, ecx, edx, max_eax, signature, unused;
 	int model, family, type, brand, stepping, reserved;
 	int extended_family = -1;
 
@@ -267,7 +267,7 @@ void printregs(int eax, int ebx, int ecx, int edx) {
 int do_amd(void) {
 	display::print("AMD Specific Features:\n\r", YELLOW);
 
-	DWORD extended, eax, ebx, ecx, edx, unused;
+	uint_32 extended, eax, ebx, ecx, edx, unused;
 	int family, model, stepping, reserved;
 
 	cpuid(1, eax, unused, unused, unused);
