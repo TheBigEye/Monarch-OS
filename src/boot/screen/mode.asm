@@ -25,6 +25,7 @@ disable_cursor:
     int 0x10
     ret
 
+; change pallete
 change_pallete:
     mov ah, 0x0B
     mov bh, 0x00

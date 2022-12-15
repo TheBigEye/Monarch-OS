@@ -1,30 +1,33 @@
 [ORG 0x7C00]                ; Set the origin of the program to 0x7C00
 
+; Save the boot disk number in the BOOT_DISK variable
 mov [BOOT_DISK], dl
 
 ; Setup the stack
 mov bp, 0x7c00              ; Set the base pointer to 0x7C00
 mov sp, bp                  ; Set the stack pointer to the base pointer
 
-call cls                    ; Clear the BIOS screen
+; Clear the BIOS screen
+call cls
 
-; if you want, disable thse two for normal text mode 80x25 (VGA_WIDTH and VGA_HEIGHT will be also modified on display.h)
-call video_mode             ; essential for scalling
-call text_mode              ; 80x50 display size, 8x8 font
-;call disable_cursor        ; disable the console cursor
+; Set video mode to 320x200x256 (pixels)
+call video_mode
 
+; Set video mode to 80x25x16 (text only)
+call text_mode
+
+; Print the bootloader version message
 mov bx, MSG_bootloader_version
 call print
 
+; Print a newline character
 mov bx, nl
 call print
-
-; -----------------------------------------------------------------------------------------------------------------------------
 
 ; Read the disk sectors
 call disk_read
 
-; Access extended memory
+; Jump to the program space
 jmp PROGRAM_SPACE
 
 %include "src/boot/screen/print.asm"
@@ -33,8 +36,6 @@ jmp PROGRAM_SPACE
 
 MSG_bootloader_version:     db 'Butterfly bootloader v2', 0
 nl: db 0x0A, 0x0D, 0
-
-; -----------------------------------------------------------------------------------------------------------------------------
 
 ; Fill the left sectors with zeros
 times 510-($-$$) db 0

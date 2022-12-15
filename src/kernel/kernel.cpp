@@ -3,8 +3,8 @@
 #include "../common/monarch.h"
 #include "../common/stdlib.h"
 
-#include "cpu/IDT.h"
-#include "cpu/IO.h"
+#include "CPU/IDT.h"
+#include "CPU/IO.h"
 
 #include "drivers/display.h"
 #include "drivers/keyboard.h"

@@ -42,9 +42,9 @@ echo [-] Compiling system kernel ...
 :: NOTE: change or add objects require modify also INPUT on linker.ld
 
 :: 0x8000 specifies where the code expects to find itself
-%GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/kernel/cpu/IDT.cpp"                -o "build/IDT.o"
-%GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/kernel/cpu/IO.cpp"                 -o "build/IO.o"
-%GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/kernel/cpu/CPU.cpp"                -o "build/CPU.o"
+%GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/kernel/CPU/IDT.cpp"                -o "build/IDT.o"
+%GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/kernel/CPU/IO.cpp"                 -o "build/IO.o"
+%GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/kernel/CPU/CPU.cpp"                -o "build/CPU.o"
 %GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/kernel/memory/map.cpp"             -o "build/map.o"
 %GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/kernel/memory/heap.cpp"            -o "build/heap.o"
 %GCC% %CFLAGS% -Ttext 0x8000 -ffreestanding -mno-red-zone %ARCH% -c "src/kernel/memory/memory.cpp"          -o "build/memory.o"

@@ -1,9 +1,10 @@
 #include "cmath.h"
+#include "../sys/types.h"
 
-#define M_PI 3.14159265358979323846
+#define PI 3.14159265358979323846
 
-unsigned int math::log(signed int x, signed int n) {
-    signed int ret = 0;
+uint_32 math::log(int_32 x, int_32 n) {
+    int_32 ret = 0;
     while (n >= x) {
         n /= x;
         ret++;
@@ -11,31 +12,31 @@ unsigned int math::log(signed int x, signed int n) {
     return ret;
 }
 
-unsigned int math::min(unsigned int a, unsigned int b) {
+uint_32 math::min(uint_32 a, uint_32 b) {
     // A is less than B?, return A, if not B
     return a < b ? a : b;
 }
 
-unsigned int math::max(unsigned int a, unsigned int b) {
+uint_32 math::max(uint_32 a, uint_32 b) {
     // A is greater than B?, return A, if not B
     return a > b ? a : b;
 }
 
-unsigned int math::pow(signed int x, signed int p) {
-    unsigned int ret = 1; // Initialize result
+uint_32 math::pow(int_32 x, int_32 p) {
+    uint_32 ret = 1; // Initialize result
 
     if (p == 0) return 1; // If p is 0, return 1
     if (x < 0)  x = math::abs(x); // If x is negative, compute |x| and use the absolute value
 
     // Compute x^p using a loop
-    for (unsigned int i = 0; i < p; i++) {
+    for (uint_32 i = 0; i < p; i++) {
         ret *= x;
     }
 
     return ret;
 }
 
-unsigned int math::abs(signed int x) {
+uint_32 math::abs(int_32 x) {
     // If x is negative, compute |x|
     return x < 0 ? -x : x;
 }
@@ -55,6 +56,6 @@ float math::sqrt(float x) {
     return x1;
 }
 
-unsigned int math::sqr(unsigned int x) {
+uint_32 math::sqr(uint_32 x) {
     return x * x;
 }

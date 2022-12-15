@@ -5,7 +5,5 @@
 #include "libc/cstdarg.h"
 #include "libc/cstdio.h"
 #include "libc/cstring.h"
-#include "libc/cstdint.h"
-#include "libc/cstddef.h"
 
 #endif /* STDLIB_H_ */

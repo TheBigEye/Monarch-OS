@@ -17,6 +17,8 @@ disk_read:
     jc disk_read_fail
     call disk_read_success
 
+    ;jmp 0x8000
+
     ret
 
 BOOT_DISK:

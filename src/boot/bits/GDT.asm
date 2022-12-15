@@ -5,8 +5,8 @@ GDT_start:
 
     GDT_code_descriptor:
         dw 0FFFFh               ; Limit
-        dw 0x0000               ; Base (low, 16 bits) +
-        db 0x00                 ; Base (medium, 8 bits) = 24
+        dw 0x0000               ; Base (low, 16 bits)
+        db 0x00                 ; Base (medium, 8 bits)
         db 10011010b            ; Flags (Present, Privilege and Type)
         db 11001111b            ; Other flags (Other + limit)
         db 0x00                 ; Base (high, 8 bits)
@@ -31,8 +31,11 @@ DATA_SEGMENT equ GDT_data_descriptor - GDT_start
 [BITS 32]
 
 Load_GDT_64_bits:
-	mov [GDT_code_descriptor + 6], byte 10101111b ; Other flags
-	mov [GDT_data_descriptor + 6], byte 10101111b ; Other flags
-	ret
+    ; Set other flags for code and data segments
+    mov [GDT_code_descriptor + 6], byte 10101111b
+    mov [GDT_data_descriptor + 6], byte 10101111b
+
+    ; Return from function
+    ret
 
 [BITS 16]

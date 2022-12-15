@@ -1,19 +1,22 @@
-#ifndef CMATH_H_
-#define CMATH_H_
+#ifndef _CMATH_H
+#define _CMATH_H
 
-typedef struct { unsigned int X; unsigned int Y; } coord;
-typedef struct { unsigned int X; unsigned int Y; } point;
+#include "../sys/types.h"
 
-class math {
-    public:
-        static unsigned int min(unsigned int a, unsigned int b);
-        static unsigned int max(unsigned int a, unsigned int b);
-        static unsigned int log(signed int x, signed int n);
-        static unsigned int pow(signed int x, signed int p);
+typedef struct {
+    uint_32 X;
+    uint_32 Y;
+} point;
 
-        static unsigned int abs(signed int x);
-        static float sqrt(float x);
-        static unsigned int sqr(unsigned int x);
-};
+namespace math {
+    uint_32 min(uint_32 a, uint_32 b);
+    uint_32 max(uint_32 a, uint_32 b);
+    uint_32 log(int_32 x, int_32 n);
+    uint_32 pow(int_32 x, int_32 p);
 
-#endif /* CMATH_H_ */
+    uint_32 abs(int_32 x);
+    float sqrt(float x);
+    uint_32 sqr(uint_32 x);
+}
+
+#endif /* cmath.h */

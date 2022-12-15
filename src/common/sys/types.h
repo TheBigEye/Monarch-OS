@@ -58,19 +58,34 @@
 #ifndef SHORT
 #define SHORT short
 #endif
-#ifndef HANDLE
-#define HANDLE void*
+#ifndef VOIDPTR
+#define VOIDPTR void*
 #endif
 
 // C standard ---------------------------------------------------------------------------------------------------------------------
-typedef unsigned char         uint_8,  uint8_t,  u8;     // 8 bit unsigned, 1 byte, from 0 to 255
-typedef unsigned short        uint_16, uint16_t, u16;    // 16 bit unsigned, 2 byte, from 0 to 65,535
-typedef unsigned int          uint_32, uint32_t, u32;    // 32 bit unsigned, 4 byte, from 0 to 4,294,967,295
-typedef unsigned long long    uint_64, uint64_t, u64;    // 64 bit unsigned, 8 byte, from 0 to 18,446,744,073,709,551,615
 
-typedef signed char           int_8,  int8_t,  i8;       // 8 bit signed, 1 byte, from -128 to 127
-typedef signed short          int_16, int16_t, i16;      // 16 bit signed, 2 byte, from -32,768 to 32,767
-typedef signed int            int_32, int32_t, i32;      // 32 bit signed, 4 byte, from -2,147,483,648 to 2,147,483,647
-typedef signed long long      int_64, int64_t, i64;      // 64 bit signed, 8 byte, from -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+// Represents a null pointer constant.
+#define NULL 0
+
+typedef unsigned long long    size_t, usize;             // 8 byte, 64 bits object size
+typedef signed long long      ssize_t, isize;             // 8 byte, 64 bits object size
+
+// Returns the offset of a field within a structure.
+#define offsetof(type, member) (reinterpret_cast<size_t>(&(static_cast<type*>(0)->member)))
+
+typedef unsigned char         uint_8,  uint8_t,  u8;     // 8 bit unsigned interger, 1 byte, from 0 to 255
+typedef unsigned short        uint_16, uint16_t, u16;    // 16 bit unsigned interger, 2 byte, from 0 to 65,535
+typedef unsigned int          uint_32, uint32_t, u32;    // 32 bit unsigned interger, 4 byte, from 0 to 4,294,967,295
+typedef unsigned long long    uint_64, uint64_t, u64;    // 64 bit unsigned interger, 8 byte, from 0 to 18,446,744,073,709,551,615
+
+typedef signed char           int_8,  int8_t,  i8;       // 8 bit signed interger, 1 byte, from -128 to 127
+typedef signed short          int_16, int16_t, i16;      // 16 bit signed interger, 2 byte, from -32,768 to 32,767
+typedef signed int            int_32, int32_t, i32;      // 32 bit signed interger, 4 byte, from -2,147,483,648 to 2,147,483,647
+typedef signed long long      int_64, int64_t, i64;      // 64 bit signed interger, 8 byte, from -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+
+typedef struct {
+    unsigned int X;
+    unsigned int Y;
+} coord;
 
 #endif /* _TYPES_H */

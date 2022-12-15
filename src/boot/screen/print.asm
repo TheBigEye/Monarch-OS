@@ -1,11 +1,10 @@
-; FUNCTIONS ---------------------------------------------------------------------------------------------------
-
 ; print a string
 print:
     push ax
     push bx
 
-    mov ah, 0x0E                ; set the high byte of the accumulator to 0x0e
+    ; set the high byte of the accumulator to 0x0e
+    mov ah, 0x0E
 
     ; check if we reached the end of the string
     .loop:
@@ -20,6 +19,6 @@ print:
         jmp .loop               ; jump to the loop label
 
     .exit:
-        pop ax
         pop bx
+        pop ax
         ret

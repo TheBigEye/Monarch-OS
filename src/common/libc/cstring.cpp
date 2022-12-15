@@ -1,5 +1,5 @@
 #include "cstring.h"
-#include "cstddef.h"
+#include "../sys/types.h"
 
 // STRCAT() equivalent
 char* concatenateStrings(char* str1, const char* str2) {
@@ -46,9 +46,9 @@ bool stringsEqual(const char* str1, const char* str2) {
     return false;
 }
 
-size_t stringLength(const char* str) {
+usize stringLength(const char* str) {
     // Initialize the length to 0
-    size_t length = 0;
+    usize length = 0;
 
     // Count the number of characters in the string
     // Stop when we reach the end of the const char *(indicated by the null character '\0')

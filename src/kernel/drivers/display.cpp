@@ -3,7 +3,7 @@
 #include "../../common/monarch.h"
 #include "../../common/stdlib.h"
 
-#include "../cpu/IO.h"
+#include "../CPU/IO.h"
 #include "../memory/memory.h"
 
 /**

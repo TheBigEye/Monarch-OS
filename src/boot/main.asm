@@ -5,18 +5,16 @@ jmp Protected_mode
 %include "src/boot/memory/memory.asm"
 
 Protected_mode:
-	call DetectMemory
+    ; Initialize memory and A20 gate
+    call DetectMemory
     call Enable_A20
 
-	; Disable interrupts
+    ; Enter protected mode
     cli
     lgdt [GDT_descriptor]
-
-	; Change last bit of cr0 to 1
     mov eax, cr0
     or eax, 1
-    mov cr0, eax ; Yay!, 32 bits mode
-
+    mov cr0, eax
     jmp CODE_SEGMENT:Protected_mode_main
 
 Enable_A20:
@@ -31,16 +29,22 @@ Enable_A20:
 %include "src/boot/memory/paging.asm"
 
 Protected_mode_main:
-	mov ax, DATA_SEGMENT
-	mov ds, ax
-	mov ss, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
+    ; Set data segment registers
+    mov ax, DATA_SEGMENT
+    mov ds, ax
+    mov ss, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
 
+    ; Check CPUID and long mode support
     call Is_CPUID_supported
     call Is_long_mode_supported
+
+    ; Enable paging
     call SetUpIdentityPaging
+
+    ; Switch to 64-bit mode
     call Load_GDT_64_bits
     jmp CODE_SEGMENT:Long_mode_main
 
@@ -50,26 +54,31 @@ Protected_mode_main:
 %include "src/boot/bits/IDT.asm"
 
 Long_mode_main:
-	mov edi, 0xB8000
-	mov rax, 0x1F201F201F201F20
-	mov ecx, 500
+    ; Clear screen
+    mov edi, 0xB8000
+    mov rax, 0x1F201F201F201F20
+    mov ecx, 500
     rep stosq
 
-	call ActivateSSE
-	call _start
+    ; Enable SSE
+    call ActivateSSE
 
+    ; Jump to _start
+    call _start
+
+    ; Loop forever
     jmp $
 
 ActivateSSE:
-	mov rax, cr0
-	and ax, 0b11111101
-	or ax, 0b00000001
-	mov cr0, rax
+    mov rax, cr0
+    and ax, 0b11111101
+    or ax, 0b00000001
+    mov cr0, rax
 
-	mov rax, cr4
-	or ax, 0b1100000000
-	mov cr4, rax
+    mov rax, cr4
+    or ax, 0b1100000000
+    mov cr4, rax
 
-	ret
+    ret
 
 times 2048-($-$$) db 0

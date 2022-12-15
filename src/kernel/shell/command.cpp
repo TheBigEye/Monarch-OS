@@ -1,8 +1,8 @@
 #include "command.h"
 
 #include "../../common/monarch.h"
-#include "../cpu/CPU.h"
-#include "../cpu/IO.h"
+#include "../CPU/CPU.h"
+#include "../CPU/IO.h"
 #include "../drivers/display.h"
 #include "../drivers/keyboard.h"
 #include "../power/power.h"

@@ -1,8 +1,8 @@
 #include "cstdio.h"
 #include "cstdarg.h"
-#include "cstdint.h"
 
 #include "../../kernel/drivers/display.h"
+#include "../sys/types.h"
 
 const char hex_chars[] = "0123456789abcdef";
 

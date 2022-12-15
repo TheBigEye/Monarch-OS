@@ -2,7 +2,7 @@
 #include "display.h"
 
 #include "../../common/monarch.h"
-#include "../cpu/IO.h"
+#include "../CPU/IO.h"
 
 bool LeftShiftPressed = false;
 bool RightShiftPressed = false;

@@ -1,6 +1,8 @@
 #ifndef CSTDIO_H_
 #define CSTDIO_H_
 
+#include "../sys/types.h"
+
 #define PRINTF_STATE_NORMAL         0
 #define PRINTF_STATE_LENGTH         1
 #define PRINTF_STATE_LENGTH_SHORT   2
