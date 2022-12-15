@@ -28,7 +28,7 @@ void display::cleanup(uint_8 color) {
     uint_64 value = (color << 8) | (color << 24) | (color << 40) | (color << 56);
 
     // Get a pointer to the start of the VGA address space
-    uint_64* vga = (uint_64*) VGA_ADDRESS;
+    uint_64* vga = (uint_64*) VIDEO_MEMORY;
 
     // Loop over all memory locations in the VGA address space
     for (uint_64* i = vga; i < vga + 8000; i++) {
@@ -101,7 +101,7 @@ uint_16 coords(uint_8 x, uint_8 y) {
 */
 void display::putchar(uint_8 x, uint_8 y, char chr, uint_8 color) {
     uint_16 position = coords(x, y);
-    uint_8* vga = VGA_ADDRESS; // Store the VGA address
+    uint_8* vga = VIDEO_MEMORY; // Store the VGA address
     uint_8 data = (color << 8) | chr;  // store the character and color.
     *(vga + (position << 1)) = data;  // Apply the new char data to the position
 }
@@ -118,8 +118,8 @@ void display::putchar(uint_8 x, uint_8 y, char chr, uint_8 color) {
 void display::putstr(uint_8 x, uint_8 y, const char *str, uint_8 color) {
     uint_16 position = coords(x, y);
     while (*str) {
-        *(VGA_ADDRESS + position * 2) = *str;
-        *(VGA_ADDRESS + position * 2 + 1) = color;
+        *(VIDEO_MEMORY + position * 2) = *str;
+        *(VIDEO_MEMORY + position * 2 + 1) = color;
         position++;
         str++;
     }
@@ -135,7 +135,7 @@ void display::putstr(uint_8 x, uint_8 y, const char *str, uint_8 color) {
 */
 char display::getchar(uint_8 x, uint_8 y) {
     uint_16 position = coords(x, y);
-    uint_8* VGA = VGA_ADDRESS; // Store the VGA address
+    uint_8* VGA = VIDEO_MEMORY; // Store the VGA address
     return (uint_8) *(VGA + (position << 1)); // Return the char data from the position
 }
 
@@ -148,7 +148,7 @@ char display::getchar(uint_8 x, uint_8 y) {
 */
 void display::putcolor(uint_8 x, uint_8 y, uint_8 color) {
     uint_16 position = coords(x, y);
-    *(VGA_ADDRESS + position * 2 + 1) = color;
+    *(VIDEO_MEMORY + position * 2 + 1) = color;
 }
 
 /**
@@ -161,7 +161,7 @@ void display::putcolor(uint_8 x, uint_8 y, uint_8 color) {
 */
 uint_8 display::getcolor(uint_8 x, uint_8 y) {
     uint_16 position = coords(x, y);
-    return *(VGA_ADDRESS + position * 2 + 1);
+    return *(VIDEO_MEMORY + position * 2 + 1);
 }
 
 /**
@@ -221,8 +221,8 @@ void display::print(const char* str, uint_8 color) {
 
 void display::print(char chr, uint_8 color) {
     uint_16 cursor_pos = get_cursor_pos();
-    *(VGA_ADDRESS + cursor_pos * 2) = chr;
-    *(VGA_ADDRESS + cursor_pos * 2 + 1) = color;
+    *(VIDEO_MEMORY + cursor_pos * 2) = chr;
+    *(VIDEO_MEMORY + cursor_pos * 2 + 1) = color;
 
     set_cursor_pos(cursor_pos + 1);
 }
@@ -240,8 +240,8 @@ void display::print_centered(char chr, uint_8 y, uint_8 color) {
 void display::colorize(uint_8 x, uint_8 y, uint_16 w, uint_16 h, char chr, uint_8 color) {
     // search the printed char (chr) ont the screen area (x,y,w,h), if the char is found, change the color of the char to color
     for (uint_16 i = 0; i < w * h; i++) {
-        if (*(VGA_ADDRESS + (y * VGA_WIDTH + x) * 2 + i * 2) == chr) {
-            *(VGA_ADDRESS + (y * VGA_WIDTH + x) * 2 + i * 2 + 1) = color;
+        if (*(VIDEO_MEMORY + (y * VGA_WIDTH + x) * 2 + i * 2) == chr) {
+            *(VIDEO_MEMORY + (y * VGA_WIDTH + x) * 2 + i * 2 + 1) = color;
         }
     }
 }

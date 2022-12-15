@@ -6,8 +6,9 @@
 
 #include "../cpu/IO.h"
 
-#define VGA_ADDRESS (uint_8*) 0xB8000 // THE VGA (TEXT MODE) MEMORY ADDRESS
-#define EGA_ADDRESS (uint_8*) 0xA0000 // THE EGA/VGA (VIDEO MODE) MEMORY ADDRESS
+#ifndef VIDEO_MEMORY
+#define VIDEO_MEMORY (uint_8*) 0xB8000 // The VGA (text mode) memory address
+#endif
 
 // Also supports 80x25 video mode, but bootloader.asm will be modified for this
 #define VGA_WIDTH 80
@@ -19,34 +20,33 @@
 #define CURSOR_NORMAL 0x0A
 #define CURSOR_UNDERLINE 0x0F
 
-class display {
-    public:
-        static void initialize(uint_8 x, uint_8 y, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
-        static void cleanup(uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+namespace display {
+    void initialize(uint_8 x, uint_8 y, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+    void cleanup(uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
 
-        static void set_cursor_pos(uint_16 position);
-        static void set_cursor_shape(uint_8 shape);
+    void set_cursor_pos(uint_16 position);
+    void set_cursor_shape(uint_8 shape);
 
-        static void putchar(uint_8 x, uint_8 y, char chr, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
-        static char getchar(uint_8 x, uint_8 y);
+    void putchar(uint_8 x, uint_8 y, char chr, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+    char getchar(uint_8 x, uint_8 y);
 
-        static void putstr(uint_8 x, uint_8 y, const char* str, uint_8 color  = BACKGROUND_BLACK | FOREGROUND_WHITE);
+    void putstr(uint_8 x, uint_8 y, const char* str, uint_8 color  = BACKGROUND_BLACK | FOREGROUND_WHITE);
 
-        static void putcolor(uint_8 x, uint_8 y, uint_8 color);
-        static uint_8 getcolor(uint_8 x, uint_8 y);
+    void putcolor(uint_8 x, uint_8 y, uint_8 color);
+    uint_8 getcolor(uint_8 x, uint_8 y);
 
-        static void scroll();
+    void scroll();
 
-        static void print(const char* str, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
-        static void print(char chr, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
-        static void print_centered(const char* str, uint_8 y, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
-        static void print_centered(char chr, uint_8 y, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+    void print(const char* str, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+    void print(char chr, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+    void print_centered(const char* str, uint_8 y, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
+    void print_centered(char chr, uint_8 y, uint_8 color = BACKGROUND_BLACK | FOREGROUND_WHITE);
 
-        static void colorize(uint_8 x, uint_8 y, uint_16 w, uint_16 h, char chr, uint_8 color);
+    void colorize(uint_8 x, uint_8 y, uint_16 w, uint_16 h, char chr, uint_8 color);
 
-        static void colors();
-        static void chars();
-};
+    void colors();
+    void chars();
+}
 
 uint_16 get_cursor_pos();
 uint_16 coords(uint_8 x, uint_8 y);
