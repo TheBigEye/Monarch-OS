@@ -11,12 +11,12 @@
 <!-- Badges -->
 <p align="center">
      <a href="https://github.com/TheBigEye#gh-light-mode-only"> <!-- if light mode -->
-          <img src="https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=FF9641&color=4f4f4f" title="Made with C++"/>
+          <img src="https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=FF9641&color=4f4f4f" title="Made with C"/>
           <img src="https://komarev.com/ghpvc/?username=Eye-Monarch-OS&label=Views&color=FF9641&style=for-the-badge" title="Views" />
           <img src="https://img.shields.io/badge/VSCode-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=FF9641&color=4f4f4f" title="Programmed using VScode"/>
      </a>
      <a href="https://github.com/TheBigEye#gh-dark-mode-only"> <!-- if dark mode -->
-          <img src="https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=FF9641&color=4f4f4f" title="Made with C++"/>
+          <img src="https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=FF9641&color=4f4f4f" title="Made with C"/>
           <img src="https://komarev.com/ghpvc/?username=Eye-Monarch-OS&label=Views&color=000000&style=for-the-badge" title="Views"/>
           <img src="https://img.shields.io/badge/VSCode-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=FF9641&color=000000" title="Programmed using VScode"/>
      </a>
