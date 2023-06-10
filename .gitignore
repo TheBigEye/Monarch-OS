@@ -1,1 +1,6 @@
 .vscode/settings.json
+*.o
+*.img
+*.bin
+docs/TAREAS.txt
+doc/TAREAS.txt
