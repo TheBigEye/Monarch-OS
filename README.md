@@ -22,6 +22,8 @@
      </a>
 </p>
 
+> **Note**: Currently the development of this branch is paused due some code issues, if you want, you can keep an eye on the 32-bit branch
+
 **Monarch OS** is an Operating System based on 64 bits in VGA text mode, it is composed of a Kernel (as the main program) and a Bootloader (reads the disk, searches and loads the kernel in memory), it also contains a Memory manager and Commands interpreter
 
 It has been created from scratch using several videos from Youtube as a base, and https://wiki.osdev.org, with the aim of trying to make a real OS, currently still under development :)
