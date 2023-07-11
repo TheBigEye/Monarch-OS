@@ -1,5 +1,5 @@
 #ifndef DRIVER_SCREEN_H_
-#define DRIVER_SCREEN_H_
+#define DRIVER_SCREEN_H_ 1
 
 #include <stdint.h>
 
@@ -39,9 +39,12 @@
 #define BG_BKYELLOW         0xE0 // Blinking red background attribute
 #define BG_BKWHITE          0xF0 // Blinking white background attribute
 
+int getOffset(int column, int row);
+void setCursorOffset(int offset);
+
 void VGA_install();
 
-int printCharacter(const char character, int column, int row, uint8_t attribute);
+int putCharacter(const char character, int column, int row, uint8_t attribute);
 
 void setCursorShape(uint8_t shape);
 void clearScreen(uint8_t color);
@@ -50,7 +53,8 @@ void putColor(const char character, int column, int row, uint16_t width, uint16_
 void print(const char *message);
 void printColor(const char *message, uint8_t color);
 
-void printBackspace();
 void printSupportedChars();
+
+void printFormat(const char *format, ...);
 
 #endif /* DRIVER_SCREEN_H_ */

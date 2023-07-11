@@ -1,4 +1,4 @@
-#include <stdint.h>
+#include "ports.h"
 
 /*
 * IO Ports - Input/Output Ports, hardware interfaces used by a computer to communicate with
@@ -7,6 +7,25 @@
 *  @see https://wiki.osdev.org/I/O_Ports
 *  @see https://wiki.osdev.org/Port_IO
 */
+
+void operationWait() {
+    __asm__ __volatile__ ("outb %%al, $0x80" : : "a"(0));
+}
+
+/**
+ * Sleeps for the specified number of milliseconds.
+ *
+ * @param milliseconds  The number of milliseconds to sleep for.
+ */
+void operationSleep(uint32_t milliseconds) {
+    // Calculate the number of iterations needed to sleep for the specified number of milliseconds
+    uint32_t iterations = milliseconds * 1000;
+
+    // Sleep for the specified number of iterations by executing a busy-wait loop
+    for (uint32_t i = 0; i < iterations; i++) {
+        __asm__ __volatile__ ("outb %%al, $0x80" : : "a"(0));
+    }
+}
 
 /**
  * Read a byte from the specified port (inb)
@@ -25,7 +44,7 @@ unsigned char readByteFromPort(uint16_t port) {
      *
      * Inputs and outputs are separated by colons
      */
-    __asm__("in %%dx, %%al" : "=a" (result) : "d" (port));
+    __asm__ __volatile__ ("in %%dx, %%al" : "=a" (result) : "d" (port));
     return result;
 }
 
@@ -41,7 +60,8 @@ void writeByteToPort(uint16_t port, uint8_t data) {
      * However, we see a comma since there are two variables in the input area
      * and none in the 'return' area
      */
-    __asm__("out %%al, %%dx" : : "a" (data), "d" (port));
+    __asm__ __volatile__ ("out %%al, %%dx" : : "a" (data), "d" (port));
+    operationWait();
 }
 
 
@@ -54,7 +74,7 @@ void writeByteToPort(uint16_t port, uint8_t data) {
 unsigned short readWordFromPort(uint16_t port) {
     unsigned short result;
 
-    __asm__("in %%dx, %%ax" : "=a" (result) : "d" (port));
+    __asm__ __volatile__ ("in %%dx, %%ax" : "=a" (result) : "d" (port));
     return result;
 }
 
@@ -65,7 +85,8 @@ unsigned short readWordFromPort(uint16_t port) {
  * @param data The data to write to the port
  */
 void writeWordToPort(uint16_t port, uint16_t data) {
-    __asm__("out %%ax, %%dx" : : "a" (data), "d" (port));
+    __asm__ __volatile__ ("out %%ax, %%dx" : : "a" (data), "d" (port));
+    operationWait();
 }
 
 

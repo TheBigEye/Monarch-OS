@@ -1,16 +1,17 @@
 #include "ISR.h"
 
-#include "../../common/cstring.h"
+#include "../../../common/sysutils.h"
 
-#include "../drivers/screen.h"
-#include "../drivers/keyboard.h"
+#include "../../drivers/screen.h"
+#include "../../drivers/keyboard.h"
 
-#include "clock.h"
-#include "IDT.h"
-#include "ports.h"
-#include "timer.h"
+#include "../../bugfault.h"
 
-#include "../bugfault.h"
+#include "../IDT/IDT.h"
+#include "../PIT/timer.h"
+#include "../RTC/clock.h"
+#include "../ports.h"
+
 
 /*
 * ISR - Interrupt Service Routines, code routines that are executed in response to an interrupt
@@ -94,18 +95,23 @@ const char *getExceptionMessage(int exceptionNumber) {
         case 17: return "Alignment Check";
         case 18: return "Machine Check";
 
-        case 4101: return "Keyboard overflow";
         default:
             return "Reserved";
     }
 }
 
-void ISR_handler(reg_t *r) {
-    kernelException(getExceptionMessage(r->int_no), r->int_no, (uint32_t)&r);
+void ISR_handler(reg_t *registers) {
+    if (registers->int_no < 32) {
+        kernelException(getExceptionMessage(registers->int_no), registers->int_no, registers->ds, registers);
+    }
 }
 
 /* Implement a custom IRQ handler for the given IRQ */
 void registerInterruptHandler(uint8_t irq, isr_t handler) {
+    printColor("[-] ", BG_BLACK | FG_YELLOW); print("Registering IRQ ");
+    printColor(itoa(irq), BG_BLACK | FG_DKGRAY); print(" to handler ");
+    printColor(htoa((uint32_t)handler), BG_BLACK | FG_DKGRAY); print("\n\n");
+
     interrupt_handlers[irq] = handler;
 }
 
@@ -114,20 +120,19 @@ void unregisterInterruptHandler(uint8_t irq) {
     interrupt_handlers[irq] = 0;
 }
 
-
-void IRQ_handler(reg_t *r) {
+void IRQ_handler(reg_t *registers) {
     /* After every interrupt we need to send an EOI to the PICs
      * or they will not send another interrupt again */
 
-    if (r->int_no >= 40) { /* slave */
+    if (registers->int_no >= 40) { /* slave */
         writeByteToPort(0xA0, 0x20);
     }
     writeByteToPort(0x20, 0x20); /* master */
 
     /* Handle the interrupt in a more modular way */
-    if (interrupt_handlers[r->int_no] != 0) {
-        isr_t handler = interrupt_handlers[r->int_no];
-        handler(r);
+    if (interrupt_handlers[registers->int_no] != 0) {
+        isr_t handler = interrupt_handlers[registers->int_no];
+        handler(registers);
     }
 }
 
@@ -135,7 +140,7 @@ void IRQ_install() {
     /* Enable interruptions */
     __asm__ __volatile__("sti");
 
-    initTimer(50);   /* IRQ0: timer PIT */
+    initTimer(100);   /* IRQ0: timer PIT */
     initKeyboard();  /* IRQ1: keyboard */
     initClock();     /* IRQ8: clock RTC */
 }

@@ -2,6 +2,7 @@
 #define _KERNEL_BUGFAULT_H 1
 
 #include <stdint.h>
+#include "CPU/ISR/ISR.h"
 
 /**
  * Trigger a kernel low priority panic.
@@ -19,7 +20,7 @@
  * @param interrupt The IRQ value that triggered the exception.
  * @param regpointer The memory pointer to the ISR register.
  */
-void kernelException(const char *reason, uint32_t interrupt, uint32_t regpointer);
+void kernelException(const char *reason, uint32_t interrupt, uint32_t segment, reg_t *registers);
 
 /**
  * Trigger a kernel panic.

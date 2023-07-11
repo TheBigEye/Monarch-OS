@@ -10,13 +10,6 @@
  */
 void initTimer(uint32_t frequency);
 
-/**
- * Sleeps for the specified number of milliseconds.
- *
- * @param milliseconds  The number of milliseconds to sleep for.
- */
-void sleepTimer(uint32_t milliseconds);
-
 
 uint32_t getElapsedTimer();
 

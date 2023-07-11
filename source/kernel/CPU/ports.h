@@ -3,6 +3,15 @@
 
 #include <stdint.h>
 
+void operationWait();
+
+/**
+ * Sleeps for the specified number of milliseconds.
+ *
+ * @param milliseconds  The number of milliseconds to sleep for.
+ */
+void operationSleep(uint32_t milliseconds);
+
 /**
  * Read a byte from the specified port (inb)
  *
@@ -52,5 +61,7 @@ uint8_t readRegisterValue(uint8_t reg);
  * @param value The value to write to the register
  */
 void writeRegisterValue(uint8_t reg, uint8_t value);
+
+
 
 #endif /* _CPU_PORTS_H */

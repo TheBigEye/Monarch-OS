@@ -1,5 +1,7 @@
 #include "memory.h"
 
+#include "../bugfault.h"
+
 /* This should be computed at link time, but a hardcoded
  * value is fine for now. Remember that our kernel starts
  * at 0x1000 as defined in the Makefile */
@@ -42,6 +44,8 @@ void memorySet(uint8_t *destination, uint8_t value, uint32_t len) {
  * @return  The starting address of the allocated memory block
  */
 uint32_t memoryAllocate(size_t size, int align, uint32_t *physicalAddress) {
+    ASSERT(align <= PAGE_SIZE);
+
     /* Pages are aligned to 4K, or 0x1000 */
     if (align == 1 && (freeMemoryAddress & 0x00000FFF)) { // if something fails, change & 0x00000FFF to & 0xFFFFF000
         freeMemoryAddress &= 0xFFFFF000;
@@ -55,18 +59,4 @@ uint32_t memoryAllocate(size_t size, int align, uint32_t *physicalAddress) {
     uint32_t ret = freeMemoryAddress;
     freeMemoryAddress += size; /* Remember to increment the pointer */
     return ret;
-}
-
-/**
- * Convert a Binary Coded Decimal (BCD) to a binary number.
- *
- * @param bcd   Binary Coded Decimal value
- * @return  The corresponding binary number
- */
-uint8_t bcdToBinary(uint8_t bcd) {
-    /*
-    * Decimal:    0     1     2     3     4     5     6     7     8     9
-    * BCD:      0000  0001  0010  0011  0100  0101  0110  0111  1000  1001
-    */
-    return (uint8_t)(((bcd >> 4) * 10) + (bcd & 0x0F));
 }

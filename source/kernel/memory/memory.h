@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define PAGE_SIZE 4096
+
 /**
  * Copy a block of memory from the source to the destination. (memcpy)
  *
@@ -33,13 +35,5 @@ void memorySet(uint8_t *destination, uint8_t value, uint32_t len);
  * @return  The starting address of the allocated memory block
  */
 uint32_t memoryAllocate(size_t size, int align, uint32_t *physicalAddress);
-
-/**
- * Convert a Binary Coded Decimal (BCD) to a binary number.
- *
- * @param bcd   Binary Coded Decimal value
- * @return  The corresponding binary number
- */
-uint8_t bcdToBinary(uint8_t bcd);
 
 #endif /* KERNEL_MEMORY_H */

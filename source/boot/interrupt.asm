@@ -1,8 +1,14 @@
-; Defined in isr.c
+;-----------------------------------------------------------------------------;
+;                      Butterfly Kernel IRQ and ISR Handlers                  ;
+;-----------------------------------------------------------------------------;
+
+; Defined in ISR.c
 [extern ISR_handler]
 [extern IRQ_handler]
 
-; Common ISR code
+;─────────────────────────────────────;
+;           Common ISR Code           ;
+;─────────────────────────────────────;
 ISR_common_stub:
     ; 1. Save CPU state
 	pusha ; Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
@@ -29,9 +35,11 @@ ISR_common_stub:
 	add esp, 8 ; Cleans up the pushed error code and pushed ISR number
 	iret ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
 
-; Common IRQ code. Identical to ISR code except for the 'call'
-; and the 'pop ebx'
+;─────────────────────────────────────;
+;          Common IRQ Code            ;
+;─────────────────────────────────────;
 IRQ_common_stub:
+    ; Identical to ISR code except for the 'call' and the 'pop ebx'
     pusha
     mov ax, ds
     push eax
@@ -111,6 +119,10 @@ global IRQ_12
 global IRQ_13
 global IRQ_14
 global IRQ_15
+
+;─────────────────────────────────────;
+;      Exception Handlers (ISRs)      ;
+;─────────────────────────────────────;
 
 ; 0: Divide By Zero Exception
 ISR_0:
@@ -299,8 +311,9 @@ ISR_31:
     jmp ISR_common_stub
 
 
-
-; IRQ handlers
+;─────────────────────────────────────;
+;             IRQ Handlers            ;
+;─────────────────────────────────────;
 IRQ_0:
 	push byte 0
 	push byte 32

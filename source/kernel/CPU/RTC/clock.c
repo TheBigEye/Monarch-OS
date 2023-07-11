@@ -1,10 +1,12 @@
 #include "clock.h"
 
-#include "../../common/ctypes.h"
-#include "../memory/memory.h"
+#include "../../../common/sysutils.h"
+#include "../../drivers/screen.h"
+#include "../../memory/memory.h"
 
-#include "ISR.h"
-#include "ports.h"
+#include "../CMOS/CMOS.h"
+#include "../ISR/ISR.h"
+#include "../ports.h"
 
 /*
 * RTC - Real Time Clock, keeps track of current time and date even when the
@@ -41,21 +43,23 @@ void getTime(time_t *time) {
 static void clockCallback(reg_t *regs) {
     if (readRegisterValue(0x0C) & 0x10) {
         if (bcd) {
-            global_time.second = bcdToBinary(readRegisterValue(0x00));
-            global_time.minute = bcdToBinary(readRegisterValue(0x02));
-            global_time.hour   = bcdToBinary(readRegisterValue(0x04));
-            global_time.month  = bcdToBinary(readRegisterValue(0x08));
-            global_time.year   = bcdToBinary(readRegisterValue(0x09));
-            global_time.day_of_week  = bcdToBinary(readRegisterValue(0x06));
-            global_time.day_of_month = bcdToBinary(readRegisterValue(0x07));
+            global_time.second = getBCD(readRegisterValue(0x00));
+            global_time.minute = getBCD(readRegisterValue(0x02));
+            global_time.hour   = getBCD(readRegisterValue(0x04));
+            global_time.day_of_week  = getBCD(readRegisterValue(0x06));
+            global_time.day_of_month = getBCD(readRegisterValue(0x07));
+            global_time.month  = getBCD(readRegisterValue(0x08));
+            global_time.year   = getBCD(readRegisterValue(0x09));
+            global_time.century = getBCD(readRegisterValue(0x32)); // yeah, this is real son
         } else {
             global_time.second = readRegisterValue(0x00);
             global_time.minute = readRegisterValue(0x02);
             global_time.hour   = readRegisterValue(0x04);
-            global_time.month  = readRegisterValue(0x08);
-            global_time.year   = readRegisterValue(0x09);
             global_time.day_of_week  = readRegisterValue(0x06);
             global_time.day_of_month = readRegisterValue(0x07);
+            global_time.month  = readRegisterValue(0x08);
+            global_time.year   = readRegisterValue(0x09);
+            global_time.century = readRegisterValue(0x32);
         }
     }
     UNUSED(regs);
@@ -77,5 +81,6 @@ void initClock() {
     writeRegisterValue(0x0B, status);
     readRegisterValue(0x0C);
 
+    printColor("[-] ", BG_BLACK | FG_YELLOW); print("Initializing RTC handler at IRQ8 ...\n");
     registerInterruptHandler(IRQ8, clockCallback);
 }

@@ -1,9 +1,9 @@
 #include "sound.h"
 
-#include "../../common/cstring.h"
+#include "../../common/sysutils.h"
 
 #include "../CPU/ports.h"
-#include "../CPU/timer.h"
+
 
 /** @see https://wiki.osdev.org/PC_Speaker **/
 
@@ -50,8 +50,10 @@ void stopSound() {
  * @param duration The duration of the beep sound in milliseconds.
  */
 void playBeep(uint32_t frequency, uint32_t duration) {
+    if (!frequency) frequency = 950;
+    if (!duration) duration = 255;
     playSound(frequency);
-    sleepTimer(duration);
+    operationSleep(duration);
     stopSound();
 }
 
@@ -62,7 +64,7 @@ void playBeep(uint32_t frequency, uint32_t duration) {
  * @param position The starting position of the chord.
  */
 void playChord(char chord[], int position) {
-    int len = strlen(chord);  // Length of the chord array
+    int len = lengthString(chord);  // Length of the chord array
     char notes[256] = "";  // Array to store extracted notes
     int index = 0;  // Index of the notes array
 
@@ -73,7 +75,7 @@ void playChord(char chord[], int position) {
     }
     notes[index] = '\0';  // Null-terminate the notes array
 
-    int notesLen = strlen(notes);  // Length of the extracted notes
+    int notesLen = lengthString(notes);  // Length of the extracted notes
     int frequency = 1;  // Default frequency value
 
     // Iterate over the extracted notes
@@ -98,7 +100,7 @@ void playChord(char chord[], int position) {
 void startupSound() {
     // Chord -> C D G+C D G+F+E+
     // Windows XP startup
-    /*sleepTimer(50);
+    /*operationSleep(50);
     playBeep(523, 200); // C5
     playBeep(587, 190); // D5
     playBeep(392, 180); // G4
@@ -111,38 +113,38 @@ void startupSound() {
     playBeep(1319, 240); // E6
     playBeep(1319, 250); // E6
     playBeep(988, 400); // B5
-    sleepTimer(50);*/
+    operationSleep(50);*/
 
     // Windows NT 4.0 Startup Sound
-    /*sleepTimer(50);
+    /*operationSleep(50);
     playBeep(523, 200);  // C5
     playBeep(587, 210);  // D5
     playBeep(659, 200);  // E5
     playBeep(783, 210);  // G5
-    sleepTimer(10);
+    operationSleep(10);
     playBeep(659, 200);  // E5
     playBeep(587, 210);  // D5
     playBeep(523, 200);  // C5
     playBeep(587, 210);  // D5
-    sleepTimer(10);
+    operationSleep(10);
     playBeep(659, 200);  // E5
     playBeep(783, 210);  // G5
     playBeep(659, 200);  // E5
     playBeep(587, 210);  // D5
-    sleepTimer(10);
+    operationSleep(10);
     playBeep(523, 200);  // C5
     playBeep(440, 400);  // A4
-    sleepTimer(400);*/
+    operationSleep(400);*/
 
-    sleepTimer(300);
+    operationSleep(300);
     playBeep(262, 300);  // C4
     playBeep(294, 150);  // D4
     playBeep(330, 150);  // E4
-    sleepTimer(10);
+    operationSleep(10);
     playBeep(440, 150);  // A4
     playBeep(494, 150);  // B4
     playBeep(523, 300);  // C5
-    sleepTimer(50);
+    operationSleep(50);
 }
 
 /**
@@ -150,13 +152,13 @@ void startupSound() {
  */
 void shutdownSound() {
     // Windows XP Shutdown Sound
-    sleepTimer(50);
+    operationSleep(50);
     playBeep(523, 300);  // C5
     playBeep(494, 150);  // B4
     playBeep(440, 150);  // A4
-    sleepTimer(10);
+    operationSleep(10);
     playBeep(330, 150);  // E4
     playBeep(294, 150);  // D4
     playBeep(262, 300);  // C4
-    sleepTimer(300);
+    operationSleep(300);
 }

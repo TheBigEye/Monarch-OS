@@ -1,19 +1,20 @@
 #include "screen.h"
 
-#include "../../common/ctypes.h"
+#include "../../common/sysutils.h"
 
 #include "../CPU/ports.h"
 #include "../memory/memory.h"
 
 
-#define SCREEN_ADDRESS      (byte *)   0xB8000
+#define SCREEN_BUFFER (uint8_t*) 0xB8000 // VGA Video memory
 
-#define SCREEN_HEIGHT       (uint8_t)  59
-#define SCREEN_WIDTH        (uint8_t)  90
-#define SCREEN_SIZE         (uint16_t) (SCREEN_WIDTH * SCREEN_HEIGHT)
+#define SCREEN_HEIGHT (uint8_t) 59
+#define SCREEN_WIDTH (uint8_t) 90
 
-#define REGISTRY_CONTROL    (uint16_t) 0x3D4
-#define REGISTRY_DATA       (uint16_t) 0x3D5
+#define SCREEN_AREA (uint16_t) (59 * 90)
+
+#define REGISTRY_CONTROL (uint16_t) 0x3D4
+#define REGISTRY_DATA (uint16_t) 0x3D5
 
 
 /* Private Kernel API functions */
@@ -74,54 +75,80 @@ void setCursorOffset(int offset) {
  * @param attribute The attribute of the character.
  * @return The new offset of the cursor in video memory.
  */
-int printCharacter(const char character, int column, int row, byte attribute) {
-    byte * SCREEN_MEMORY = (byte *) SCREEN_ADDRESS;
+int putCharacter(const char character, int column, int row, byte attribute) {
+    byte *SCREEN_MEMORY = (byte *)SCREEN_BUFFER;
+
     if (!attribute) {
         attribute = BG_BLACK | FG_LTGRAY;
     }
 
     /* Error control: print a red 'E' if the coords aren't right */
     if (column >= SCREEN_WIDTH || row >= SCREEN_HEIGHT) {
-        SCREEN_MEMORY[2 * (SCREEN_WIDTH * SCREEN_HEIGHT) - 2] = 'E';
-        SCREEN_MEMORY[2 * (SCREEN_WIDTH * SCREEN_HEIGHT) - 1] = BG_BLACK | FG_LTRED;
+        SCREEN_MEMORY[2 * SCREEN_AREA - 2] = 'E';
+        SCREEN_MEMORY[2 * SCREEN_AREA - 1] = BG_BLACK | FG_LTRED;
         return getOffset(column, row);
     }
 
-    int offset = (column >= 0 && row >= 0) ? getOffset(column, row) : getCursorOffset();
-
-    // New line
-    if (character == '\n') {
-        row = getOffsetRow(offset);
-        offset = getOffset(0, row + 1);
-
-    // Carriage return
-    } else if (character == '\r') {
-        row = getOffsetRow(offset);
-        offset = getOffset(0, row);
-
-    // Backspace
-    } else if (character == '\b' || character == 0x08) {
-        SCREEN_MEMORY[offset] = ' ';
-        SCREEN_MEMORY[offset + 1] = attribute;
-
-    // Character
+    int offset;
+    if (column >= 0 && row >= 0) {
+        offset = getOffset(column, row);
     } else {
-        SCREEN_MEMORY[offset] = character;
-        SCREEN_MEMORY[offset + 1] = attribute;
-        offset += 2;
+        offset = getCursorOffset();
+    }
+
+    int spaces = 4 - (column % 4);
+
+    switch (character) {
+        case '\n': { // New line
+            row = getOffsetRow(offset);
+            offset = getOffset(0, row + 1);
+            break;
+        }
+
+        case '\r': { // Carriage return
+            row = getOffsetRow(offset);
+            offset = getOffset(0, row);
+            break;
+        }
+
+        case '\b': { // Backspace
+            offset = getCursorOffset() - 2;
+            row = getOffsetRow(offset);
+            column = getOffsetCol(offset);
+            SCREEN_MEMORY[offset] = ' ';
+            SCREEN_MEMORY[offset + 1] = attribute;
+            break;
+        }
+
+        case '\t':{ // Tab
+            for (int i = 0; i < spaces; i++) {
+                SCREEN_MEMORY[offset] = ' ';
+                SCREEN_MEMORY[offset + 1] = attribute;
+                offset += 2;
+                column++;
+            }
+            break;
+        }
+
+        default: { // Character
+            SCREEN_MEMORY[offset] = character;
+            SCREEN_MEMORY[offset + 1] = attribute;
+            offset += 2;
+            break;
+        }
     }
 
     /* Check if the offset is over screen size and scroll */
-    if (offset >= SCREEN_HEIGHT * SCREEN_WIDTH * 2) {
-            memoryCopy(
-                SCREEN_MEMORY + getOffset(0, 1),
-                SCREEN_MEMORY + getOffset(0, 0),
-                SCREEN_WIDTH * (SCREEN_HEIGHT - 1) * 2
-            );
+    if (offset >= SCREEN_AREA * 2) {
+        memoryCopy(
+            SCREEN_MEMORY + getOffset(0, 1),
+            SCREEN_MEMORY + getOffset(0, 0),
+            SCREEN_WIDTH * (SCREEN_HEIGHT - 1) * 2
+        );
 
         /* Blank last line */
-        char* last_line = (char*)(SCREEN_MEMORY + getOffset(0, SCREEN_HEIGHT - 1));
-        for (int i = 0; i < SCREEN_WIDTH * 2; i++) {
+        char *last_line = (char *)(SCREEN_MEMORY + getOffset(0, SCREEN_HEIGHT - 1));
+        for (uint16_t i = 0; i < SCREEN_WIDTH * 2; i++) {
             last_line[i] = 0;
         }
 
@@ -136,8 +163,25 @@ int printCharacter(const char character, int column, int row, byte attribute) {
 /* Public Kernel API functions */
 
 void VGA_install() {
-    uint32_t Regs[] = {
-        0x6900, 0x5901, 0x5a02, 0x8c03, 0x5e04, 0x8a05, 0x0b06, 0x3e07, 0x4709, 0xea10, 0x8c11, 0xdf12, 0x2d13, 0xe715, 0x0416
+    uint32_t vga_registers[15] = {
+        // Horizontal timing
+        0x6900, // 0x69 -> 105          | 0 | Horizontal Total Register
+        0x5901, // 0x59 -> 89 columns   | 1 | End Horizontal Display Register
+        0x5a02, // 0x5a -> 90           | 2 | Start Horizontal Blanking Register
+        0x8c03, // 0x8c -> 140          | 3 | End Horizontal Blanking Register
+        0x5e04, // 0x5e -> 94           | 4 | Start Horizontal Retrace Register
+        0x8a05, // 0x8a -> 138          | 5 | End Horizontal Retrace Register
+
+        // Vertical timing
+        0x0b06, // 0xb6 -> 182          | 6 | Vertical Total Register
+        0x3e07, // 0x3e -> 62           | 7 | Overflow Register
+        0x4709, // 0x47 -> 71           | 9 | Maximum Scan Line Register
+        0xea10, // 0xea -> 234         | 10 | Start Vertical Retrace Register
+        0x8c11, // 0x8c -> 140         | 11 | End Vertical Retrace Register
+        0xdf12, // 0xdf -> 223         | 12 | End Vertical Display Register
+        0x2d13, // 0x2d -> 45          | 13 | Offset Register
+        0xe715, // 0xe7 -> 231         | 15 | Vertical Blanking Start Register
+        0x0416 // 0x04 -> 4            | 16 | End Vertical Blanking Register
     };
 
     // set 90x60 text mode
@@ -149,8 +193,8 @@ void VGA_install() {
     writeWordToPort(0x3c4, 0x0300);
     writeWordToPort(0x3d4, 0x0e11);
 
-    for (int i = 0; i < 15; i++) {
-        writeWordToPort(0x3d4, Regs[i]);
+    for (uint8_t i = 0; i < 15; i++) {
+        writeWordToPort(0x3d4, vga_registers[i]);
     }
 
     readByteFromPort(0x3da);
@@ -175,9 +219,9 @@ void setCursorShape(byte shape) {
  */
 void clearScreen(byte color) {
     // Calculate the starting memory address of the screen
-    byte * SCREEN_MEMORY = (byte *) SCREEN_ADDRESS;
+    byte * SCREEN_MEMORY = (byte *) SCREEN_BUFFER;
     // Calculate the ending memory address of the screen
-    byte * FINAL_MEMORY = SCREEN_MEMORY + SCREEN_SIZE * 2;
+    byte * FINAL_MEMORY = SCREEN_MEMORY + SCREEN_AREA * 2;
 
     // Set the character and color in memory to clear the screen
     while (SCREEN_MEMORY < FINAL_MEMORY) {
@@ -202,9 +246,9 @@ void clearScreen(byte color) {
 void putString(const char *message, int column, int row, byte color) {
     /* Set cursor if col/row are negative */
     int offset;
-    if (column >= 0 && row >= 0)
+    if (column >= 0 && row >= 0) {
         offset = getOffset(column, row);
-    else {
+    } else {
         offset = getCursorOffset();
         row = getOffsetRow(offset);
         column = getOffsetCol(offset);
@@ -213,7 +257,7 @@ void putString(const char *message, int column, int row, byte color) {
     /* Loop through message and print it */
     int i = 0;
     while (message[i] != 0) {
-        offset = printCharacter(message[i++], column, row, color);
+        offset = putCharacter(message[i++], column, row, color);
         /* Compute row/col for the next iteration */
         row = getOffsetRow(offset);
         column = getOffsetCol(offset);
@@ -232,7 +276,7 @@ void putString(const char *message, int column, int row, byte color) {
  */
 void putColor(const char character, int column, int row, uint16_t width, uint16_t height, byte color) {
     // Calculate the starting memory address of the screen area
-    uint16_t* video_memory = (uint16_t*)(SCREEN_ADDRESS + (row * SCREEN_WIDTH + column) * 2);
+    uint16_t* video_memory = (uint16_t*)(SCREEN_BUFFER + (row * SCREEN_WIDTH + column) * 2);
     // Calculate the ending memory address of the screen area
     uint16_t* final_memory = video_memory + width * height;
 
@@ -268,35 +312,98 @@ void printColor(const char *message, byte color) {
     putString(message, -1, -1, color);
 }
 
-/**
- * Erase the last character on the screen by moving the cursor back.
- */
-void printBackspace() {
-    int offset = getCursorOffset() - 2;
-    int row = getOffsetRow(offset);
-    int col = getOffsetCol(offset);
-    printCharacter(0x08, col, row, BG_BLACK | FG_LTGRAY);
-}
-
 void printSupportedChars() {
-    for (uint16_t i = 32; i < 256; i++) {
+    for (uint16_t i = 32; i < 256; i++) { // Only printable chars
         int offset = getCursorOffset();
         int row = getOffsetRow(offset);
         int col = getOffsetCol(offset) + 1;
 
-        printCharacter((char) i, col, row, BG_BLACK | FG_CYAN);
-        // Imprimir 10 caracteres por línea
-
+        putCharacter((char) i, col, row, BG_BLACK | FG_CYAN);
         if (col == SCREEN_WIDTH) {
             col = 0;
             if (row == SCREEN_HEIGHT - 1) {
-                // Realizar el scroll si se alcanza el final de la altura de la pantalla
+                // Scroll if we reach the screen end
                 for (uint16_t j = 0; j < SCREEN_WIDTH; j++) {
-                    printCharacter(' ', j, 0, BG_BLACK | FG_CYAN);
+                    putCharacter(' ', j, 0, BG_BLACK | FG_CYAN);
                 }
             } else {
                 row++;
             }
         }
     }
+    print("\n");
+}
+
+
+void printFormat(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    while (*format != '\0') {
+        if (*format == '%') {
+            format++;
+
+            // Handle format specifiers
+            switch (*format) {
+                case 'd': case 'i': { // Integer value
+                    int value = va_arg(args, int);
+                    char buffer[32];
+                    toString(value, buffer, 10);
+                    putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
+                    break;
+                }
+
+                case 'x': { // Hex value (lowercase)
+                    int value = va_arg(args, int);
+                    char buffer[32];
+                    toString(value, buffer, 16);
+                    toLowercase(buffer);
+                    putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
+                    break;
+                }
+
+                case 'X': { // Hex value (uppercase)
+                    int value = va_arg(args, int);
+                    char buffer[32];
+                    toString(value, buffer, 16);
+                    toUppercase(buffer);
+                    putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
+                    break;
+                }
+
+                case 'o': { // Octal value
+                    int value = va_arg(args, int);
+                    char buffer[32];
+                    toString(value, buffer, 8);
+                    putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
+                    break;
+                }
+
+                case 's': { // String value
+                    char *value = va_arg(args, char *);
+                    putString(value, -1, -1, BG_BLACK | FG_DKGRAY);
+                    break;
+                }
+
+                case 'c': { // Char value
+                    int value = va_arg(args, int);
+                    putCharacter((char)value, -1, -1, BG_BLACK | FG_DKGRAY);
+                    break;
+                }
+
+                default: {
+                    putCharacter('%', -1, -1, BG_BLACK | FG_LTGRAY);
+                    putCharacter(*format, -1, -1, BG_BLACK | FG_LTGRAY);
+                    break;
+                }
+            }
+
+        } else {
+            putCharacter(*format, -1, -1, BG_BLACK | FG_LTGRAY);
+        }
+
+        format++;
+    }
+
+    va_end(args);
 }

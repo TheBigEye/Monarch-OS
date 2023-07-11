@@ -54,7 +54,7 @@ typedef struct {
 } reg_t;
 
 void ISR_install();
-void ISR_handler(reg_t *r);
+void ISR_handler(reg_t *registers);
 void IRQ_install();
 
 typedef void (*isr_t)(reg_t*);

@@ -6,16 +6,16 @@ CLEAR_SCREEN:
     int 0x10
     ret
 
-; 2 Video mode
-VIDEO_MODE:
-    mov ax, 0x13
-    int 0x10
-    ret
-
-; 3 try set 80x50 text mode and 8x8 font
+; 2 try set 80x50 text mode and 8x8 font
 TEXT_MODE:
     mov ax, 0x1112
     xor bl, bl
+    int 0x10
+
+    ; set cursor position to 0,0
+    mov ax, 0x2000
+    mov bx, 0 ; bx = 0
+    mov dx, bx ; dx = 0
     int 0x10
 
     ret

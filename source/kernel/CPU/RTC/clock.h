@@ -11,6 +11,7 @@ typedef struct {
     uint8_t day_of_month;
     uint8_t month;
     uint8_t year;
+    uint8_t century;
 } time_t;
 
 /**
