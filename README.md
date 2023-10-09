@@ -1,10 +1,10 @@
 <!-- Logo -->
 <p align="center">
     <a href="https://github.com/TheBigEye/Monarch-OS#gh-light-mode-only"> <!-- if light mode -->
-        <img width="42%" src="https://github.com/TheBigEye/TheBigEye/blob/main/Projects/Monarch-OS/Light-header.svg?raw=true" alt="Light mode Monarch OS logo!"/>
+        <img width="42%" src="https://github.com/TheBigEye/TheBigEye/blob/main/assets/projects/Monarch-OS/Light-header.svg?raw=true" alt="Light mode Monarch OS logo!"/>
     </a>
     <a href="https://github.com/TheBigEye/Monarch-OS#gh-dark-mode-only"> <!-- if dark mode -->
-        <img width="42%" src="https://github.com/TheBigEye/TheBigEye/blob/main/Projects/Monarch-OS/Dark-header.svg?raw=true" alt="Dark mode Monarch OS logo!!"/>
+        <img width="42%" src="https://github.com/TheBigEye/TheBigEye/blob/main/assets/projects/Monarch-OS/Dark-header.svg?raw=true" alt="Dark mode Monarch OS logo!!"/>
     </a>
 </p>
 
