@@ -12,39 +12,9 @@
 * @see https://wiki.osdev.org/PIT#Programmable-Interval-Timer
 */
 
+
+// FIX FIX THIS SHIT!: this will overflow after about an hour of runtime, use uint64_t and either link against libgcc or write a 64bit os
 uint32_t tick = 0;
-
-/**
- * Timer interrupt callback function.
- *
- * @param regs  The interrupt's caller registers.
- */
-static void timerCallback(reg_t *regs) {
-    tick++;
-    UNUSED(regs);
-}
-
-/**
- * Initializes the timer with the specified frequency.
- *
- * @param frequency  The frequency at which the timer should generate interrupts.
- */
-void initTimer(uint32_t frequency) {
-    // Get the PIT value: hardware clock at 1193180 Hz
-    uint32_t divisor = 1193180 / frequency;
-    uint8_t low = (uint8_t)(divisor & 0xFF);
-    uint8_t high = (uint8_t)((divisor >> 8) & 0xFF);
-
-    printColor("[-] ", BG_BLACK | FG_YELLOW); print("Initializing PIT handler at IRQ0 ...\n");
-
-    // Install the timerCallback function
-    registerInterruptHandler(IRQ0, timerCallback);
-
-    // Send the command
-    writeByteToPort(0x43, 0x36); // Command port
-    writeByteToPort(0x40, low);
-    writeByteToPort(0x40, high);
-}
 
 uint32_t getElapsedTimer() {
     return tick;
@@ -87,4 +57,43 @@ uint32_t getTimerMinutes() {
  */
 uint32_t getTimerHours() {
     return tick / (100 * 60 * 60);
+}
+
+/**
+ * Timer interrupt callback function.
+ *
+ * @param regs  The interrupt's caller registers.
+ */
+static void timerCallback(reg_t *regs) {
+    tick++;
+    UNUSED(regs);
+}
+
+/**
+ * Initializes the timer with the specified frequency.
+ *
+ * @param frequency  The frequency at which the timer should generate interrupts.
+ */
+void initializeTimer(uint32_t frequency) {
+    // Get the PIT value: hardware clock at 1193180 Hz
+    uint32_t divisor = 1193180 / frequency;
+    uint8_t low = (uint8_t)(divisor & 0xFF);
+    uint8_t high = (uint8_t)((divisor >> 8) & 0xFF);
+
+    printColor("[-] ", BG_BLACK | FG_LTGREEN); print("Initializing PIT handler at IRQ0 ...\n");
+
+    // Install the timerCallback function
+    registerInterruptHandler(IRQ0, timerCallback);
+
+    // Send the command
+    writeByteToPort(0x43, 0x36); // Command port
+    writeByteToPort(0x40, low);
+    writeByteToPort(0x40, high);
+}
+
+void terminateTimer() {
+    printColor("[-] ", BG_BLACK | FG_LTRED); print("Terminating and cleaning PIT handler at IRQ0 ...\n");
+
+    // Unnstall the timerCallback function
+    unregisterInterruptHandler(IRQ0);
 }

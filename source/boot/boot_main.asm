@@ -9,14 +9,13 @@
 ;              Constants              ;
 ;-------------------------------------;
 KERNEL_OFFSET equ 0x1000 ; The same one we used when linking the kernel
-BOOT_SECTORS  equ 52     ; Sectors to be read by the bootloader
-BOOT_DRIVE    equ 0      ; (0 = floppy, 1 = floppy2, 0x80 = HDD, 0x81 = HDD2)
+BOOT_SECTORS  equ 50     ; Sectors to be read by the bootloader
+BOOT_DRIVE    equ 0      ; (0 = floppy A, 1 = floppy B, 0x80 = HDD, 0x81 = HDD 2)
 
 ;-------------------------------------;
 ;        Save Boot Drive Number       ;
 ;-------------------------------------;
 mov [BOOT_DRIVE], dl ; Remember that the BIOS sets us the boot drive in 'dl' on boot
-mov bp, 0x9000 ; Set the base pointer to 0x9000
 
 ;-------------------------------------;
 ;      Set Up Segment Registers       ;
@@ -28,7 +27,7 @@ mov ds, ax     ; set data segment (ds) to 0
 mov es, ax     ; set extra segment (es) to 0
 mov ss, ax     ; set stack segment (es) to 0
 
-mov sp, bp     ; set stack pointer (sp) to the base address
+mov sp, 0x9000 ; set stack pointer (sp) to the base pointer address 0x9000
 sti            ; enable interrupts
 
 ;-------------------------------------;
@@ -89,8 +88,8 @@ LOAD_KERNEL:
 LOAD_PROTECTED:
     ;---------------------------------;
     ;   Print a Message on the Screen ;
-    ;    and Give Control to the      ;
-    ;          Kernel                 ;
+    ;     and Give Control to the     ;
+    ;             Kernel              ;
     ;---------------------------------;
     mov ebx, MSG_PROTECTED_MODE
     call PRINT_32
@@ -99,7 +98,7 @@ LOAD_PROTECTED:
 
 ;-------------------------------------;
 ;  Define Variables and Messages      ;
-;              in Memory              ;
+;            in Memory                ;
 ;-------------------------------------;
 MSG_REAL_MODE        db "- Welcome to Butterfly Bootloader! -", 0
 MSG_PROTECTED_MODE   db "[i] Entering Protected Mode ...", 0
@@ -107,7 +106,11 @@ MSG_LOAD_KERNEL      db "[i] Loading Butterfly Kernel ...", 0
 
 ;-------------------------------------;
 ; Fill the Remaining Bytes of the     ;
-;           Boot Sector with 0        ;
+;       Boot Sector with 0            ;
 ;-------------------------------------;
 TIMES 510 - ($-$$) db 0
 dw 0xAA55 ; boot signature (0xAA55)
+
+; 'incbin' saves us from having to concatenate two
+; separate binaries manually to create the floppy image
+incbin "kernel.bin"

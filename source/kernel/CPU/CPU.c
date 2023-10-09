@@ -1,79 +1,85 @@
 #include "CPU.h"
 #include "../drivers/screen.h"
 
-// ------------------------------------------------------------------------------------------------
-// Function 0x01
-
-#define ECX_SSE3                        (1 << 0)    // Streaming SIMD Extensions 3
-#define ECX_PCLMULQDQ                   (1 << 1)    // PCLMULQDQ Instruction
-#define ECX_DTES64                      (1 << 2)    // 64-Bit Debug Store Area
-#define ECX_MONITOR                     (1 << 3)    // MONITOR/MWAIT
-#define ECX_DS_CPL                      (1 << 4)    // CPL Qualified Debug Store
-#define ECX_VMX                         (1 << 5)    // Virtual Machine Extensions
-#define ECX_SMX                         (1 << 6)    // Safer Mode Extensions
-#define ECX_EST                         (1 << 7)    // Enhanced SpeedStep Technology
-#define ECX_TM2                         (1 << 8)    // Thermal Monitor 2
-#define ECX_SSSE3                       (1 << 9)    // Supplemental Streaming SIMD Extensions 3
-#define ECX_CNXT_ID                     (1 << 10)   // L1 Context ID
-#define ECX_FMA                         (1 << 12)   // Fused Multiply Add
-#define ECX_CX16                        (1 << 13)   // CMPXCHG16B Instruction
-#define ECX_XTPR                        (1 << 14)   // xTPR Update Control
-#define ECX_PDCM                        (1 << 15)   // Perf/Debug Capability MSR
-#define ECX_PCID                        (1 << 17)   // Process-context Identifiers
-#define ECX_DCA                         (1 << 18)   // Direct Cache Access
-#define ECX_SSE41                       (1 << 19)   // Streaming SIMD Extensions 4.1
-#define ECX_SSE42                       (1 << 20)   // Streaming SIMD Extensions 4.2
-#define ECX_X2APIC                      (1 << 21)   // Extended xAPIC Support
-#define ECX_MOVBE                       (1 << 22)   // MOVBE Instruction
-#define ECX_POPCNT                      (1 << 23)   // POPCNT Instruction
-#define ECX_TSC                         (1 << 24)   // Local APIC supports TSC Deadline
-#define ECX_AESNI                       (1 << 25)   // AESNI Instruction
-#define ECX_XSAVE                       (1 << 26)   // XSAVE/XSTOR States
-#define ECX_OSXSAVE                     (1 << 27)   // OS Enabled Extended State Management
-#define ECX_AVX                         (1 << 28)   // AVX Instructions
-#define ECX_F16C                        (1 << 29)   // 16-bit Floating Point Instructions
-#define ECX_RDRAND                      (1 << 30)   // RDRAND Instruction
-
-#define EDX_FPU                         (1 << 0)    // Floating-Point Unit On-Chip
-#define EDX_VME                         (1 << 1)    // Virtual 8086 Mode Extensions
-#define EDX_DE                          (1 << 2)    // Debugging Extensions
-#define EDX_PSE                         (1 << 3)    // Page Size Extension
-#define EDX_TSC                         (1 << 4)    // Time Stamp Counter
-#define EDX_MSR                         (1 << 5)    // Model Specific Registers
-#define EDX_PAE                         (1 << 6)    // Physical Address Extension
-#define EDX_MCE                         (1 << 7)    // Machine-Check Exception
-#define EDX_CX8                         (1 << 8)    // CMPXCHG8 Instruction
-#define EDX_APIC                        (1 << 9)    // APIC On-Chip
-#define EDX_SEP                         (1 << 11)   // SYSENTER/SYSEXIT instructions
-#define EDX_MTRR                        (1 << 12)   // Memory Type Range Registers
-#define EDX_PGE                         (1 << 13)   // Page Global Bit
-#define EDX_MCA                         (1 << 14)   // Machine-Check Architecture
-#define EDX_CMOV                        (1 << 15)   // Conditional Move Instruction
-#define EDX_PAT                         (1 << 16)   // Page Attribute Table
-#define EDX_PSE36                       (1 << 17)   // 36-bit Page Size Extension
-#define EDX_PSN                         (1 << 18)   // Processor Serial Number
-#define EDX_CLFLUSH                     (1 << 19)   // CLFLUSH Instruction
-#define EDX_DS                          (1 << 21)   // Debug Store
-#define EDX_ACPI                        (1 << 22)   // Thermal Monitor and Software Clock Facilities
-#define EDX_MMX                         (1 << 23)   // MMX Technology
-#define EDX_FXSR                        (1 << 24)   // FXSAVE and FXSTOR Instructions
-#define EDX_SSE                         (1 << 25)   // Streaming SIMD Extensions
-#define EDX_SSE2                        (1 << 26)   // Streaming SIMD Extensions 2
-#define EDX_SS                          (1 << 27)   // Self Snoop
-#define EDX_HTT                         (1 << 28)   // Multi-Threading
-#define EDX_TM                          (1 << 29)   // Thermal Monitor
-#define EDX_PBE                         (1 << 31)   // Pending Break Enable
-
-// ------------------------------------------------------------------------------------------------
-// Extended Function 0x01
-
 #define EDX_SYSCALL                     (1 << 11)   // SYSCALL/SYSRET
 #define EDX_XD                          (1 << 20)   // Execute Disable Bit
 #define EDX_1GB_PAGE                    (1 << 26)   // 1 GB Pages
 #define EDX_RDTSCP                      (1 << 27)   // RDTSCP and IA32_TSC_AUX
 #define EDX_64_BIT                      (1 << 29)   // 64-bit Architecture
 
-// ------------------------------------------------------------------------------------------------
+struct TableInfo {
+    uint32_t bit;
+    char* name;
+};
+
+static const struct TableInfo features[] = {
+    /* {BIT, FEATURE NAME} |  DEFINITION     | DESCRIPTION                                   */
+    /*---------------------|-----------------|---------------------------------------------- */
+    {(1 << 0), "FPU"},     /* EDX_FPU        | Floating-Point Unit On-Chip                   */
+    {(1 << 1), "VME"},     /* EDX_VME        | Virtual 8086 Mode Extensions                  */
+    {(1 << 2), "DE"},      /* EDX_DE         | Debugging Extensions                          */
+    {(1 << 3), "PSE"},     /* EDX_PSE        | Page Size Extension                           */
+    {(1 << 4), "TSC"},     /* EDX_TSC        | Time Stamp Counter                            */
+    {(1 << 5), "MSR"},     /* EDX_MSR        | Model Specific Registers                      */
+    {(1 << 6), "PAE"},     /* EDX_PAE        | Physical Address Extension                    */
+    {(1 << 7), "MCE"},     /* EDX_MCE        | Machine-Check Exception                       */
+    {(1 << 8), "CX8"},     /* EDX_CX8        | CMPXCHG8 Instruction                          */
+    {(1 << 9), "APIC"},    /* EDX_APIC       | APIC On-Chip                                  */
+    {(1 << 11), "SEP"},    /* EDX_SEP        | SYSENTER/SYSEXIT instructions                 */
+    {(1 << 12), "MTRR"},   /* EDX_MTRR       | Memory Type Range Registers                   */
+    {(1 << 13), "PGE"},    /* EDX_PGE        | Page Global Bit                               */
+    {(1 << 14), "MCA"},    /* EDX_MCA        | Machine-Check Architecture                    */
+    {(1 << 15), "CMOV"},   /* EDX_CMOV       | Conditional Move Instruction                  */
+    {(1 << 16), "PAT"},    /* EDX_PAT        | Page Attribute Table                          */
+    {(1 << 17), "PSE36"},  /* EDX_PSE36      | 36-bit Page Size Extension                    */
+    {(1 << 18), "PSN"},    /* EDX_PSN        | Processor Serial Number                       */
+    {(1 << 19), "CLFLUSH"},/* EDX_CLFLUSH    | CLFLUSH Instruction                           */
+    {(1 << 21), "DS"},     /* EDX_DS         | Debug Store                                   */
+    {(1 << 22), "ACPI"},   /* EDX_ACPI       | Thermal Monitor and Software Clock Facilities */
+    {(1 << 23), "MMX"},    /* EDX_MMX        | MMX Technology                                */
+    {(1 << 24), "FXSR"},   /* EDX_FXSR       | FXSAVE and FXSTOR Instructions                */
+    {(1 << 25), "SSE"},    /* EDX_SSE        | Streaming SIMD Extensions                     */
+    {(1 << 26), "SSE2"},   /* EDX_SSE2       | Streaming SIMD Extensions 2                   */
+    {(1 << 27), "SS"},     /* EDX_SS         | Self Snoop                                    */
+    {(1 << 28), "HTT"},    /* EDX_HTT        | Multi-Threading                               */
+    {(1 << 29), "TM"},     /* EDX_TM         | Thermal Monitor                               */
+    {(1 << 31), "PBE"},    /* EDX_PBE        | Pending Break Enable                          */
+};
+
+static const struct TableInfo instructions[] = {
+    /* {BIT, INSTRUCTION}   |  DEFINITION     | DESCRIPTION                                  */
+    /*----------------------|-----------------|--------------------------------------------- */
+    {(1 << 0), "SSE3"},     /* ECX_SSE3       | Streaming SIMD Extensions 3                  */
+    {(1 << 1), "PCLMULQDQ"},/* ECX_PCLMULQDQ  | PCLMULQDQ Instruction                        */
+    {(1 << 2), "DTES64"},   /* ECX_DTES64     | 64-Bit Debug Store Area                      */
+    {(1 << 3), "MONITOR"},  /* ECX_MONITOR    | MONITOR/MWAIT                                */
+    {(1 << 4), "DS_CPL"},   /* ECX_DS_CPL     | CPL Qualified Debug Store                    */
+    {(1 << 5), "VMX"},      /* ECX_VMX        | Virtual Machine Extensions                   */
+    {(1 << 6), "SMX"},      /* ECX_SMX        | Safer Mode Extensions                        */
+    {(1 << 7), "EST"},      /* ECX_EST        | Enhanced SpeedStep Technology                */
+    {(1 << 8), "TM2"},      /* ECX_TM2        | Thermal Monitor 2                            */
+    {(1 << 9), "SSSE3"},    /* ECX_SSSE3      | Supplemental Streaming SIMD Extensions 3     */
+    {(1 << 10), "CNXT_ID"}, /* ECX_CNXT_ID    | L1 Context ID                                */
+    {(1 << 12), "FMA"},     /* ECX_FMA        | Fused Multiply Add                           */
+    {(1 << 13), "CX16"},    /* ECX_CX16       | CMPXCHG16B Instruction                       */
+    {(1 << 14), "XTPR"},    /* ECX_XTPR       | xTPR Update Control                          */
+    {(1 << 15), "PDCM"},    /* ECX_PDCM       | Perf/Debug Capability MSR                    */
+    {(1 << 17), "PCID"},    /* ECX_PCID       | Process-context Identifiers                  */
+    {(1 << 18), "DCA"},     /* ECX_DCA        | Direct Cache Access                          */
+    {(1 << 19), "SSE41"},   /* ECX_SSE41      | Streaming SIMD Extensions 4.1                */
+    {(1 << 20), "SSE42"},   /* ECX_SSE42      | Streaming SIMD Extensions 4.2                */
+    {(1 << 21), "X2APIC"},  /* ECX_X2APIC     | Extended xAPIC Support                       */
+    {(1 << 22), "MOVBE"},   /* ECX_MOVBE      | MOVBE Instruction                            */
+    {(1 << 23), "POPCNT"},  /* ECX_POPCNT     | POPCNT Instruction                           */
+    {(1 << 24), "TSC"},     /* ECX_TSC        | Local APIC supports TSC Deadline             */
+    {(1 << 25), "AESNI"},   /* ECX_AESNI      | AESNI Instruction                            */
+    {(1 << 26), "XSAVE"},   /* ECX_XSAVE      | XSAVE/XSTOR States                           */
+    {(1 << 27), "OSXSAVE"}, /* ECX_OSXSAVE    | OS Enabled Extended State Management         */
+    {(1 << 28), "AVX"},     /* ECX_AVX        | AVX Instructions                             */
+    {(1 << 29), "F16C"},    /* ECX_F16C       | 16-bit Floating Point Instructions           */
+    {(1 << 30), "RDRAND"}   /* ECX_RDRAND     | RDRAND Instruction                           */
+};
+
 
 static inline void cpuid(uint32_t reg, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
     __asm__ __volatile__("cpuid"
@@ -81,7 +87,34 @@ static inline void cpuid(uint32_t reg, uint32_t *eax, uint32_t *ebx, uint32_t *e
         : "0" (reg));
 }
 
-// ------------------------------------------------------------------------------------------------
+
+// Function to check and print features
+static void checkAndPrintInfo(const struct TableInfo *table, uint32_t infoBits, const char* label) {
+    printColor("[o] ", BG_BLACK | FG_YELLOW); print(label);
+    int printed = 0;
+    int maxFeatureNameLength = 10;
+
+    // Print features or instructions with aligned names
+    for (uint16_t i = 0; i < sizeof(features) / sizeof(features[0]); ++i) {
+        if (infoBits & table[i].bit) {
+            if (printed % 6 == 0) {
+                print("\n    ");
+            }
+            printColor("- ", BG_BLACK | FG_DKGRAY);
+            print(table[i].name);
+
+            // Calculate the number of spaces needed to align feature names
+            int spacesToAdd = maxFeatureNameLength - lengthString(table[i].name) + 1;
+            for (int j = 0; j < spacesToAdd; ++j) {
+                print(" ");
+            }
+
+            ++printed;
+        }
+    }
+
+    print("\n\n");
+}
 
 void detectCPU() {
     // Register storage
@@ -101,30 +134,8 @@ void detectCPU() {
     if (largestStandardFunc >= 0x01) {
         cpuid(0x01, &eax, &ebx, &ecx, &edx);
 
-        printColor("[o] ", BG_BLACK | FG_YELLOW); print("Features:");
-
-        if (edx & EDX_PSE)      printColor(" PSE", BG_BLACK | FG_DKGRAY);
-        if (edx & EDX_PAE)      printColor(" PAE", BG_BLACK | FG_DKGRAY);
-        if (edx & EDX_APIC)     printColor(" APIC", BG_BLACK | FG_DKGRAY);
-        if (edx & EDX_MTRR)     printColor(" MTRR", BG_BLACK | FG_DKGRAY);
-
-        print("\n");
-
-        printColor("[o] ", BG_BLACK | FG_YELLOW); print("Instructions:");
-
-        if (edx & EDX_TSC)      printColor(" TSC", BG_BLACK | FG_DKGRAY);
-        if (edx & EDX_MSR)      printColor(" MSR", BG_BLACK | FG_DKGRAY);
-        if (edx & EDX_SSE)      printColor(" SSE", BG_BLACK | FG_DKGRAY);
-        if (edx & EDX_SSE2)     printColor(" SSE2", BG_BLACK | FG_DKGRAY);
-        if (ecx & ECX_SSE3)     printColor(" SSE3", BG_BLACK | FG_DKGRAY);
-        if (ecx & ECX_SSSE3)    printColor(" SSSE3", BG_BLACK | FG_DKGRAY);
-        if (ecx & ECX_SSE41)    printColor(" SSE41", BG_BLACK | FG_DKGRAY);
-        if (ecx & ECX_SSE42)    printColor(" SSE42", BG_BLACK | FG_DKGRAY);
-        if (ecx & ECX_AVX)      printColor(" AVX", BG_BLACK | FG_DKGRAY);
-        if (ecx & ECX_F16C)     printColor(" F16C", BG_BLACK | FG_DKGRAY);
-        if (ecx & ECX_RDRAND)   printColor(" RDRAND", BG_BLACK | FG_DKGRAY);
-
-        print("\n\n");
+        checkAndPrintInfo(features, edx, "Features:");
+        checkAndPrintInfo(instructions, ecx, "Instructions:");
     }
 
     // Extended Function 0x00 - Largest Extended Function
@@ -137,7 +148,7 @@ void detectCPU() {
     if (largestExtendedFunc >= 0x80000001) {
         cpuid(0x80000001, &eax, &ebx, &ecx, &edx);
 
-        if (edx & EDX_64_BIT) {;
+        if (edx & EDX_64_BIT) {
             printColor("[-] ", BG_BLACK | FG_YELLOW); printColor("64-bit Architecture\n\n", BG_BLACK | FG_CYAN);
         }
     }
@@ -150,7 +161,7 @@ void detectCPU() {
         cpuid(0x80000003, (uint32_t *)(name + 16), (uint32_t *)(name + 20), (uint32_t *)(name + 24), (uint32_t *)(name + 28));
         cpuid(0x80000004, (uint32_t *)(name + 32), (uint32_t *)(name + 36), (uint32_t *)(name + 40), (uint32_t *)(name + 44));
 
-        // Processor name is right justified with leading spaces
+        // Processor name is right-justified with leading spaces
         const char *p = name;
         while (*p == ' ') {
             ++p;

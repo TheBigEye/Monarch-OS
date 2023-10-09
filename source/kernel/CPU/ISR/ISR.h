@@ -55,7 +55,9 @@ typedef struct {
 
 void ISR_install();
 void ISR_handler(reg_t *registers);
+
 void IRQ_install();
+void IRQ_uninstall();
 
 typedef void (*isr_t)(reg_t*);
 void registerInterruptHandler(uint8_t irq, isr_t handler);

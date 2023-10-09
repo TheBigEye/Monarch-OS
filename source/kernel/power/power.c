@@ -1,6 +1,9 @@
 #include "power.h"
 
 #include "../CPU/ports.h"
+#include "../CPU/ISR/ISR.h"
+
+#include "../kernel.h"
 
 /**
  * Reboots the computer after the specified time.
@@ -8,6 +11,9 @@
  * @param time The time to wait in milliseconds before rebooting.
  */
 void powerReboot(uint32_t time) {
+
+    terminateKernel(); // Clean drivers and kernel
+
     operationSleep(time);
 
     // Wait until the input buffer is empty
@@ -26,6 +32,9 @@ void powerReboot(uint32_t time) {
  * @param time The time to wait in milliseconds before shutting down.
  */
 void powerShutdown(uint32_t time) {
+
+    terminateKernel(); // Clean drivers and kernel
+
     operationSleep(time);
 
     writeWordToPort(0xB004, 0x2000); // Bochs (BIOS)

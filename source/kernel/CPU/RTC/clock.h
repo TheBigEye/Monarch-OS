@@ -24,6 +24,12 @@ void getTime(time_t* time);
 /**
  * Initialize the Real Time Clock chip and add its handler to the IDT.
  */
-void initClock();
+void initializeClock();
+
+
+/**
+ * Unregister the Real Time Clock and remove its handler from the IDT.
+ */
+void terminateClock();
 
 #endif /* _CPU_CLOCK_H */

@@ -2,5 +2,6 @@
 *.o
 *.img
 *.bin
-docs/TAREAS.txt
-doc/TAREAS.txt
+doc/*.txt
+doc/*.pdf
+doc/*.docx

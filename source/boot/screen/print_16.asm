@@ -1,6 +1,7 @@
 
 PRINT_16:
     pusha
+    mov ah, 0x0e ; tty
 
     ; strings will be terminated by 0 byte in memory
     PRINT_16_LOOP:
@@ -8,7 +9,6 @@ PRINT_16:
         cmp al, 0
         je PRINT_16_DONE
 
-        mov ah, 0x0e ; tty
         int 0x10 ; 'al' already contains the char
 
         ; increment pointer and do next loop

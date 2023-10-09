@@ -1,16 +1,14 @@
 #include "sound.h"
 
 #include "../../common/sysutils.h"
-
 #include "../CPU/ports.h"
 
 
 /** @see https://wiki.osdev.org/PC_Speaker **/
 
-
-/**********************************************************
- * Private Kernel API functions                           *
- **********************************************************/
+//
+// PRIVATE API ROUTINES
+//
 
 /**
  * Play sound with the specified frequency.
@@ -23,7 +21,7 @@ void playSound(uint32_t frequency) {
         writeByteToPort(0x61, readByteFromPort(0x61) & ~3);
         return;
     }
-    scale = 1193180 / frequency;
+    scale = 1193182 / frequency;
     writeByteToPort(0x43, 0xb6);
     writeByteToPort(0x42, scale & 0xff);
     writeByteToPort(0x42, scale >> 8);
@@ -39,9 +37,9 @@ void stopSound() {
 }
 
 
-/**********************************************************
- * Public Kernel API functions                            *
- **********************************************************/
+//
+// PUBLIC API ROUTINES
+//
 
 /**
  * Make a beep sound with the specified frequency and duration.

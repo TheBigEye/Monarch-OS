@@ -1,9 +1,8 @@
 #include "version.h"
 
-/* Kernel name. If you change this, you're not
- * my friend any more. */
+/* Kernel name */
 char * __kernel_name = "butterfly";
-char * __kernel_version = "1.2.5";
+char * __kernel_version = "1.3.0";
 
 /* The release codename.
  *

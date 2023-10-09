@@ -6,18 +6,20 @@
 #include "../memory/memory.h"
 
 
-#define SCREEN_BUFFER (uint8_t*) 0xB8000 // VGA Video memory
+// Physical VGA Video memory
+#define SCREEN_BUFFER (uint8_t*) 0xB8000
 
 #define SCREEN_HEIGHT (uint8_t) 59
-#define SCREEN_WIDTH (uint8_t) 90
+#define SCREEN_WIDTH  (uint8_t) 90
 
 #define SCREEN_AREA (uint16_t) (59 * 90)
 
 #define REGISTRY_CONTROL (uint16_t) 0x3D4
 #define REGISTRY_DATA (uint16_t) 0x3D5
 
-
-/* Private Kernel API functions */
+//
+// PRIVATE API ROUTINES
+//
 
 /* Get the offset of a character cell in video memory based on its column and row */
 int getOffset(int column, int row) {
@@ -62,17 +64,144 @@ void setCursorOffset(int offset) {
     writeByteToPort(REGISTRY_DATA, (byte)(offset & 0xff));
 }
 
+void setColorPalette(uint8_t index, uint32_t RGB) {
+    // Write the color index to port 0x3c8
+    writeByteToPort(0x3c8, index);
+
+    // For each color component (R, G, B)
+    for (int i = 0; i < 3; i++) {
+        // Shift the color bits and take only the last 6 bits
+        uint8_t colorComponent = (RGB >> (i * 6)) & 0x3f;
+
+        // Write the color component to port 0x3c9
+        writeByteToPort(0x3c9, colorComponent);
+    }
+}
+
+
+//
+// PUBLIC API ROUTINES
+//
+
+/** Initializes the custom color palette for the screen **/
+void initializePalette() {
+    uint32_t palette[16] = {
+        0x000000, // Black
+        0x2a0000, // Dark Red
+        0x002a00, // Dark Green
+        0x2a2a00, // Brown
+        0x00002a, // Dark Blue
+        0x2a002a, // Magenta
+        0x002a2a, // Dark Cyan
+        0x2a2a2a, // Dark Gray
+
+        0x151515, // Light Gray
+        0x00003f, // Light Blue
+        0x003f00, // Light Green
+        0x003f3f, // Light Cyan
+        0x3f0000, // Light Red
+        0x3f003f, // Light Pink
+        0x3f3f00, // Light Yellow
+        0x3f3f3f, // Light White
+    };
+
+    for (uint8_t i = 0; i < 16; i++) {
+        setColorPalette(i, palette[i]);
+    }
+}
+
+/** Initializes the screen with a 90x60 text mode **/
+void initializeScreen() {
+
+    /** @see https://wiki.osdev.org/VGA_Hardware#The_CRT_Controller **/
+
+    uint32_t vga_registers[15] = {
+
+
+        // Horizontal timing
+        0x6900, // 0x69 -> 105          | 0 | Horizontal Total Register
+        0x5901, // 0x59 -> 89 columns   | 1 | End Horizontal Display Register
+        0x5a02, // 0x5a -> 90           | 2 | Start Horizontal Blanking Register
+        0x8c03, // 0x8c -> 140          | 3 | End Horizontal Blanking Register
+        0x5e04, // 0x5e -> 94           | 4 | Start Horizontal Retrace Register
+        0x8a05, // 0x8a -> 138          | 5 | End Horizontal Retrace Register
+
+        // Vertical timing
+        0x0b06, // 0xb6 -> 182          | 6 | Vertical Total Register
+        0x3e07, // 0x3e -> 62           | 7 | Overflow Register
+        0x4709, // 0x47 -> 71           | 9 | Maximum Scan Line Register
+        0xea10, // 0xea -> 234          | 10 | Start Vertical Retrace Register
+        0x8c11, // 0x8c -> 140          | 11 | End Vertical Retrace Register
+        0xdf12, // 0xdf -> 223          | 12 | End Vertical Display Register
+        0x2d13, // 0x2d -> 45           | 13 | Offset Register
+        0xe715, // 0xe7 -> 231          | 15 | Vertical Blanking Start Register
+        0x0416 // 0x04 -> 4             | 16 | End Vertical Blanking Register
+    };
+
+    // set 90x60 text mode
+    writeWordToPort(0x3c4, 0x100);
+    writeByteToPort(0x3c2, 0xe7);
+    writeWordToPort(0x3c4, 0x0300);
+    writeWordToPort(0x3c4, 0x0000);
+    writeWordToPort(0x3c4, 0x0101);
+    writeWordToPort(0x3c4, 0x0300);
+    writeWordToPort(0x3d4, 0x0e11);
+
+    for (uint8_t i = 0; i < 15; i++) {
+        writeWordToPort(0x3d4, vga_registers[i]);
+    }
+
+    readByteFromPort(0x3da);
+    writeByteToPort(0x3c0, 0x33);
+    writeByteToPort(0x3c0, 0x00);
+
+    initializePalette();
+}
 
 /**
- * Print a character at the specified position with the given attribute.
- * If the position is invalid, an error character 'E' will be printed at the bottom right corner.
- * Supports newline ('\n') and backspace (0x08) characters.
- * Scrolls the screen if necessary.
+ * Set the shape of the cursor.
  *
- * @param character The character to print.
- * @param column The column index of the position.
- * @param row The row index of the position.
- * @param attribute The attribute of the character.
+ * @param shape The new shape of the cursor.
+ */
+void setCursorShape(byte shape) {
+    writeByteToPort(REGISTRY_CONTROL, 10);
+    writeByteToPort(REGISTRY_DATA, shape);
+}
+
+/**
+ * Clear the screen with the specified color.
+ *
+ * @param color The color to fill the screen with.
+ */
+void clearScreen(byte color) {
+    // Calculate the starting memory address of the screen
+    byte * SCREEN_MEMORY = (byte *) SCREEN_BUFFER;
+    // Calculate the ending memory address of the screen
+    byte * FINAL_MEMORY = SCREEN_MEMORY + SCREEN_AREA * 2;
+
+    // Set the character and color in memory to clear the screen
+    while (SCREEN_MEMORY < FINAL_MEMORY) {
+        *SCREEN_MEMORY = ' ';
+        *(SCREEN_MEMORY + 1) = color;
+        SCREEN_MEMORY += 2;
+    }
+
+    // Set the cursor offset to the top-left corner of the screen
+    setCursorOffset(getOffset(0, 0));
+}
+
+/**
+ * Print a character at the specified position with the given attribute
+ *
+ * @note - Supports newline,tabs and backspace characters
+ * @note - Scrolls the screen if necessary
+ * @exception - If the position is invalid, an error character 'E' will be printed at the bottom right corner
+ *
+ * @param character         The character to print
+ * @param column            The column index of the position
+ * @param row               The row index of the position
+ * @param attribute         The attribute of the character
+ *
  * @return The new offset of the cursor in video memory.
  */
 int putCharacter(const char character, int column, int row, byte attribute) {
@@ -159,84 +288,10 @@ int putCharacter(const char character, int column, int row, byte attribute) {
     return offset;
 }
 
-
-/* Public Kernel API functions */
-
-void VGA_install() {
-    uint32_t vga_registers[15] = {
-        // Horizontal timing
-        0x6900, // 0x69 -> 105          | 0 | Horizontal Total Register
-        0x5901, // 0x59 -> 89 columns   | 1 | End Horizontal Display Register
-        0x5a02, // 0x5a -> 90           | 2 | Start Horizontal Blanking Register
-        0x8c03, // 0x8c -> 140          | 3 | End Horizontal Blanking Register
-        0x5e04, // 0x5e -> 94           | 4 | Start Horizontal Retrace Register
-        0x8a05, // 0x8a -> 138          | 5 | End Horizontal Retrace Register
-
-        // Vertical timing
-        0x0b06, // 0xb6 -> 182          | 6 | Vertical Total Register
-        0x3e07, // 0x3e -> 62           | 7 | Overflow Register
-        0x4709, // 0x47 -> 71           | 9 | Maximum Scan Line Register
-        0xea10, // 0xea -> 234         | 10 | Start Vertical Retrace Register
-        0x8c11, // 0x8c -> 140         | 11 | End Vertical Retrace Register
-        0xdf12, // 0xdf -> 223         | 12 | End Vertical Display Register
-        0x2d13, // 0x2d -> 45          | 13 | Offset Register
-        0xe715, // 0xe7 -> 231         | 15 | Vertical Blanking Start Register
-        0x0416 // 0x04 -> 4            | 16 | End Vertical Blanking Register
-    };
-
-    // set 90x60 text mode
-    writeWordToPort(0x3c4, 0x100);
-    writeByteToPort(0x3c2, 0xe7);
-    writeWordToPort(0x3c4, 0x0300);
-    writeWordToPort(0x3c4, 0x0000);
-    writeWordToPort(0x3c4, 0x0101);
-    writeWordToPort(0x3c4, 0x0300);
-    writeWordToPort(0x3d4, 0x0e11);
-
-    for (uint8_t i = 0; i < 15; i++) {
-        writeWordToPort(0x3d4, vga_registers[i]);
-    }
-
-    readByteFromPort(0x3da);
-    writeByteToPort(0x3c0, 0x33);
-    writeByteToPort(0x3c0, 0x00);
-}
-
 /**
- * Set the shape of the cursor.
+ * Print a message at the specified location on the screen
  *
- * @param shape The new shape of the cursor.
- */
-void setCursorShape(byte shape) {
-    writeByteToPort(REGISTRY_CONTROL, 10);
-    writeByteToPort(REGISTRY_DATA, shape);
-}
-
-/**
- * Clear the screen with the specified color.
- *
- * @param color The color to fill the screen with.
- */
-void clearScreen(byte color) {
-    // Calculate the starting memory address of the screen
-    byte * SCREEN_MEMORY = (byte *) SCREEN_BUFFER;
-    // Calculate the ending memory address of the screen
-    byte * FINAL_MEMORY = SCREEN_MEMORY + SCREEN_AREA * 2;
-
-    // Set the character and color in memory to clear the screen
-    while (SCREEN_MEMORY < FINAL_MEMORY) {
-        *SCREEN_MEMORY = ' ';
-        *(SCREEN_MEMORY + 1) = color;
-        SCREEN_MEMORY += 2;
-    }
-
-    // Set the cursor offset to the top-left corner of the screen
-    setCursorOffset(getOffset(0, 0));
-}
-
-/**
- * print a message at the specified location on the screen.
- * If col and row are negative, the current cursor position will be used.
+ * @note - If column and row are negative, the current cursor position will be used
  *
  * @param message The message to print.
  * @param column The column index of the position.
@@ -319,6 +374,7 @@ void printSupportedChars() {
         int col = getOffsetCol(offset) + 1;
 
         putCharacter((char) i, col, row, BG_BLACK | FG_CYAN);
+        operationSleep(32); // NICE EFFECT
         if (col == SCREEN_WIDTH) {
             col = 0;
             if (row == SCREEN_HEIGHT - 1) {
@@ -334,7 +390,14 @@ void printSupportedChars() {
     print("\n");
 }
 
-
+/**
+ * Prints formatted output to the screen (printf)
+ *
+ * @note - '%d' or '%i' for integers
+ * @note - '%x' for hexadecimal lowercase, and '%X' for hexadecimal uppercase
+ * @note - '%o' for octal, '%s' for string, and '%c' for character
+ * @exception - If an unsupported specifier is encountered, it prints the '%' character followed by the unsupported specifier
+ */
 void printFormat(const char *format, ...) {
     va_list args;
     va_start(args, format);
@@ -347,7 +410,7 @@ void printFormat(const char *format, ...) {
             switch (*format) {
                 case 'd': case 'i': { // Integer value
                     int value = va_arg(args, int);
-                    char buffer[32];
+                    char buffer[16];
                     toString(value, buffer, 10);
                     putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
                     break;
@@ -355,7 +418,7 @@ void printFormat(const char *format, ...) {
 
                 case 'x': { // Hex value (lowercase)
                     int value = va_arg(args, int);
-                    char buffer[32];
+                    char buffer[16];
                     toString(value, buffer, 16);
                     toLowercase(buffer);
                     putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
@@ -364,7 +427,7 @@ void printFormat(const char *format, ...) {
 
                 case 'X': { // Hex value (uppercase)
                     int value = va_arg(args, int);
-                    char buffer[32];
+                    char buffer[16];
                     toString(value, buffer, 16);
                     toUppercase(buffer);
                     putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
@@ -373,7 +436,7 @@ void printFormat(const char *format, ...) {
 
                 case 'o': { // Octal value
                     int value = va_arg(args, int);
-                    char buffer[32];
+                    char buffer[16];
                     toString(value, buffer, 8);
                     putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
                     break;

@@ -1,6 +1,5 @@
 #include "sysutils.h"
 
-
 static unsigned int rand_state = 32;
 
 void setRandom(unsigned int seed) {
@@ -109,6 +108,15 @@ void reverseString(char *string) {
     }
 }
 
+/**
+ * Concatenate two strings (strcat).
+ */
+void combineString(char *dest, char *source) {
+    char *end = dest + lengthString(dest);
+
+    while (*source != '\0') *end++ = *source++;
+    *end = '\0';
+}
 
 /**
  * Append a character to a string (append).
@@ -204,10 +212,35 @@ int equalsWith(const char* a, const char* b) {
     if (a == NULL || b == NULL) {
         return (a == NULL) ? ((b == NULL) ? 0 : -1) : 1;
     }
+
+    if (a == b) return 0;
+
     while (*a && (*a == *b)) {
         a++; b++;
     }
     return (unsigned char) *a - (unsigned char) *b;
+}
+
+/**
+ * Compare two strings, how many characters match, before the first unmatching character (match).
+ *
+ * @param a The first string.
+ * @param b The second string.
+ * @return The index of the first unmatching character. If the strings are identical, returns -2.
+ */
+int matchWith(char *a, char *b) {
+    int threshold = 0;
+
+    for (int i = 0; *(a + i) == *(b + i); i++) {
+        if (*(a + i) == '\0' || *(b + i) == '\0') return i - 1;
+        threshold = i;
+    }
+
+    if (equalsWith(a, b) == 0) {
+        return -2;
+    }
+
+    return threshold;
 }
 
 
@@ -238,17 +271,18 @@ bool startsWith(char *a, char *b) {
 
 
 /**
- * Decode and calculate the sum of numbers in a comma-separated string.
+ * Decode and calculate the sum, subtraction, or product of two or more numbers.
  *
  * @param input The input string.
  * @param pos The starting position in the input.
- * @return The sum result of the numbers.
+ * @return The result of the operation on the numbers.
  */
-int getInputSum(char input[], int pos) {
+int getInputOperation(char input[], int pos) {
     char string[127] = "";
     int index = 0;
-    int sum = 0;
+    int result = 0;
     int num = 0;
+    char operation = '+';
 
     int line = lengthString(input);
 
@@ -260,89 +294,29 @@ int getInputSum(char input[], int pos) {
 
     int len = lengthString(string);
     for (int i = 0; i < (len - 1); i++) {
-        if (string[i] != ',') {
+        if (string[i] >= '0' && string[i] <= '9') { // Check if it is a number
             num *= 10;
             num += (string[i] - '0');
-        } else {
-            sum += num;
-            num = 0;
-        }
-    }
-    sum += num;
-    return sum;
-}
-
-/**
- * Decode and calculate the subtraction of numbers in a comma-separated string.
- *
- * @param input The input string.
- * @param pos The starting position in the input.
- * @return The subtraction result of the numbers.
- */
-int getInputSub(char input[], int pos) {
-    char string[127] = "";
-    int index = 0;
-    int sub = 0;
-    int num = 0;
-    int line = lengthString(input);
-
-    for (int i = pos; i < line; i++) {
-        string[index++] = input[i];
-    }
-
-    string[index] = '0';
-
-    int len = lengthString(string);
-    for (int i = 0; i < (len - 1); i++) {
-        if (string[i] != ',') {
-            num *= 10;
-            num += (string[i] - '0');
-        } else {
-            if (sub == 0) {
-                sub = num;
-            } else {
-                sub -= num;
+        } else if (string[i] == '+' || string[i] == '-' || string[i] == '*') {
+            if (operation == '+') {
+                result += num;
+            } else if (operation == '-') {
+                result -= num;
+            } else if (operation == '*') {
+                result *= num;
             }
             num = 0;
+            operation = string[i];
         }
     }
-    sub -= num;
-    return sub;
-}
 
-
-/**
- * Decode and calculate the product of numbers in a comma-separated string.
- *
- * @param input The input string.
- * @param pos The starting position in the string.
- * @return The product of the numbers.
- */
-int getInputMul(char input[], int pos){
-    char string[127] = "";
-    int index = 0;
-    int mul = 1;
-    int num = 0;
-
-    int line = lengthString(input);
-
-    for (int i = pos; i < line; i++) {
-        string[index++] = input[i];
+    if (operation == '+') {
+        result += num;
+    } else if (operation == '-') {
+        result -= num;
+    } else if (operation == '*') {
+        result *= num;
     }
 
-    string[index]= '0';
-
-    int len = lengthString(string);
-
-    for (int i = 0; i < (len - 1); i++) {
-        if (string[i] != ',') {
-            num *= 10;
-            num += (string[i] - '0');
-        } else {
-            mul *= num;
-            num = 0;
-        }
-    }
-    mul *= num;
-    return mul;
+    return result;
 }

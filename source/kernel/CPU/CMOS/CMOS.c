@@ -29,8 +29,10 @@ uint8_t getBIN(uint8_t bin) {
     return ((bin / 10) << 4) + (bin % 10);
 }
 
-
-uint32_t getCmosTotalMemory() {
+/**
+ * Gets and returns the RAM memory size from the CMOS/BIOS.
+ */
+uint32_t getRAM() {
     uint16_t total;
     uint8_t lowmem, highmem;
 

@@ -34,7 +34,6 @@ void memorySet(uint8_t *destination, uint8_t value, uint32_t len) {
     }
 }
 
-
 /**
  * Allocate a block of memory with a specified size and alignment. (malloc)
  *
@@ -47,14 +46,13 @@ uint32_t memoryAllocate(size_t size, int align, uint32_t *physicalAddress) {
     ASSERT(align <= PAGE_SIZE);
 
     /* Pages are aligned to 4K, or 0x1000 */
-    if (align == 1 && (freeMemoryAddress & 0x00000FFF)) { // if something fails, change & 0x00000FFF to & 0xFFFFF000
-        freeMemoryAddress &= 0xFFFFF000;
-        freeMemoryAddress += 0x1000;
+    if (align == 1 && (freeMemoryAddress & ~0xFFF)) {
+        freeMemoryAddress += 0xFFF;
+        freeMemoryAddress &= ~0xFFF;
     }
+
     /* Save also the physical address */
-    if (physicalAddress) {
-        *physicalAddress = freeMemoryAddress;
-    }
+    if (physicalAddress) *physicalAddress = freeMemoryAddress;
 
     uint32_t ret = freeMemoryAddress;
     freeMemoryAddress += size; /* Remember to increment the pointer */

@@ -42,7 +42,7 @@
 int getOffset(int column, int row);
 void setCursorOffset(int offset);
 
-void VGA_install();
+void initializeScreen();
 
 int putCharacter(const char character, int column, int row, uint8_t attribute);
 

@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+void initializeKernel();
+void terminateKernel();
+
 void user_input(char *input);
 
 #endif /* _KERNEL_BUTTERFLY_H */

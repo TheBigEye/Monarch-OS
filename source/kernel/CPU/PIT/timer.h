@@ -3,13 +3,6 @@
 
 #include <stdint.h>
 
-/**
- * Initializes the timer with the specified frequency.
- *
- * @param frequency  The frequency at which the timer should generate interrupts.
- */
-void initTimer(uint32_t frequency);
-
 
 uint32_t getElapsedTimer();
 
@@ -45,5 +38,19 @@ uint32_t getTimerMinutes();
  * @return The elapsed PIT hours.
  */
 uint32_t getTimerHours();
+
+
+/**
+ * Initializes the timer with the specified frequency.
+ *
+ * @param frequency  The frequency at which the timer should generate interrupts.
+ */
+void initializeTimer(uint32_t frequency);
+
+/**
+ * Terminate the PIT and unregister it handler from the IRQ
+*/
+void terminateTimer();
+
 
 #endif /* _CPU_TIMER_H */

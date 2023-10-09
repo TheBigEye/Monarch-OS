@@ -68,7 +68,7 @@ static void clockCallback(reg_t *regs) {
 /**
  * Initialize the Real Time Clock chip and add its handler to the IDT.
  */
-void initClock() {
+void initializeClock() {
     uint8_t status;
 
     status = readRegisterValue(0x0B);
@@ -81,6 +81,11 @@ void initClock() {
     writeRegisterValue(0x0B, status);
     readRegisterValue(0x0C);
 
-    printColor("[-] ", BG_BLACK | FG_YELLOW); print("Initializing RTC handler at IRQ8 ...\n");
+    printColor("[-] ", BG_BLACK | FG_LTGREEN); print("Initializing RTC handler at IRQ8 ...\n");
     registerInterruptHandler(IRQ8, clockCallback);
+}
+
+void terminateClock() {
+    printColor("[-] ", BG_BLACK | FG_LTRED); print("Terminating and claning RTC handler at IRQ8 ...\n");
+    unregisterInterruptHandler(IRQ8);
 }

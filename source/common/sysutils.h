@@ -43,12 +43,23 @@
         typedef struct { float x; float y; float z; } vector;
         typedef struct { int numerator; int denominator; } fraction;
 
+        /* Builtin C definitions */
+
         typedef __builtin_va_list va_list;
 
-        #define va_start(ap, last_arg) (__builtin_va_start(ap, last_arg))
-        #define va_arg(ap, type) (__builtin_va_arg(ap, type))
-        #define va_end(ap) (__builtin_va_end(ap))
-        #define va_copy(d, s) (__builtin_va_copy(d, s))
+        #define va_start(ap, last_arg)  __builtin_va_start(ap, last_arg)
+        #define va_arg(ap, type)        __builtin_va_arg(ap, type)
+        #define va_end(ap)              __builtin_va_end(ap)
+        #define va_copy(d, s)           __builtin_va_copy(d, s)
+
+        #define	memcpy(d, s, l)	        __builtin_memcpy(d, s, l)
+        #define	memcmp(a, b, l)	        __builtin_memcmp(a, b, l)
+        #define	memset(d, v, l)	        __builtin_memset(d, v, l)
+
+        #define	strcpy(d, s)	        __builtin_strcpy(d, s)
+        #define	strlen(a)		        __builtin_strlen(a)
+
+        #define	alloca(s)		        __builtin_alloca(s)
 
     #endif /* _COMMON_TYPEDEFS */
 
@@ -63,6 +74,7 @@
 
     int lengthString(char *string);
     void reverseString(char *string);
+    void combineString(char *dest, char *source);
 
     bool backspace(char string[]);
 
@@ -77,12 +89,11 @@
     void appendChar(char string[], char num);
 
     int equalsWith(const char *a, const char *b);
+    int matchWith(char *a, char *b);
     bool startsWith(char *a, char *b);
 
     /* Non standard functions */
 
-    int getInputSum(char input[], int pos);
-    int getInputSub(char input[], int pos);
-    int getInputMul(char input[], int pos);
+    int getInputOperation(char input[], int pos);
 
 #endif /* _SYS_UTILS_H */

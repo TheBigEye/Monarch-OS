@@ -23,6 +23,11 @@
 /**
  * Initializes the keyboard by registering the keyboard callback function.
  */
-void initKeyboard();
+void initializeKeyboard();
+
+/**
+ * Terminate the keyboard by unregistering the keyboard callback function.
+ */
+void terminateKeyboard();
 
 #endif /* _DRIVER_KEYBOARD_H */

@@ -25,6 +25,9 @@ isr_t interrupt_handlers[256];
 /* Can't do this with a loop because we need the address of the function names */
 void ISR_install() {
 
+    // TODO: actually we *can* do this with a loop if you used a macro to generate all
+    // the stubs, because you can also generate the addresses while you're at it
+
     /* Set the first 32 entries in the IDT to the first 32 ISRs */
     set_idt_gate(0,  (uint32_t) ISR_0);    set_idt_gate(1,  (uint32_t) ISR_1);
     set_idt_gate(2,  (uint32_t) ISR_2);    set_idt_gate(3,  (uint32_t) ISR_3);
@@ -108,7 +111,7 @@ void ISR_handler(reg_t *registers) {
 
 /* Implement a custom IRQ handler for the given IRQ */
 void registerInterruptHandler(uint8_t irq, isr_t handler) {
-    printColor("[-] ", BG_BLACK | FG_YELLOW); print("Registering IRQ ");
+    printColor("[-] ", BG_BLACK | FG_GREEN); print("Registering IRQ ");
     printColor(itoa(irq), BG_BLACK | FG_DKGRAY); print(" to handler ");
     printColor(htoa((uint32_t)handler), BG_BLACK | FG_DKGRAY); print("\n\n");
 
@@ -117,6 +120,9 @@ void registerInterruptHandler(uint8_t irq, isr_t handler) {
 
 /* Clear the custom IRQ handler */
 void unregisterInterruptHandler(uint8_t irq) {
+    printColor("[-] ", BG_BLACK | FG_RED); print("Unregistering IRQ ");
+    printColor(itoa(irq), BG_BLACK | FG_DKGRAY); print("\n\n");
+
     interrupt_handlers[irq] = 0;
 }
 
@@ -140,7 +146,16 @@ void IRQ_install() {
     /* Enable interruptions */
     __asm__ __volatile__("sti");
 
-    initTimer(100);   /* IRQ0: timer PIT */
-    initKeyboard();  /* IRQ1: keyboard */
-    initClock();     /* IRQ8: clock RTC */
+    initializeTimer(100);  /* IRQ0: timer PIT */
+    initializeKeyboard();  /* IRQ1: keyboard */
+    initializeClock();     /* IRQ8: clock RTC */
+}
+
+void IRQ_uninstall() {
+    /* Enable interruptions */
+    __asm__ __volatile__("sti");
+
+    terminateTimer();     /* IRQ0: timer PIT */
+    terminateKeyboard();  /* IRQ1: keyboard */
+    terminateClock();     /* IRQ8: clock RTC */
 }

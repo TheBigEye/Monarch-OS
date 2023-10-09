@@ -2,6 +2,7 @@
 #define _CPU_H 1
 
 #include <stdint.h>
+#include "../../common/sysutils.h"
 
 void detectCPU();
 

@@ -33,7 +33,7 @@ idt_gate_t idt[IDT_ENTRIES];
 idt_register_t idt_reg;
 
 /* Functions implemented in idt.c */
-void set_idt_gate(int n, uint32_t handler);
-void set_idt();
+void set_idt_gate(uint8_t gate, uint32_t handler);
+void set_idt(void);
 
 #endif /* _CPU_IDT_H */

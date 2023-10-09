@@ -13,4 +13,4 @@
 ; include the ascii art
 INCLUDE_BIN butterfly, "source/binaries/butterfly"
 
-; include more files to be used, an example can be found in shell.cpp
+; include more files to be used, an example can be found in kernel.c
