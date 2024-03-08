@@ -1,1 +1,9 @@
 .vscode/settings.json
+*.o
+*.img
+*.iso
+*.bin
+*.elf
+doc/*.txt
+doc/*.pdf
+doc/*.docx
