@@ -22,6 +22,7 @@
      </a>
 </p>
 
+
 **Monarch OS** is an simple Operating System designed to run on 32-bit architectures, only supports VGA text mode, it is composed of a Kernel (as the main program) and GRUB Legacy as bootloader, it also contains a Memory manager, PC Speaker drivers and a Commands interpreter
 
 It has been created from scratch using several videos from Youtube as a base, and https://wiki.osdev.org, with the aim of trying to make a real OS, currently still under development :)
