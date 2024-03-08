@@ -5,6 +5,19 @@
 
 #include "../kernel.h"
 
+
+/**
+ * Halt the CPU with security and stops all.
+ *
+ * @param time The time to wait in milliseconds before halt.
+ */
+void powerHalt(uint32_t time) {
+
+    operationSleep(time);
+
+    __asm__ __volatile__("hlt"); // Halt the CPU
+}
+
 /**
  * Reboots the computer after the specified time.
  *

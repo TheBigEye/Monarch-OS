@@ -7,6 +7,6 @@
 #define BIOS_ADDRESS    0x70
 #define BIOS_DATA       0x71
 
-void getBIOS();
+void getBIOS(void);
 
 #endif /* _BIOS_H */

@@ -1,21 +1,21 @@
 #include "version.h"
 
 /* Kernel name */
-char * __kernel_name = "butterfly";
-char * __kernel_version = "1.3.0";
+const char * __kernel_name = "butterfly";
+const char * __kernel_version = "1.3.2";
 
 /* The release codename.
  *
  * History:
  *  * 0.0.X+ are part of the "whitewings" family
  */
-char * __kernel_version_codename = "whitewings";
+const char * __kernel_version_codename = "bluewings";
 
 /* Build architecture (should probably not be
  * here as a string, but rather some sort of
  * preprocessor macro, or pulled from a script) */
-char * __kernel_arch = "i686";
+const char * __kernel_arch = "i686";
 
 /* Rebuild from clean to reset these. */
-char * __kernel_build_date = __DATE__;
-char * __kernel_build_time = __TIME__;
+const char * __kernel_build_date = __DATE__;
+const char * __kernel_build_time = __TIME__;

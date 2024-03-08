@@ -44,27 +44,22 @@ void kernelException(const char *reason, uint32_t interrupt, uint32_t segment, r
 
     clearScreen(BG_BLACK | FG_WHITE);
     operationSleep(50);
-    setCursorShape(0x3F);
+    setCursor(0x3F);
 
-    putString(butterfly, 0, 1, BG_BLACK | FG_DKGRAY);
+    putString(butterfly, 0, 1, BG_BLACK | FG_LTRED);
 
-    putColor('*', 20, 1, 68, 42, BG_BLACK | FG_LTRED);
-    putColor('#', 20, 1, 68, 42, BG_BLACK | FG_LTRED);
-    putColor('%', 20, 1, 68, 42, BG_BLACK | FG_LTRED);
-    putColor('+', 20, 1, 68, 42, BG_BLACK | FG_RED);
-    putColor('=', 20, 1, 68, 42, BG_BLACK | FG_RED);
-    putColor('-', 20, 1, 68, 42, BG_BLACK | FG_RED);
-
-    putString(" Uh Oh ... This isn't good ... ", 30, 35, BG_BLACK | FG_LTRED); operationSleep(50);
+    putString(" Uh Oh ... This isn't good ... ", 21, 20, BG_BLACK | FG_LTRED); operationSleep(1000);
+    putString("                               ", 21, 20, BG_BLACK | FG_LTRED);
 
     if (registers) {
-        putString(" [registers at interrupt] ", 31, 38, BG_BKRED | FG_BLACK);
-        putString("eax = ", 26, 40, BG_BLACK | FG_RED); putString(htoa(registers->eax), 32, 40, BG_BLACK | FG_LTRED);
-        putString("ebx = ", 46, 40, BG_BLACK | FG_RED); putString(htoa(registers->ebx), 52, 40, BG_BLACK | FG_LTRED);
-        putString("ecx = ", 26, 41, BG_BLACK | FG_RED); putString(htoa(registers->ecx), 32, 41, BG_BLACK | FG_LTRED);
-        putString("edx = ", 46, 41, BG_BLACK | FG_RED); putString(htoa(registers->edx), 52, 41, BG_BLACK | FG_LTRED);
-        putString("esp = ", 26, 42, BG_BLACK | FG_RED); putString(htoa(registers->esp), 32, 42, BG_BLACK | FG_LTRED);
-        putString("ebp = ", 46, 42, BG_BLACK | FG_RED); putString(htoa(registers->ebp), 52, 42, BG_BLACK | FG_LTRED);
+        putString(" [registers at interrupt] ", 25, 20, BG_BKRED | FG_BLACK);
+        putString("eax = ", 10, 21, BG_BLACK | FG_RED); putString(htoa(registers->eax), 16, 21, BG_BLACK | FG_LTRED);
+        putString("ebx = ", 30, 21, BG_BLACK | FG_RED); putString(htoa(registers->ebx), 36, 21, BG_BLACK | FG_LTRED);
+        putString("ecx = ", 50, 21, BG_BLACK | FG_RED); putString(htoa(registers->ecx), 56, 21, BG_BLACK | FG_LTRED);
+
+        putString("edx = ", 10, 22, BG_BLACK | FG_RED); putString(htoa(registers->edx), 16, 22, BG_BLACK | FG_LTRED);
+        putString("esp = ", 30, 22, BG_BLACK | FG_RED); putString(htoa(registers->esp), 36, 22, BG_BLACK | FG_LTRED);
+        putString("ebp = ", 50, 22, BG_BLACK | FG_RED); putString(htoa(registers->ebp), 56, 22, BG_BLACK | FG_LTRED);
 
         putString("error code = ", 26, 44, BG_BLACK | FG_RED); putString(htoa(registers->err_code), 39, 44, BG_BLACK | FG_LTRED);
         putString("eflags = ", 26, 45, BG_BLACK | FG_RED); putString(htoa(registers->eflags), 35, 45, BG_BLACK | FG_LTRED);
@@ -90,7 +85,7 @@ void kernelException(const char *reason, uint32_t interrupt, uint32_t segment, r
     clearScreen(BG_RED | FG_WHITE);
     operationSleep(50);
     clearScreen(BG_BLACK | FG_WHITE);
-    setCursorShape(0x3F);
+    setCursor(0x3F);
 
     putString(title, 38, 20, BG_LTGRAY | FG_BLACK);
     putString(msg_line_1, 10, 23, BG_BLACK | FG_WHITE);
@@ -146,5 +141,5 @@ void kernelAssert(const char *file, uint32_t line, const char *desc) {
     printColor(":", BG_BLACK | FG_BROWN);
     printColor(itoa(line), BG_BLACK | FG_BROWN);
     printColor("]\n", BG_BLACK | FG_BROWN);
-    FOREVER;
+    return;
 }

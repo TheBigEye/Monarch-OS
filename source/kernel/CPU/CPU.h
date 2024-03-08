@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "../../common/sysutils.h"
 
-void detectCPU();
+void detectCPU(void);
+uint32_t getCpuTicks();
 
 #endif /* _CPU_ID_H */

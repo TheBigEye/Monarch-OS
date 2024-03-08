@@ -7,6 +7,7 @@
 
 #include "../../bugfault.h"
 
+#include "../FPU/FPU.h"
 #include "../IDT/IDT.h"
 #include "../PIT/timer.h"
 #include "../RTC/clock.h"
@@ -23,7 +24,7 @@
 isr_t interrupt_handlers[256];
 
 /* Can't do this with a loop because we need the address of the function names */
-void ISR_install() {
+void ISR_install(void) {
 
     // TODO: actually we *can* do this with a loop if you used a macro to generate all
     // the stubs, because you can also generate the addresses while you're at it
@@ -111,17 +112,17 @@ void ISR_handler(reg_t *registers) {
 
 /* Implement a custom IRQ handler for the given IRQ */
 void registerInterruptHandler(uint8_t irq, isr_t handler) {
-    printColor("[-] ", BG_BLACK | FG_GREEN); print("Registering IRQ ");
-    printColor(itoa(irq), BG_BLACK | FG_DKGRAY); print(" to handler ");
-    printColor(htoa((uint32_t)handler), BG_BLACK | FG_DKGRAY); print("\n\n");
+    printColor("[-] ", BG_BLACK | FG_GREEN); printString("Registering IRQ ");
+    printColor(itoa(irq), BG_BLACK | FG_DKGRAY); printString(" to handler ");
+    printColor(htoa((uint32_t)handler), BG_BLACK | FG_DKGRAY); printString("\n\n");
 
     interrupt_handlers[irq] = handler;
 }
 
 /* Clear the custom IRQ handler */
 void unregisterInterruptHandler(uint8_t irq) {
-    printColor("[-] ", BG_BLACK | FG_RED); print("Unregistering IRQ ");
-    printColor(itoa(irq), BG_BLACK | FG_DKGRAY); print("\n\n");
+    printColor("[-] ", BG_BLACK | FG_RED); printString("Unregistering IRQ ");
+    printColor(itoa(irq), BG_BLACK | FG_DKGRAY); printString("\n\n");
 
     interrupt_handlers[irq] = 0;
 }
@@ -142,20 +143,22 @@ void IRQ_handler(reg_t *registers) {
     }
 }
 
-void IRQ_install() {
+void IRQ_install(void) {
     /* Enable interruptions */
     __asm__ __volatile__("sti");
 
-    initializeTimer(100);  /* IRQ0: timer PIT */
-    initializeKeyboard();  /* IRQ1: keyboard */
-    initializeClock();     /* IRQ8: clock RTC */
+    initializeTimer(100);     /* IRQ0: timer PIT */
+    initializeKeyboard();     /* IRQ1: keyboard */
+    initializeClock();        /* IRQ8: clock RTC */
+    initializeCoprocessor();  /* IRQ13: Float Point Unit */
 }
 
-void IRQ_uninstall() {
+void IRQ_uninstall(void) {
     /* Enable interruptions */
     __asm__ __volatile__("sti");
 
-    terminateTimer();     /* IRQ0: timer PIT */
-    terminateKeyboard();  /* IRQ1: keyboard */
-    terminateClock();     /* IRQ8: clock RTC */
+    terminateTimer();        /* IRQ0: timer PIT */
+    terminateKeyboard();     /* IRQ1: keyboard */
+    terminateClock();        /* IRQ8: clock RTC */
+    terminateCoprocessor();  /* IRQ13: Float Point Unit */
 }

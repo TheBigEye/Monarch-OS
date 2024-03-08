@@ -56,9 +56,6 @@
         #define	memcmp(a, b, l)	        __builtin_memcmp(a, b, l)
         #define	memset(d, v, l)	        __builtin_memset(d, v, l)
 
-        #define	strcpy(d, s)	        __builtin_strcpy(d, s)
-        #define	strlen(a)		        __builtin_strlen(a)
-
         #define	alloca(s)		        __builtin_alloca(s)
 
     #endif /* _COMMON_TYPEDEFS */
@@ -70,11 +67,13 @@
     unsigned int getUnsignedRandom();
 
     char* itoa(int integer);
+    char* ftoa(double value);
     char* htoa(int integer);
 
-    int lengthString(char *string);
+    int lengthString(const char *string);
     void reverseString(char *string);
     void combineString(char *dest, char *source);
+    void copyString(char *dest, const char *source);
 
     bool backspace(char string[]);
 
@@ -90,10 +89,8 @@
 
     int equalsWith(const char *a, const char *b);
     int matchWith(char *a, char *b);
-    bool startsWith(char *a, char *b);
+    bool startsWith(const char *a, const char *b);
 
     /* Non standard functions */
-
-    int getInputOperation(char input[], int pos);
 
 #endif /* _SYS_UTILS_H */

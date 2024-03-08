@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-void operationWait();
+void operationWait(void);
 
 /**
  * Sleeps for the specified number of milliseconds.

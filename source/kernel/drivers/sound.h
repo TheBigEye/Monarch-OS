@@ -22,11 +22,11 @@ void playChord(char chord[], int position);
 /**
  * Play the startup sound.
  */
-void startupSound();
+void startupSound(void);
 
 /**
  * Play the shutdown sound.
  */
-void shutdownSound();
+void shutdownSound(void);
 
 #endif /* _DRIVER_SOUND_H */

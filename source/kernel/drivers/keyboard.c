@@ -10,10 +10,11 @@
 #include "screen.h"
 #include "sound.h"
 
-#define BUFFER_SIZE 256
+#define BUFFER_SIZE 1995
 
-static char key_buffer[BUFFER_SIZE];
-static bool caps_status = false;
+static char buffer[BUFFER_SIZE];
+static bool capslock_enabled = false;
+static bool keybaord_enabled = false;
 
 /* US Keyboard layout */
 const char layout[128][2] = {
@@ -96,15 +97,15 @@ const char layout[128][2] = {
     {'?', '?'}, /* Num Lock          | None              | 0x45 */
     {'?', '?'}, /* Scroll Lock       | None              | 0x46 */
     {'?', '?'}, /* Home              | None              | 0x47 */
-    {'?', '?'}, /* Up Arrow          | None              | 0x48 */
+    { 24, 227}, /* Up Arrow          | Pi Sign           | 0x48 */
     {'?', '?'}, /* Page Up           | None              | 0x49 */
     {'-', '-'}, /* Minus             | None              | 0x4A */
-    {'?', '?'}, /* Left Arrow        | None              | 0x4B */
+    { 27,  27}, /* Left Arrow        | None              | 0x4B */
     {'?', '?'}, /* Center            | None              | 0x4C */
-    {'?', '?'}, /* Right Arrow       | None              | 0x4D */
+    { 26,  26}, /* Right Arrow       | None              | 0x4D */
     {'+', '+'}, /* Plus              | None              | 0x4E */
     {'?', '?'}, /* End               | None              | 0x4F */
-    {'?', '?'}, /* Down Arrow        | None              | 0x50 */
+    { 25,  25}, /* Down Arrow        | None              | 0x50 */
     {'?', '?'}, /* Page Down         | None              | 0x51 */
     {'?', '?'}, /* Insert            | None              | 0x52 */
     {'?', '?'}, /* Delete            | None              | 0x53 */
@@ -117,29 +118,14 @@ const char layout[128][2] = {
     {'?', '?'}, /* F12               | None              | 0x58 */
 };
 
+
 /** @note If you are on a Virtual Machine, probablily this doesn't works */
-void setKeyboardLeds(bool caps, bool num, bool scroll) {
-    uint8_t data = 0;
-
-    /* Caps lock LED is bit 2 */
-    if (caps) {
-        data |= (1 << 2);
-    }
-
-    /* Num lock LED is bit 1 */
-    if (num) {
-        data |= (1 << 1);
-    }
-
-    /* Scroll lock LED is bit 0 */
-    if (scroll) {
-        data |= (1 << 0);
-    }
-
-    /* Send the command to change the LEDs */
+static void setKeyboardLeds(bool caps, bool num, bool scroll) {
+    uint8_t data = (caps << 2) | (num << 1) | scroll;
     writeByteToPort(0x64, 0xED);
     writeByteToPort(0x60, data);
 }
+
 
 /**
  * Callback function for keyboard interrupt.
@@ -151,78 +137,82 @@ static void keyboardCallback(reg_t *regs) {
     uint8_t scancode = readByteFromPort(0x60);
 
     /* Check if the key was mapped in the layout */
-    if (scancode >= sizeof(layout) / sizeof(layout[0])) {
+    if (scancode >= sizeof(layout) / sizeof(layout[0]) || keybaord_enabled == false) {
         return;
     }
 
     // If caps enabled, we use the second column, else, the fisrt column in the layout
-    char letter = caps_status ? layout[(int)scancode][1] : layout[(int)scancode][0];
+    char letter = capslock_enabled ? layout[(int)scancode][1] : layout[(int)scancode][0];
 
     /* Remember that print only accepts char[] */
     char key[4] = {letter, '\0'};
 
     if (scancode == BACKSPACE) {
-        if (backspace(key_buffer)) {
+        if (backspace(buffer)) {
             printColor(key, BG_BLACK | FG_LTGRAY);
         }
 
     /* F1 - Clear the screen, like an Commodore*/
     } else if (scancode == KEY_F1) {
         clearScreen(BG_BLACK | FG_WHITE);
-        playBeep(255, 100);
-        printColor("/Monarch OS/[@] ", BG_BLACK | FG_GREEN);
+        configureKeyboard();
 
     } else if (scancode == ENTER) {
-        printColor(key, BG_BLACK | FG_LTGRAY);
-        user_input(key_buffer);
-        key_buffer[0] = '\0';
+        cosoleHandler(buffer);
+        configureKeyboard();
 
     } else if (scancode == TAB) {
-        if (lengthString(key_buffer) + 1 < BUFFER_SIZE) {
+        if (lengthString(buffer) + 1 < BUFFER_SIZE) {
             for (uint8_t i = 0; i < 4; i++) {
-                appendChar(key_buffer, ' ');
+                appendChar(buffer, ' ');
             }
-
             printColor(key, BG_BLACK | FG_LTGRAY);
         }
 
     /* Toggle caps lock */
     } else if (scancode == CAPSLOCK) {
-        if (caps_status) {
-            caps_status = false;
-            playBeep(440, 100);
-        } else {
-            caps_status = true;
-            playBeep(220, 100);
-        }
+        capslock_enabled = !capslock_enabled;
+        playBeep(capslock_enabled ? 220 : 440, 16);
+        setKeyboardLeds(capslock_enabled, false, false);
 
-        /* Update the keyboard LEDs */
-        setKeyboardLeds(caps_status, false, false);
-
+    // Write the character
     } else {
         // Check if there is enough space in the buffer to append the letter
-        if (lengthString(key_buffer) + 1 < BUFFER_SIZE) {
-            appendChar(key_buffer, letter);
+        if (lengthString(buffer) + 1 < BUFFER_SIZE) {
 
-            // Finally we print the char into the screen
-            printColor(key, BG_BLACK | FG_LTGRAY);
+            if (getCharacter() == ' ' || getCharacter() == '\0') {
+                appendChar(buffer, letter);
+
+                // Finally we print the char into the screen
+                printColor(key, BG_BLACK | FG_LTGRAY);
+            }
         }
     }
     UNUSED(regs);
 }
 
+void configureKeyboard(void) {
+    keybaord_enabled = false;
+    buffer[0] = '\0';
+    setCursor(0x00);
+    printOutput("\n[@]", BG_BLACK | FG_GREEN, "%c ", (char)255);
+    moveCursor(-1, 0);
+    keybaord_enabled = true;
+}
+
 /**
  * Initializes the keyboard by registering the keyboard callback function.
  */
-void initializeKeyboard() {
-    printColor("[-] ", BG_BLACK | FG_LTGREEN); print("Initializing keyboard handler at IRQ1 ...\n");
+void initializeKeyboard(void) {
+    printColor("[-] ", BG_BLACK | FG_LTGREEN); printString("Initializing keyboard handler at IRQ1 ...\n");
     registerInterruptHandler(IRQ1, keyboardCallback);
 }
 
 /**
  * Terminate the keyboard by unregistering the keyboard callback function.
  */
-void terminateKeyboard() {
-    printColor("[-] ", BG_BLACK | FG_LTRED); print("Terminating and cleaning keyboard handler at IRQ1 ...\n");
+void terminateKeyboard(void) {
+    printColor("[-] ", BG_BLACK | FG_LTRED); printString("Terminating and cleaning keyboard handler at IRQ1 ...\n");
     unregisterInterruptHandler(IRQ1);
+    keybaord_enabled = false;
 }

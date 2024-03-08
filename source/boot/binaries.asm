@@ -11,6 +11,6 @@
 %endmacro
 
 ; include the ascii art
-INCLUDE_BIN butterfly, "source/binaries/butterfly"
+INCLUDE_BIN butterfly, "source/binaries/butterfly.txt"
 
 ; include more files to be used, an example can be found in kernel.c

@@ -1,5 +1,6 @@
 #include "IDT.h"
-#include "../types.h"
+
+#include "../../../common/sysutils.h"
 
 /*
 * IDT - Interrupt Descriptor Table, a data structure used by the operating system

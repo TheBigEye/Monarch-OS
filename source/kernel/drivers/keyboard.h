@@ -20,14 +20,16 @@
 
 #define KEY_F1 0x3B
 
+void configureKeyboard(void);
+
 /**
  * Initializes the keyboard by registering the keyboard callback function.
  */
-void initializeKeyboard();
+void initializeKeyboard(void);
 
 /**
  * Terminate the keyboard by unregistering the keyboard callback function.
  */
-void terminateKeyboard();
+void terminateKeyboard(void);
 
 #endif /* _DRIVER_KEYBOARD_H */

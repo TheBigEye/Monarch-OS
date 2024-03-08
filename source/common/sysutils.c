@@ -21,7 +21,6 @@ unsigned int getUnsignedRandom() {
 }
 
 
-
 /**
  * Convert an integer to a string.
  *
@@ -29,7 +28,7 @@ unsigned int getUnsignedRandom() {
  * @return The converted string.
  */
 char* itoa(int integer) {
-    static char string[16]; // Static buffer to store the converted string
+    static char string[32]; // Static buffer to store the converted string
     int index = 0;
     int sign = (integer < 0) ? -1 : 1;
 
@@ -54,6 +53,101 @@ char* itoa(int integer) {
     return string; // Return the converted string
 }
 
+int normalize(double *val) {
+    int exponent = 0;
+    double value = *val;
+
+    while (value >= 1.0) {
+        value /= 10.0;
+        ++exponent;
+    }
+
+    while (value < 0.1) {
+        value *= 10.0;
+        --exponent;
+    }
+    *val = value;
+    return exponent;
+}
+
+
+/**
+ * Convert a float or double to a string.
+ *
+ * @param value The value to convert.
+ * @return The converted string.
+ */
+char* ftoa(double value) {
+    static char buffer[32]; // Buffer to store the resulting string
+    char* p = buffer; // Pointer for traversing the buffer
+
+    int exponent = 0; // Exponent for normalizing the value
+    int places = 0; // Decimal places counter
+    static const int width = 4; // Desired width for the decimal part
+
+    // Handle special cases: zero and extreme values
+    if (value == 0.0) {
+        buffer[0] = '0';
+        buffer[1] = '\0';
+        return buffer;
+    }
+
+    if (value >= 1E37 || value <= -1E37) {
+        if (value > 0) {
+            copyString(buffer, "INF");
+        } else {
+            copyString(buffer, "-INF");
+        }
+        return buffer;
+    }
+
+    // Adjust the sign if negative
+    if (value < 0.0) {
+        *p++ = '-';
+        value = -value;
+    }
+
+    // Normalize the value and calculate the exponent
+    exponent = normalize(&value);
+
+    // Convert integer part
+    while (exponent > 0) {
+        int digit = value * 10;
+        *p++ = digit + '0';
+        value = value * 10 - digit;
+        ++places;
+        --exponent;
+    }
+
+    // Add leading zero if no integer part
+    if (places == 0)
+        *p++ = '0';
+
+    // Add decimal point if needed
+    if (places < width)
+        *p++ = '.';
+
+    // Convert fractional part
+    while (exponent < 0 && places < width) {
+        *p++ = '0';
+        --exponent;
+        ++places;
+    }
+
+    // Fill remaining places with digits
+    while (places < width) {
+        int digit = value * 10.0;
+        *p++ = digit + '0';
+        value = value * 10.0 - digit;
+        ++places;
+    }
+
+    *p = '\0'; // Null-terminate the string
+
+    return buffer;
+}
+
+
 
 /**
  * Convert an integer to a hexadecimal string.
@@ -62,35 +156,34 @@ char* itoa(int integer) {
  * @return The converted hexadecimal string.
  */
 char* htoa(int integer) {
-    static char string[16]; // Static buffer to store the converted hexadecimal string
     int index = 0;
-    string[index++] = '0'; // Add the '0' character to the buffer
-    string[index++] = 'x'; // Add the 'x' character to the buffer
+    static char buffer[32]; // Static buffer to store the converted hexadecimal string
+    buffer[index++] = '0'; // Add the '0' character to the buffer
+    buffer[index++] = 'x'; // Add the 'x' character to the buffer
 
     // Convert each nibble (4 bits) of the integer to a hexadecimal digit
     for (int i = 28; i >= 0; i -= 4) {
         int tmp = (integer >> i) & 0xF; // Extract the current nibble
         if (tmp >= 0xA) {
-            string[index++] = (char)(tmp - 0xA + 'A'); // Convert and add the hexadecimal digit (A-F) to the buffer
+            buffer[index++] = (char)(tmp - 0xA + 'A'); // Convert and add the hexadecimal digit (A-F) to the buffer
         } else {
-            string[index++] = (char)(tmp + '0'); // Convert and add the hexadecimal digit (0-9) to the buffer
+            buffer[index++] = (char)(tmp + '0'); // Convert and add the hexadecimal digit (0-9) to the buffer
         }
     }
 
-    string[index] = '\0'; // Add null-terminator to mark the end of the string
-    return string; // Return the converted hexadecimal string
+    buffer[index] = '\0'; // Add null-terminator to mark the end of the string
+    return buffer; // Return the converted hexadecimal string
 }
 
 
 /**
  * Calculate the length of a string (strlen).
  */
-int lengthString(char *string) {
+int lengthString(const char *string) {
     int length = 0;
 
-    while (*string != '\0') {
+    while (*(string + length) != '\0') {
         length++;
-        string++;
     }
     return length;
 }
@@ -116,6 +209,19 @@ void combineString(char *dest, char *source) {
 
     while (*source != '\0') *end++ = *source++;
     *end = '\0';
+}
+
+void copyString(char *dest, const char *source) {
+    int i = 0;
+    while (1) {
+        dest[i] = source[i];
+
+        if (dest[i] == '\0') {
+            break;
+        }
+
+        i++;
+    }
 }
 
 /**
@@ -172,7 +278,7 @@ void toUppercase(char *string) {
 }
 
 void toString(int integer, char *buffer, int base) {
-    static char digits[] = "0123456789ABCDEF";
+    static char digits[17] = "0123456789ABCDEF";
     int index = 0;
     bool sign = false;
 
@@ -251,7 +357,7 @@ int matchWith(char *a, char *b) {
  * @param b The prefix to compare.
  * @return True if the string starts with the prefix, false otherwise.
  */
-bool startsWith(char *a, char *b) {
+bool startsWith(const char *a, const char *b) {
     int length_a = lengthString(a); int i = 0;
     int length_b = lengthString(b); int j = 0;
 
@@ -267,56 +373,4 @@ bool startsWith(char *a, char *b) {
         }
     }
     return false; // 'a' is not a prefix of 'b', return false
-}
-
-
-/**
- * Decode and calculate the sum, subtraction, or product of two or more numbers.
- *
- * @param input The input string.
- * @param pos The starting position in the input.
- * @return The result of the operation on the numbers.
- */
-int getInputOperation(char input[], int pos) {
-    char string[127] = "";
-    int index = 0;
-    int result = 0;
-    int num = 0;
-    char operation = '+';
-
-    int line = lengthString(input);
-
-    for (int i = pos; i < line; i++) {
-        string[index++] = input[i];
-    }
-
-    string[index] = '0';
-
-    int len = lengthString(string);
-    for (int i = 0; i < (len - 1); i++) {
-        if (string[i] >= '0' && string[i] <= '9') { // Check if it is a number
-            num *= 10;
-            num += (string[i] - '0');
-        } else if (string[i] == '+' || string[i] == '-' || string[i] == '*') {
-            if (operation == '+') {
-                result += num;
-            } else if (operation == '-') {
-                result -= num;
-            } else if (operation == '*') {
-                result *= num;
-            }
-            num = 0;
-            operation = string[i];
-        }
-    }
-
-    if (operation == '+') {
-        result += num;
-    } else if (operation == '-') {
-        result -= num;
-    } else if (operation == '*') {
-        result *= num;
-    }
-
-    return result;
 }

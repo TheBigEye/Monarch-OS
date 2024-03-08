@@ -36,4 +36,5 @@ void memorySet(uint8_t *destination, uint8_t value, uint32_t len);
  */
 uint32_t memoryAllocate(size_t size, int align, uint32_t *physicalAddress);
 
+
 #endif /* KERNEL_MEMORY_H */

@@ -9,7 +9,7 @@
 
 struct TableInfo {
     uint32_t bit;
-    char* name;
+    const char* name;
 };
 
 static const struct TableInfo features[] = {
@@ -43,7 +43,7 @@ static const struct TableInfo features[] = {
     {(1 << 27), "SS"},     /* EDX_SS         | Self Snoop                                    */
     {(1 << 28), "HTT"},    /* EDX_HTT        | Multi-Threading                               */
     {(1 << 29), "TM"},     /* EDX_TM         | Thermal Monitor                               */
-    {(1 << 31), "PBE"},    /* EDX_PBE        | Pending Break Enable                          */
+    {(1 << 31), "PBE"}     /* EDX_PBE        | Pending Break Enable                          */
 };
 
 static const struct TableInfo instructions[] = {
@@ -84,39 +84,36 @@ static const struct TableInfo instructions[] = {
 static inline void cpuid(uint32_t reg, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
     __asm__ __volatile__("cpuid"
         : "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
-        : "0" (reg));
+        : "0" (reg)
+    );
 }
 
 
 // Function to check and print features
 static void checkAndPrintInfo(const struct TableInfo *table, uint32_t infoBits, const char* label) {
-    printColor("[o] ", BG_BLACK | FG_YELLOW); print(label);
-    int printed = 0;
-    int maxFeatureNameLength = 10;
+    printOutput("[o] ", BG_BLACK | FG_YELLOW, label);
 
     // Print features or instructions with aligned names
-    for (uint16_t i = 0; i < sizeof(features) / sizeof(features[0]); ++i) {
+    for (uint16_t i = 0, x = 0; i < sizeof(features) / sizeof(features[0]); ++i) {
         if (infoBits & table[i].bit) {
-            if (printed % 6 == 0) {
-                print("\n    ");
+            if (x++ % 6 == 0) {
+                printString("\t");
             }
-            printColor("- ", BG_BLACK | FG_DKGRAY);
-            print(table[i].name);
+
+            printOutput("- ", BG_BLACK | FG_DKGRAY, table[i].name);
 
             // Calculate the number of spaces needed to align feature names
-            int spacesToAdd = maxFeatureNameLength - lengthString(table[i].name) + 1;
-            for (int j = 0; j < spacesToAdd; ++j) {
-                print(" ");
+            for (int j = 0; j < 10 - lengthString(table[i].name) + 1; ++j) {
+                printString(" ");
             }
-
-            ++printed;
         }
     }
 
-    print("\n\n");
+    printString("\n\n");
 }
 
-void detectCPU() {
+
+void detectCPU(void) {
     // Register storage
     uint32_t eax, ebx, ecx, edx;
 
@@ -127,15 +124,14 @@ void detectCPU() {
     cpuid(0, &largestStandardFunc, (uint32_t *)(vendor + 0), (uint32_t *)(vendor + 8), (uint32_t *)(vendor + 4));
     vendor[12] = '\0';
 
-    printColor("[o] ", BG_BLACK | FG_YELLOW); printFormat("CPU Vendor: %s\n", vendor);
+    printOutput("[o] ", BG_BLACK | FG_YELLOW, "CPU Vendor: %s\n", vendor);
 
     // Function 0x01 - Feature Information
 
     if (largestStandardFunc >= 0x01) {
         cpuid(0x01, &eax, &ebx, &ecx, &edx);
-
-        checkAndPrintInfo(features, edx, "Features:");
-        checkAndPrintInfo(instructions, ecx, "Instructions:");
+        checkAndPrintInfo(features, edx, "Features:\n");
+        checkAndPrintInfo(instructions, ecx, "Instructions:\n");
     }
 
     // Extended Function 0x00 - Largest Extended Function
@@ -149,7 +145,7 @@ void detectCPU() {
         cpuid(0x80000001, &eax, &ebx, &ecx, &edx);
 
         if (edx & EDX_64_BIT) {
-            printColor("[-] ", BG_BLACK | FG_YELLOW); printColor("64-bit Architecture\n\n", BG_BLACK | FG_CYAN);
+            printOutput("[-] ", BG_BLACK | FG_YELLOW, "64-bit Architecture\n\n", BG_BLACK | FG_CYAN);
         }
     }
 
@@ -167,6 +163,13 @@ void detectCPU() {
             ++p;
         }
 
-        printColor("[o] ", BG_BLACK | FG_YELLOW); printFormat("CPU Name: %s\n", p);
+        printOutput("[o] ", BG_BLACK | FG_YELLOW, "CPU Name: %s\n", p);
     }
+}
+
+// rdtsc
+uint32_t getCpuTicks() {
+    uint32_t lo;
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo));
+    return lo;
 }

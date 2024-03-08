@@ -3,9 +3,13 @@
 
 #include <stdint.h>
 
-void initializeKernel();
-void terminateKernel();
+#include "../common/sysutils.h"
+#include "../common/sysutils.h"
 
-void user_input(char *input);
+
+void cosoleHandler(char *input);
+
+void initializeKernel(void);
+void terminateKernel(void);
 
 #endif /* _KERNEL_BUTTERFLY_H */

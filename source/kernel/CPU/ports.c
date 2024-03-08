@@ -8,7 +8,7 @@
 *  @see https://wiki.osdev.org/Port_IO
 */
 
-void operationWait() {
+void operationWait(void) {
     __asm__ __volatile__ ("outb %%al, $0x80" : : "a"(0));
 }
 

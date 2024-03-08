@@ -50,7 +50,14 @@ void initializeTimer(uint32_t frequency);
 /**
  * Terminate the PIT and unregister it handler from the IRQ
 */
-void terminateTimer();
+void terminateTimer(void);
+
+/**
+ * Sleep an operation for shot time.
+ *
+ * @param time  The time to sleep in milliseconds.
+ */
+void timerSleep(uint32_t time);
 
 
 #endif /* _CPU_TIMER_H */

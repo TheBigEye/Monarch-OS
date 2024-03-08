@@ -35,26 +35,29 @@
 #define BG_BKGREEN          0xA0 // Blinking green background attribute
 #define BG_BKCYAN           0xB0 // Blinking cyan background attribute
 #define BG_BKRED            0xC0 // Blinking red background attribute
-#define BG_BKMAGENTA        0xD0 // Blinking red background attribute
-#define BG_BKYELLOW         0xE0 // Blinking red background attribute
+#define BG_BKMAGENTA        0xD0 // Blinking magenta background attribute
+#define BG_BKYELLOW         0xE0 // Blinking yellow background attribute
 #define BG_BKWHITE          0xF0 // Blinking white background attribute
 
-int getOffset(int column, int row);
-void setCursorOffset(int offset);
 
-void initializeScreen();
+void configureScreen(void);
 
 int putCharacter(const char character, int column, int row, uint8_t attribute);
 
-void setCursorShape(uint8_t shape);
+void setCursor(uint8_t shape);
 void clearScreen(uint8_t color);
+
 void putString(const char *message, int column, int row, uint8_t color);
 void putColor(const char character, int column, int row, uint16_t width, uint16_t height, uint8_t color);
-void print(const char *message);
+void printString(const char *message);
 void printColor(const char *message, uint8_t color);
 
-void printSupportedChars();
+void printCharset(void);
 
 void printFormat(const char *format, ...);
+void printOutput(const char *prompt, uint8_t promptColor, const char *format, ...);
+
+void moveCursor(uint16_t x, uint16_t y);
+char getCharacter();
 
 #endif /* DRIVER_SCREEN_H_ */
