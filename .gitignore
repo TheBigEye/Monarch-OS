@@ -2,7 +2,6 @@
 *.o
 *.img
 *.iso
-*.bin
 *.elf
 doc/*.txt
 doc/*.pdf
