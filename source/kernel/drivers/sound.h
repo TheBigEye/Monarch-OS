@@ -1,7 +1,7 @@
 #ifndef _DRIVER_SOUND_H
 #define _DRIVER_SOUND_H 1
 
-#include <stdint.h>
+#include "../../common/sysutils.h"
 
 /**
  * Make a beep sound with the specified frequency and duration.

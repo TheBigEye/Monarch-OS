@@ -1,9 +1,10 @@
 #ifndef _SYS_UTILS_H
 #define _SYS_UTILS_H 1
 
-    // coss-compiler heaaders
+    // Coss-compiler heaaders
     #include <stdbool.h>
     #include <stdint.h>
+
 
     /* Common typedefs */
     #ifndef _COMMON_TYPEDEFS
@@ -17,31 +18,54 @@
 
         #define NULL ((void *) 0UL)
 
+        #define INF __builtin_inf()
+        #define NAN __builtin_nan("")
+        #define PI 3.141592653589793
+        #define EPSILON 1e-9
+
+        #define isInf __builtin_isinf
+        #define isNan __builtin_isnan
+
         #define MIN(a, b) ((a) < (b) ? (a) : (b)) /* @brief The minimum of two values */
         #define MAX(a, b) ((a) > (b) ? (a) : (b)) /* @brief The maximum of two values */
-        #define ABS(a) ((a) < 0 ? - (a) : (a)) /* @brief The absolute value of a number */
+        #define ABS(n) ((n) > 0 ? (n) : -(n)) /* @brief The absolute value of a number */
+        #define SQR(n) ((n) * (n)) /* @brief The square value of a number */
 
-        #define FOREVER for(;;)
+        #define SIN(x)   __builtin_sin((x))
+        #define COS(x)   __builtin_cos((x))
+        #define TAN(x)   __builtin_tan((x))
+
+        #define CEIL(x)  __builtin_ceil((x))
+        #define FLOOR(x) __builtin_floor((x))
+
+        #define FOREVER for (;;)
         #define NOTHING ;
-        #define PACKED __attribute__((__packed__))
+        #define PACKED __attribute__ ((__packed__))
 
-        #define isDigit(c)	((unsigned) ((c) - '0') < 10)
-        #define isLower(c)	((unsigned) ((c) - 'a') < 26)
-        #define isUpper(c)	((unsigned) ((c) - 'A') < 26)
-        #define isPrint(c)	((unsigned) ((c) - ' ') < 95)
-        #define isAscii(c)	((unsigned) (c) < 128)
+        #define DOUBLE_MAX 1E37
+        #define DOUBLE_MIN -1E37
+
+        #define ARRAY_LEN(a) (sizeof((a)) / sizeof(*(a)))
+
+        #define isDigit(c) ((unsigned) ((c) - '0') < 10)
+        #define isLower(c) ((unsigned) ((c) - 'a') < 26)
+        #define isUpper(c) ((unsigned) ((c) - 'A') < 26)
+        #define isPrint(c) ((unsigned) ((c) - ' ') < 95)
+        #define isAscii(c) ((unsigned) (c) < 128)
 
         /* Definition of common types used in the codebase */
 
-        typedef unsigned int    dword; // unsigned 32 bit value (0 to 4,294,967,295)
-        typedef unsigned short   word; // unsigned 16 bit value (ot to 65,535)
-        typedef unsigned char    byte; // unsigned 8 bit value (0 to 255)
+        typedef unsigned int    size;
+        typedef unsigned int    dwrd;
+        typedef unsigned short  word;
+        typedef unsigned char   byte;
 
         /* Some math (yeah, maths sucks) */
 
-        typedef struct { int x; int y; } point;
-        typedef struct { float x; float y; float z; } vector;
-        typedef struct { int numerator; int denominator; } fraction;
+        typedef struct { uint32_t x; uint32_t y; } Point;
+        typedef struct { uint32_t w; uint32_t h; } Size;
+        typedef struct { float x; float y; float z; } Vector;
+        typedef struct { int numerator; int denominator; } Fraction;
 
         /* Builtin C definitions */
 
@@ -52,19 +76,22 @@
         #define va_end(ap)              __builtin_va_end(ap)
         #define va_copy(d, s)           __builtin_va_copy(d, s)
 
-        #define	memcpy(d, s, l)	        __builtin_memcpy(d, s, l)
-        #define	memcmp(a, b, l)	        __builtin_memcmp(a, b, l)
-        #define	memset(d, v, l)	        __builtin_memset(d, v, l)
-
-        #define	alloca(s)		        __builtin_alloca(s)
-
     #endif /* _COMMON_TYPEDEFS */
 
     /* Common system functions */
 
-    void setRandom(unsigned int seed);
-    int getSignedRandom();
-    unsigned int getUnsignedRandom();
+    double sqrt(int n);
+    double factorial(int n);
+    double pow(double base, int exp);
+
+    double sin(double x);
+    double cos(double x);
+    double tan(double x);
+
+    double ceil(double x);
+    double floor(double x);
+
+    int atoi(const char* string);
 
     char* itoa(int integer);
     char* ftoa(double value);
@@ -93,4 +120,4 @@
 
     /* Non standard functions */
 
-#endif /* _SYS_UTILS_H */
+#endif /* ! _SYS_UTILS_H */

@@ -1,7 +1,7 @@
-#ifndef DRIVER_SCREEN_H_
-#define DRIVER_SCREEN_H_ 1
+#ifndef DRIVER_CONSOLE_H_
+#define DRIVER_CONSOLE_H_ 1
 
-#include <stdint.h>
+#include "../../common/sysutils.h"
 
 /* Text colors */
 #define FG_BLACK            0x00 // Black foreground attribute
@@ -40,24 +40,22 @@
 #define BG_BKWHITE          0xF0 // Blinking white background attribute
 
 
-void configureScreen(void);
-
-int putCharacter(const char character, int column, int row, uint8_t attribute);
-
 void setCursor(uint8_t shape);
-void clearScreen(uint8_t color);
+void setScreen(uint8_t color);
 
-void putString(const char *message, int column, int row, uint8_t color);
-void putColor(const char character, int column, int row, uint16_t width, uint16_t height, uint8_t color);
-void printString(const char *message);
-void printColor(const char *message, uint8_t color);
+void clearScreen(void);
+
+int putCharacter(const char character, int col, int row, uint8_t color);
+int putString(const char *string, int col, int row, uint8_t color);
+
+void printString(const char *string);
+void printColor(const char *string, uint8_t color);
 
 void printCharset(void);
-
 void printFormat(const char *format, ...);
 void printOutput(const char *prompt, uint8_t promptColor, const char *format, ...);
 
-void moveCursor(uint16_t x, uint16_t y);
-char getCharacter();
+void moveCursor(uint16_t col, uint16_t row);
+char getCharacter(void);
 
 #endif /* DRIVER_SCREEN_H_ */

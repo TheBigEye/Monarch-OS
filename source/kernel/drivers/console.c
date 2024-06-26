@@ -1,44 +1,36 @@
-#include "screen.h"
-
-#include "../../common/sysutils.h"
+#include "console.h"
+#include "VGA/VGA.h"
 
 #include "../CPU/PIT/timer.h"
-#include "../CPU/ports.h"
+#include "../CPU/HAL.h"
 #include "../memory/memory.h"
 
-// Physical VGA Video memory
-#define SCREEN_BUFFER (uint8_t*) 0xB8000
-
-#define SCREEN_WIDTH  (uint8_t) 80
-#define SCREEN_HEIGHT (uint8_t) 25
-
-#define SCREEN_AREA (uint16_t) (80 * 25)
-
+/* Private functions */
 
 /* Get the offset of a character cell in video memory based on its column and row */
-static inline int getOffset(int column, int row) {
-    return 2 * (row * SCREEN_WIDTH + column);
+static inline int getOffset(int col, int row) {
+    return 2 * (row * TEXTMODE_WIDTH + col);
 }
 
 /* Get the row index of a character cell based on its offset in video memory */
 static inline int getOffsetRow(int offset) {
-    return offset / (SCREEN_WIDTH << 1);
+    return offset / (TEXTMODE_WIDTH << 1);
 }
 
 /* Get the column index of a character cell based on its offset in video memory */
 static inline int getOffsetCol(int offset) {
-    return (offset % (SCREEN_WIDTH << 1)) / 2;
+    return (offset % (TEXTMODE_WIDTH << 1)) / 2;
 }
 
 /* Get the current cursor offset from the hardware */
-static inline int getCursorOffset() {
+static inline int getCursorOffset(void) {
     /* Select the high byte of the cursor offset (14) and read it from the data port */
-    writeByteToPort(0x3D4, 14);
-    int offset = readByteFromPort(0x3D5) << 8;
+    writeByteToPort(CATHODERAY_INDEX, 14);
+    int offset = readByteFromPort(CATHODERAY_DATA) << 8;
 
     /* Select the low byte of the cursor offset (15) and read it from the data port */
-    writeByteToPort(0x3D4, 15);
-    offset += readByteFromPort(0x3D5);
+    writeByteToPort(CATHODERAY_INDEX, 15);
+    offset += readByteFromPort(CATHODERAY_DATA);
 
     /* Return the cursor offset in bytes */
     return offset * 2;
@@ -50,55 +42,15 @@ static void setCursorOffset(int offset) {
     offset /= 2;
 
     /* Write the high byte of the cursor offset (14) to the data port */
-    writeByteToPort(0x3D4, 14);
-    writeByteToPort(0x3D5, (uint8_t)(offset >> 8));
+    writeByteToPort(CATHODERAY_INDEX, 14);
+    writeByteToPort(CATHODERAY_DATA, (uint8_t)(offset >> 8));
 
     /* Write the low byte of the cursor offset (15) to the data port */
-    writeByteToPort(0x3D4, 15);
-    writeByteToPort(0x3D5, (uint8_t)(offset & 0xff));
+    writeByteToPort(CATHODERAY_INDEX, 15);
+    writeByteToPort(CATHODERAY_DATA, (uint8_t)(offset & 0xff));
 }
 
-static void setColorPalette(uint8_t index, uint32_t RGB) {
-    // Write the color index to port 0x3c8
-    writeByteToPort(0x3c8, index);
-
-    // For each color component (R, G, B)
-    for (uint16_t i = 0; i < 3; i++) {
-        // Shift the color bits and take only the last 6 bits
-        uint8_t colorComponent = (RGB >> (i * 6)) & 0x3f;
-
-        // Write the color component to port 0x3c9
-        writeByteToPort(0x3c9, colorComponent);
-    }
-}
-
-
-/** Initializes the custom color palette for the screen **/
-void configureScreen(void) {
-    uint32_t palette[16] = {
-        0x000000, // Black
-        0x2a0000, // Dark Red
-        0x002a00, // Dark Green
-        0x2a2a00, // Brown
-        0x00002a, // Dark Blue
-        0x2a002a, // Magenta
-        0x002a2a, // Dark Cyan
-        0x2a2a2a, // Dark Gray
-
-        0x151515, // Light Gray
-        0x00003f, // Light Blue
-        0x003f00, // Light Green
-        0x003f3f, // Light Cyan
-        0x3f0000, // Light Red
-        0x3f003f, // Light Pink
-        0x3f3f00, // Light Yellow
-        0x3f3f3f, // Light White
-    };
-
-    for (uint8_t i = 0; i < 16; i++) {
-        setColorPalette(i, palette[i]);
-    }
-}
+/* Public functions */
 
 /**
  * Set the shape of the cursor.
@@ -106,69 +58,64 @@ void configureScreen(void) {
  * @param shape The new shape of the cursor.
  */
 void setCursor(uint8_t shape) {
-    writeByteToPort(0x3D4, 10);
-    writeByteToPort(0x3D5, shape);
+    writeByteToPort(CATHODERAY_INDEX, 0x0A);
+    writeByteToPort(CATHODERAY_DATA, shape);
 }
 
-/**
- * Clear the screen with the specified color.
- *
- * @param color The color to fill the screen with.
- */
-void clearScreen(uint8_t color) {
-    // Calculate the starting memory address of the screen, uint8_t
-    uint8_t * SCREEN_MEMORY = (uint8_t *) SCREEN_BUFFER;
-    // Calculate the ending memory address of the screen, uint8_t
-    uint8_t * FINAL_MEMORY = SCREEN_MEMORY + SCREEN_AREA * 2;
 
-    // Set the character and color in memory to clear the screen
-    while (SCREEN_MEMORY < FINAL_MEMORY) {
-        *SCREEN_MEMORY = ' ';
-        *(SCREEN_MEMORY + 1) = color;
-        SCREEN_MEMORY += 2;
-    }
+/**
+ * Clear the text-mode screen content and change color scheme
+ */
+void setScreen(uint8_t color) {
+    // Fill the entire screen memory
+    fastWideMemorySet(
+        (uint16_t *) TEXTMODE_BUFFER, // 0xB8000
+        (color << 8) | ' ', // Combine color and space character
+        TEXTMODE_SIZE
+    );
 
     // Set the cursor offset to the top-left corner of the screen
     setCursorOffset(getOffset(0, 0));
 }
 
 /**
+ * Clear the text-mode screen content
+ */
+void clearScreen() {
+    setScreen(BG_BLACK | FG_WHITE);
+}
+
+/**
  * Print a character at the specified position with the given attribute
  *
- * @note - Supports newline,tabs and backspace characters
+ * @note - Supports newline, tabs and backspace characters
  * @note - Scrolls the screen if necessary
  * @exception - If the position is invalid, an error character 'E' will be printed at the bottom right corner
  *
  * @param character         The character to print
- * @param column            The column index of the position
+ * @param col               The column index of the position
  * @param row               The row index of the position
- * @param attribute         The attribute of the character
+ * @param color             The color of the character
  *
  * @return The new offset of the cursor in video memory.
  */
-int putCharacter(const char character, int column, int row, uint8_t attribute) {
-    uint8_t *SCREEN_MEMORY = (uint8_t *)SCREEN_BUFFER;
+int putCharacter(char character, int col, int row, uint8_t color) {
+    uint8_t *SCREEN_MEMORY = (uint8_t *) TEXTMODE_BUFFER;
 
-    if (!attribute) {
-        attribute = BG_BLACK | FG_LTGRAY;
+    if (!color) {
+        color = BG_BLACK | FG_LTGRAY;
     }
 
     /* Error control: print a red 'E' if the coords aren't right */
-    if (column >= SCREEN_WIDTH || row >= SCREEN_HEIGHT) {
-        SCREEN_MEMORY[2 * SCREEN_AREA - 2] = 'E';
-        SCREEN_MEMORY[2 * SCREEN_AREA - 1] = BG_BLACK | FG_LTRED;
-        return getOffset(column, row);
+    if (col >= TEXTMODE_WIDTH || row >= TEXTMODE_HEIGHT) {
+        SCREEN_MEMORY[2 * TEXTMODE_SIZE - 2] = 'E';
+        SCREEN_MEMORY[2 * TEXTMODE_SIZE - 1] = BG_BLACK | FG_LTRED;
+        return getOffset(col, row);
     }
 
-    int offset;
-    if (column >= 0 && row >= 0) {
-        offset = getOffset(column, row);
-    } else {
-        offset = getCursorOffset();
-    }
+    int offset = (col >= 0 && row >= 0) ? getOffset(col, row) : getCursorOffset();
 
-    int spaces = 4 - (column % 4);
-
+    // Scape secuence chars handler
     switch (character) {
         case '\n': { // New line
             row = getOffsetRow(offset);
@@ -185,45 +132,43 @@ int putCharacter(const char character, int column, int row, uint8_t attribute) {
         case '\b': { // Backspace
             offset = getCursorOffset() - 2;
             row = getOffsetRow(offset);
-            column = getOffsetCol(offset);
+            col = getOffsetCol(offset);
             SCREEN_MEMORY[offset] = ' ';
-            SCREEN_MEMORY[offset + 1] = attribute;
+            SCREEN_MEMORY[offset + 1] = color;
             break;
         }
 
-        case '\t':{ // Tab
-            for (int i = 0; i < spaces; i++) {
+        case '\t': { // Tab
+            uint8_t spaces = 4 - (col % 4);
+            for (uint8_t i = 0; i < spaces; i++) {
                 SCREEN_MEMORY[offset] = ' ';
-                SCREEN_MEMORY[offset + 1] = attribute;
+                SCREEN_MEMORY[offset + 1] = color;
                 offset += 2;
-                column++;
+                col++;
             }
             break;
         }
 
         default: { // Character
             SCREEN_MEMORY[offset] = character;
-            SCREEN_MEMORY[offset + 1] = attribute;
+            SCREEN_MEMORY[offset + 1] = color;
             offset += 2;
             break;
         }
     }
 
     /* Check if the offset is over screen size and scroll */
-    if (offset >= (SCREEN_AREA << 1)) {
-        memoryCopy(
-            SCREEN_MEMORY + getOffset(0, 1),
+    if (offset >= (TEXTMODE_SIZE << 1)) {
+        fastFastMemoryCopy(
             SCREEN_MEMORY + getOffset(0, 0),
-            SCREEN_WIDTH * (SCREEN_HEIGHT - 1) * 2
+            SCREEN_MEMORY + getOffset(0, 1),
+            TEXTMODE_WIDTH * (TEXTMODE_HEIGHT - 1) * 2
         );
 
         /* Blank last line */
-        char *last_line = (char *)(SCREEN_MEMORY + getOffset(0, SCREEN_HEIGHT - 1));
-        for (uint16_t i = 0; i < (SCREEN_WIDTH << 1); i++) {
-            last_line[i] = 0;
-        }
+        fastFastMemorySet((char *)(SCREEN_MEMORY + getOffset(0, TEXTMODE_HEIGHT - 1)), 0, (TEXTMODE_WIDTH << 1));
 
-        offset -= 2 * SCREEN_WIDTH;
+        offset -= (TEXTMODE_WIDTH << 1);
     }
 
     setCursorOffset(offset);
@@ -231,77 +176,55 @@ int putCharacter(const char character, int column, int row, uint8_t attribute) {
 }
 
 /**
- * Print a message at the specified location on the screen
+ * Print a string at the specified location on the screen
  *
  * @note - If column and row are negative, the current cursor position will be used
  *
- * @param message The message to print.
- * @param column The column index of the position.
- * @param row The row index of the position.
- * @param color The color attribute of the message.
+ * @param string  The string to print.
+ * @param col     The column index of the position.
+ * @param row     The row index of the position.
+ * @param color   The color attribute of the message.
  */
-void putString(const char *message, int column, int row, uint8_t color) {
-    int offset = (column >= 0 && row >= 0) ? getOffset(column, row) : getCursorOffset();
+int putString(const char *string, int col, int row, uint8_t color) {
+    int offset = (col >= 0 && row >= 0) ? getOffset(col, row) : getCursorOffset();
     row = getOffsetRow(offset);
-    column = getOffsetCol(offset);
+    col = getOffsetCol(offset);
 
-    while (*message != '\0') {
-        offset = putCharacter(*message++, column, row, color);
+    while (*string != '\0') {
+        offset = putCharacter(*string++, col, row, color);
         row = getOffsetRow(offset);
-        column = getOffsetCol(offset);
+        col = getOffsetCol(offset);
     }
+
+    setCursorOffset(offset);
+    return offset;
 }
 
 
 /**
- * Set the color attribute of characters within a specified rectangular area on the screen.
+ * Print a string at the current cursor position on the screen.
  *
- * @param character The character to match within the area.
- * @param column The starting column index of the area.
- * @param row The starting row index of the area.
- * @param width The width of the area.
- * @param height The height of the area.
- * @param color The new color attribute to set for matching characters.
+ * @param string The string to print.
  */
-void putColor(const char character, int column, int row, uint16_t width, uint16_t height, uint8_t color) {
-    // Calculate the starting memory address of the screen area
-    uint16_t* video_memory = (uint16_t*)(SCREEN_BUFFER + (row * SCREEN_WIDTH + column) * 2);
-    // Calculate the ending memory address of the screen area
-    uint16_t* final_memory = video_memory + width * height;
-
-    // Iterate through each character in the screen area
-    while (video_memory < final_memory) {
-        // Check if the character matches the desired character
-        if ((char)(*video_memory & 0xFF) == character) {
-            // Modify the color of the character
-            *video_memory = (character & 0xFF) | (color << 8);
-        }
-        // Move to the next character in memory
-        video_memory++;
-    }
-}
-
-/**
- * Print a message at the current cursor position on the screen.
- *
- * @param message The message to print.
- */
-void printString(const char *message) {
-    putString(message, -1, -1, BG_BLACK | FG_LTGRAY);
+void printString(const char *string) {
+    putString(string, -1, -1, BG_BLACK | FG_LTGRAY);
 }
 
 
 /**
- * Print a message at the current cursor position on the screen with the specified color.
+ * Print a string at the current cursor position on the screen with the specified color.
  *
- * @param message The message to print.
- * @param color The color attribute of the message.
+ * @param string The string to print.
+ * @param color  The color attribute of the message.
  */
-void printColor(const char *message, uint8_t color) {
-    putString(message, -1, -1, color);
+void printColor(const char *string, uint8_t color) {
+    putString(string, -1, -1, color);
 }
 
-void printCharset(void) {
+/**
+ * Get and print all the avialible charaters from the BIOS charset
+ */
+void printCharset() {
     for (uint16_t i = 32; i < 256; i++) { // Only printable chars
         timerSleep(1);
 
@@ -310,10 +233,10 @@ void printCharset(void) {
         int row = getOffsetRow(offset);
 
         putCharacter((char) i, column, row, BG_BLACK | FG_CYAN);
-        if (column == SCREEN_WIDTH) {
+        if (column == TEXTMODE_WIDTH) {
             column = 0;
-            row = (row == SCREEN_HEIGHT - 1) ? 0 : row + 1;
-            for (uint16_t j = 0; j < SCREEN_WIDTH; j++) {
+            row = (row == TEXTMODE_HEIGHT - 1) ? 0 : row + 1;
+            for (uint16_t j = 0; j < TEXTMODE_WIDTH; j++) {
                 putCharacter(' ', j, 0, BG_BLACK | FG_CYAN);
             }
         }
@@ -348,6 +271,7 @@ void vprintFormat(const char *format, va_list args) {
                     char buffer[32];
                     toString(value, buffer, 16);
                     toLowercase(buffer);
+                    putString("0x", -1, -1, BG_BLACK | FG_DKGRAY); // Print the "0x" prefix
                     putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
                     break;
                 }
@@ -357,6 +281,18 @@ void vprintFormat(const char *format, va_list args) {
                     char buffer[32];
                     toString(value, buffer, 16);
                     toUppercase(buffer);
+                    putString("0x", -1, -1, BG_BLACK | FG_DKGRAY); // Print the "0x" prefix
+                    putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
+                    break;
+                }
+
+                case 'p': { // Pointer value (lowercase)
+                    void *value = va_arg(args, void *);
+                    uintptr_t addr = (uintptr_t)value;
+                    char buffer[32];
+                    toString(addr, buffer, 16); // Convert the address to a hexadecimal string
+                    toLowercase(buffer);
+                    putString("0x", -1, -1, BG_BLACK | FG_DKGRAY); // Print the "0x" prefix
                     putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
                     break;
                 }
@@ -414,7 +350,9 @@ void printFormat(const char *format, ...) {
     va_end(args);
 }
 
-
+/**
+ * Print a pretty formatted output to the console (printf)
+ */
 void printOutput(const char *prompt, uint8_t promptColor, const char *format, ...) {
     printColor(prompt, promptColor);
 
@@ -426,31 +364,36 @@ void printOutput(const char *prompt, uint8_t promptColor, const char *format, ..
     va_end(args);
 }
 
-void moveCursor(uint16_t x, uint16_t y) {
+/*
+ * Updates the cursor position on screen
+ */
+void moveCursor(uint16_t col, uint16_t row) {
     writeByteToPort(0x3D4, 0x0F);
     uint16_t pos = readByteFromPort(0x3D5);
     writeByteToPort(0x3D4, 0x0E);
-    pos |= ((uint16_t)readByteFromPort(0x3D5)) << 8;
+    pos |= ((uint16_t) readByteFromPort(0x3D5)) << 8;
 
-    uint16_t cy = (pos / SCREEN_WIDTH) + y;
-    uint16_t cx = (pos % SCREEN_WIDTH) + x;
+    uint16_t cy = (pos / TEXTMODE_WIDTH) + row;
+    uint16_t cx = (pos % TEXTMODE_WIDTH) + col;
 
-    if (cx > (SCREEN_WIDTH - 1) || cy > (SCREEN_HEIGHT - 1)) {
+    if (cx > (TEXTMODE_WIDTH - 1) || cy > (TEXTMODE_HEIGHT - 1)) {
         return;
     }
 
-    uint16_t newpos = cy * SCREEN_WIDTH + cx;
+    uint16_t newpos = cy * TEXTMODE_WIDTH + cx;
     writeByteToPort(0x3D4, 0x0F);
     writeByteToPort(0x3D5, (uint8_t) (newpos & 0xFF));
     writeByteToPort(0x3D4, 0x0E);
     writeByteToPort(0x3D5, (uint8_t) ((newpos >> 8) & 0xFF));
 }
 
-
+/*
+ * Get the last character from the video buffer
+ */
 char getCharacter() {
     writeByteToPort(0x3D4, 0x0F);
     uint16_t pos = readByteFromPort(0x3D5);
     writeByteToPort(0x3D4, 0x0E);
-    pos |= ((uint16_t)readByteFromPort(0x3D5)) << 8;
-    return ((uint16_t*)SCREEN_BUFFER)[pos] & 0xFF;
+    pos |= ((uint16_t) readByteFromPort(0x3D5)) << 8;
+    return ((uint16_t *) TEXTMODE_BUFFER)[pos] & 0xFF;
 }

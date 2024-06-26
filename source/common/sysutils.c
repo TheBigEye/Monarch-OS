@@ -1,23 +1,100 @@
 #include "sysutils.h"
 
-static unsigned int rand_state = 32;
+/*
+ * Get the square root from an exponent
+ */
+double sqrt(int n) {
+	double a = (double) n;
+	double x = 1;
 
-void setRandom(unsigned int seed) {
-    rand_state = seed;
+	for (int i = 0; i < n; i++) {
+		x = 0.5 * (x + a / x);
+	}
+
+	return x;
 }
 
-int getSignedRandom() {
-    rand_state = (rand_state * 1103515245U + 12345U) & 0x7fffffff;
-    int result = (int) rand_state;
-    if (result > 0x3fffffff) {
-        result -= 0x7fffffff;
+double factorial(int n) {
+    double fact = 1.0;
+    for (int i = 1; i <= n; i++) {
+        fact *= i;
+    }
+    return fact;
+}
+
+double pow(double base, int exp) {
+    double result = 1.0;
+    for (int i = 0; i < exp; i++) {
+        result *= base;
     }
     return result;
 }
 
-unsigned int getUnsignedRandom() {
-    rand_state = (rand_state * 1103515245U + 12345U) & 0xffffffffU;
-    return rand_state & 0x7fffffff;
+double sin(double x) {
+    x = x * (PI / 180.0);
+    double sum = 0.0;
+
+    for (int i = 0; i < 128; i++) {
+        double term = pow(-1, i) * pow(x, 2 * i + 1) / factorial(2 * i + 1);
+        sum += term;
+    }
+
+    return sum;
+}
+
+double cos(double x) {
+    x = x * (PI / 180.0);
+    double sum = 0.0;
+
+    for (int i = 0; i < 128; i++) {
+        double term = pow(-1, i) * pow(x, 2 * i) / factorial(2 * i);
+        sum += term;
+    }
+
+    return sum;
+}
+
+double tan(double x) {
+    return sin(x) / cos(x);
+}
+
+double ceil(double x) {
+    int i = (int) x;
+    return (double)(x > i ? i + 1 : i);
+}
+
+double floor(double x) {
+    int i = (int) x;
+    return (double)(x < i ? i - 1 : i);
+}
+
+
+int atoi(const char *string) {
+    int sign = 1, base = 0, i = 0;
+
+    // if whitespaces then ignore.
+    while (string[i] == ' ') {
+        i++;
+    }
+
+    // sign of number
+    if (string[i] == '-' || string[i] == '+') {
+        sign = 1 - 2 * (string[i++] == '-');
+    }
+
+    // checking for valid input
+    while (string[i] >= '0' && string[i] <= '9') {
+        // handling overflow test case
+        if ((base > INT32_MAX / 10) || (base == INT32_MAX / 10 && string[i] - '0' > 7)) {
+            if (sign == 1) {
+                return INT32_MAX;
+            } else {
+                return INT32_MIN;
+            }
+        }
+        base = 10 * base + (string[i++] - '0');
+    }
+    return base * sign;
 }
 
 
@@ -28,7 +105,7 @@ unsigned int getUnsignedRandom() {
  * @return The converted string.
  */
 char* itoa(int integer) {
-    static char string[32]; // Static buffer to store the converted string
+    static char string[16]; // Static buffer to store the converted string
     int index = 0;
     int sign = (integer < 0) ? -1 : 1;
 
@@ -52,6 +129,7 @@ char* itoa(int integer) {
 
     return string; // Return the converted string
 }
+
 
 int normalize(double *val) {
     int exponent = 0;
@@ -86,13 +164,13 @@ char* ftoa(double value) {
     static const int width = 4; // Desired width for the decimal part
 
     // Handle special cases: zero and extreme values
-    if (value == 0.0) {
+    if (ABS(value) < EPSILON) {
         buffer[0] = '0';
         buffer[1] = '\0';
         return buffer;
     }
 
-    if (value >= 1E37 || value <= -1E37) {
+    if (value >= DOUBLE_MAX || value <= DOUBLE_MIN) {
         if (value > 0) {
             copyString(buffer, "INF");
         } else {
@@ -125,7 +203,7 @@ char* ftoa(double value) {
 
     // Add decimal point if needed
     if (places < width)
-        *p++ = '.';
+        *p++ = ',';
 
     // Convert fractional part
     while (exponent < 0 && places < width) {
@@ -148,7 +226,6 @@ char* ftoa(double value) {
 }
 
 
-
 /**
  * Convert an integer to a hexadecimal string.
  *
@@ -157,7 +234,7 @@ char* ftoa(double value) {
  */
 char* htoa(int integer) {
     int index = 0;
-    static char buffer[32]; // Static buffer to store the converted hexadecimal string
+    static char buffer[16]; // Static buffer to store the converted hexadecimal string
     buffer[index++] = '0'; // Add the '0' character to the buffer
     buffer[index++] = 'x'; // Add the 'x' character to the buffer
 
@@ -182,16 +259,25 @@ char* htoa(int integer) {
 int lengthString(const char *string) {
     int length = 0;
 
-    while (*(string + length) != '\0') {
+    // Iterate through the string until null terminator is reached
+    while (string[length] != '\0') {
         length++;
     }
+
+    // Return the calculated length
     return length;
 }
+
 
 /**
  * Reverse a string (strrev).
  */
 void reverseString(char *string) {
+    // Check for a null pointer or an empty string
+    if (string == NULL || *string == '\0') {
+        return;
+    }
+
     int length = lengthString(string);
 
     for (int index = 0; index < length / 2; index++) {
@@ -200,6 +286,7 @@ void reverseString(char *string) {
         string[length - index - 1] = temp;
     }
 }
+
 
 /**
  * Concatenate two strings (strcat).
@@ -211,6 +298,10 @@ void combineString(char *dest, char *source) {
     *end = '\0';
 }
 
+
+/**
+ * Copy an string into a another string.
+ */
 void copyString(char *dest, const char *source) {
     int i = 0;
     while (1) {
@@ -224,10 +315,11 @@ void copyString(char *dest, const char *source) {
     }
 }
 
+
 /**
  * Append a character to a string (append).
  *
- * @param str The input string.
+ * @param string The input string.
  * @param num The character to append.
  */
 void appendChar(char string[], char num) {
@@ -235,6 +327,7 @@ void appendChar(char string[], char num) {
     string[length] = num;
     string[length + 1] = '\0';
 }
+
 
 /**
  * Remove the last character from a string (backspace).
@@ -250,18 +343,18 @@ bool backspace(char string[]) {
 }
 
 
-// Character to lowercase
+/** Character to lowercase */
 int toLower(char character) {
 	return isUpper(character) ? character - 'A' + 'a' : character;
 }
 
-// Character to uppercase
+/** Character to uppercase */
 int toUpper(char character) {
 	return isLower(character) ? character - 'a' + 'A' : character;
 }
 
 
-// String to lowercase
+/** String to lowercase */
 void toLowercase(char *string) {
     int length = lengthString(string);
     for (int i = 0; i < length; i++) {
@@ -269,7 +362,7 @@ void toLowercase(char *string) {
     }
 }
 
-// String to uppercase
+/** String to uppercase */
 void toUppercase(char *string) {
     int length = lengthString(string);
     for (int i = 0; i < length; i++) {
@@ -277,6 +370,9 @@ void toUppercase(char *string) {
     }
 }
 
+/**
+ * Convert a integer value into an string
+ */
 void toString(int integer, char *buffer, int base) {
     static char digits[17] = "0123456789ABCDEF";
     int index = 0;
@@ -326,6 +422,7 @@ int equalsWith(const char* a, const char* b) {
     }
     return (unsigned char) *a - (unsigned char) *b;
 }
+
 
 /**
  * Compare two strings, how many characters match, before the first unmatching character (match).
