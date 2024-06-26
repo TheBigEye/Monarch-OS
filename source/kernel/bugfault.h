@@ -20,7 +20,7 @@
  * @param interrupt The IRQ value that triggered the exception.
  * @param regpointer The memory pointer to the ISR register.
  */
-void kernelException(const char *reason, uint32_t interrupt, uint32_t segment, reg_t *registers);
+void kernelException(const char *reason, uint32_t interrupt, uint32_t segment, registers_t *registers);
 
 /**
  * Trigger a kernel panic.

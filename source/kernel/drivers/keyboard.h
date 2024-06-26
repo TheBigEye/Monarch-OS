@@ -1,8 +1,7 @@
 #ifndef _DRIVER_KEYBOARD_H
 #define _DRIVER_KEYBOARD_H 1
 
-#include <stdint.h>
-#include <stdbool.h>
+#include "../../common/sysutils.h"
 
 #define BACKSPACE 0x0E
 #define CAPSLOCK 0x3A
@@ -19,6 +18,9 @@
 #define ESC 0x01
 
 #define KEY_F1 0x3B
+#define KEY_F2 0x3C
+#define KEY_F3 0x3D
+
 
 void configureKeyboard(void);
 

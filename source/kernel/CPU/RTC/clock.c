@@ -1,12 +1,12 @@
 #include "clock.h"
 
 #include "../../../common/sysutils.h"
-#include "../../drivers/screen.h"
+#include "../../drivers/console.h"
 #include "../../memory/memory.h"
 
 #include "../CMOS/CMOS.h"
 #include "../ISR/ISR.h"
-#include "../ports.h"
+#include "../HAL.h"
 
 /*
 * RTC - Real Time Clock, keeps track of current time and date even when the
@@ -30,8 +30,8 @@ int32_t bcd;
   Output:
     None.
 */
-void getTime(time_t *time) {
-    memoryCopy((uint8_t*)&global_time, (uint8_t*)time, sizeof(time_t));
+void clockGetTime(time_t *time) {
+    memoryCopy((uint8_t *) time, (uint8_t *) &global_time, sizeof(time_t));
 }
 
 /**
@@ -40,7 +40,7 @@ void getTime(time_t *time) {
  *
  * @param regs  The registers of the interrupt caller
  */
-static void clockCallback(reg_t *regs) {
+static void clockCallback(registers_t *regs) {
     if (readRegisterValue(0x0C) & 0x10) {
         if (bcd) {
             global_time.second = getBCD(readRegisterValue(0x00));
@@ -68,7 +68,7 @@ static void clockCallback(reg_t *regs) {
 /**
  * Initialize the Real Time Clock chip and add its handler to the IDT.
  */
-void initializeClock(void) {
+void initializeClock() {
     uint8_t status;
 
     status = readRegisterValue(0x0B);
@@ -81,11 +81,11 @@ void initializeClock(void) {
     writeRegisterValue(0x0B, status);
     readRegisterValue(0x0C);
 
-    printColor("[-] ", BG_BLACK | FG_LTGREEN); printString("Initializing RTC handler at IRQ8 ...\n");
+    printOutput("[...] ", BG_BLACK | FG_LTGREEN, "Initializing RTC handler at IRQ8 ...\n");
     registerInterruptHandler(IRQ8, clockCallback);
 }
 
-void terminateClock(void) {
-    printColor("[-] ", BG_BLACK | FG_LTRED); printString("Terminating and cleaning RTC handler at IRQ8 ...\n");
+void terminateClock() {
+    printOutput("[...] ", BG_BLACK | FG_LTRED, "Terminating and cleaning RTC handler at IRQ8 ...\n");
     unregisterInterruptHandler(IRQ8);
 }

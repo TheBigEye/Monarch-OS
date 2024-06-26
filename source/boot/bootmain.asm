@@ -15,17 +15,17 @@ bootmain:
     jmp stublet
 
 
-; This part MUST be 4byte aligned, so we solve that issue using 'ALIGN 4'
+; This part MUST be 4byte aligned, so we solve that issue using 'ALIGN 4', LOL
 ALIGN 4
-mboot:
+multiboot:
     ; Multiboot macros to make a few lines later more readable
-    MULTIBOOT_PAGE_ALIGN	equ 1 << 0
-    MULTIBOOT_MEMORY_INFO	equ 1 << 1
-    MULTIBOOT_GRAPH_MODE    equ 1 << 2
-    MULTIBOOT_AOUT_KLUDGE	equ 1 << 16
-    MULTIBOOT_HEADER_MAGIC	equ 0x1BADB002
-    MULTIBOOT_HEADER_FLAGS	equ MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_GRAPH_MODE | MULTIBOOT_AOUT_KLUDGE
-    MULTIBOOT_CHECKSUM	    equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
+    MULTIBOOT_PAGE_ALIGN	  equ 1 << 0
+    MULTIBOOT_MEMORY_INFO	  equ 1 << 1
+    MULTIBOOT_GRAPH_MODE      equ 1 << 2
+    MULTIBOOT_AOUT_KLUDGE	  equ 1 << 16
+    MULTIBOOT_HEADER_MAGIC	  equ 0x1BADB002
+    MULTIBOOT_HEADER_FLAGS	  equ MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_GRAPH_MODE | MULTIBOOT_AOUT_KLUDGE
+    MULTIBOOT_CHECKSUM	      equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
     EXTERN code, bss, end
 
     ; This is the GRUB Multiboot header. A boot signature
@@ -40,7 +40,7 @@ mboot:
 
     ; AOUT kludge - must be physical addresses. Make a note of these:
     ; The linker script fills in the data for these ones!
-    dd mboot
+    dd multiboot
     dd code
     dd bss
     dd end
@@ -50,9 +50,35 @@ mboot:
 ; will insert an 'extern _main', followed by 'call _main', right
 ; before the 'jmp $'.
 stublet:
-    extern kernel_main
-    call kernel_main
+    push esp
+
+    ; Push the incoming mulitboot headers
+	push eax ; Header magic
+	push ebx ; Header pointer
+
+    extern monarchKernelMain
+    call monarchKernelMain
     jmp $
+
+
+; This will set up our new segment registers. We need to do
+; something special in order to set CS. We do what is called a
+; far jump. A jump that includes a segment as well as an offset.
+; This is declared in C as 'extern void gdtDoFlush();'
+global gdtDoFlush
+[extern gp]
+gdtDoFlush:
+    lgdt [gp]
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    jmp 0x08:gdt_end
+gdt_end:
+    ret
+
 
 ;-----------------------------------------------------------------------------;
 ;                      Butterfly Kernel IRQ and ISR Handlers                  ;
@@ -75,7 +101,8 @@ ISR_common_stub:
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
-	push esp ; reg_t *r
+	push esp ; registers_t *r
+
     ; 2. Call C handler
     cld ; C code following the sysV ABI requires DF to be clear on function entry
 	call ISR_handler

@@ -1,27 +1,32 @@
 #include "keyboard.h"
 
-#include "../../common/sysutils.h"
-#include "../../common/sysutils.h"
-
 #include "../CPU/ISR/ISR.h"
-#include "../CPU/ports.h"
-#include "../kernel.h"
+#include "../CPU/HAL.h"
 
-#include "screen.h"
+#include "VGA/VGA.h"
+#include "graphics.h"
+#include "console.h"
 #include "sound.h"
 
-#define BUFFER_SIZE 1995
+#include "../main.h"
+
+#define BUFFER_SIZE 512
 
 static char buffer[BUFFER_SIZE];
 static bool capslock_enabled = false;
 static bool keybaord_enabled = false;
 
 /* US Keyboard layout */
-const char layout[128][2] = {
-    /* {U ,  L}  | CAPS OFF          | CAPS ON           | SC   */
-    {'?', '?'}, /* Unknown           | Unknown           | 0x00 */
 
-    {'?', '?'}, /* Escape            | None              | 0x01 */
+/* NOTE: 'Unsigned char' are used instead of 'signed char' due to
+   an overflow if we try use the extended ascii symbols hight to 127
+*/
+
+const unsigned char layout[128][2] = {
+    /* {U ,  L}  | CAPS OFF          | CAPS ON           | SC   */
+    { 0 ,  0 }, /* Unknown           | Unknown           | 0x00 */
+
+    { 0 ,  0 }, /* Escape            | None              | 0x01 */
     {'1', '!'}, /* 1 num             | Exclamation       | 0x02 */
     {'2', '@'}, /* 2 num             | At Sign           | 0x03 */
     {'3', '#'}, /* 3 num             | Pound Sign        | 0x04 */
@@ -51,7 +56,7 @@ const char layout[128][2] = {
     {']', '}'}, /* R Bracket         | R Brace           | 0x1B */
     {'\n', '\n'}, /* Enter           | Enter             | 0x1C */
 
-    {'?', '?'}, /* Caps Lock         | None              | 0x3A */
+    { 0 ,  0 }, /* Caps Lock         | None              | 0x3A */
     {'A', 'a'}, /* A upper key       | a lower key       | 0x1E */
     {'S', 's'}, /* S upper key       | s lower key       | 0x1F */
     {'D', 'd'}, /* D upper key       | d lower key       | 0x20 */
@@ -64,7 +69,7 @@ const char layout[128][2] = {
     {';', ':'}, /* Semicolon         | Colon             | 0x27 */
     {'\'', '\"'}, /* Quote           | Double Quote      | 0x28 */
     {'`', '`'}, /* Backquote         | Tilde             | 0x29 */
-    {'?', '?'}, /* L Shift           | L Shift           | 0x2A */
+    { 0 ,  0 }, /* L Shift           | L Shift           | 0x2A */
 
     {'\\', '|'}, /* Backslash        | Pipe              | 0x2B */
     {'Z', 'z'}, /* Z upper key       | z lower key       | 0x2C */
@@ -77,62 +82,62 @@ const char layout[128][2] = {
     {',', '<'}, /* Comma             | Less Than         | 0x33 */
     {'.', '>'}, /* Period            | Greater Than      | 0x34 */
     {'/', '?'}, /* Slash             | Question Mark     | 0x35 */
-    {'?', '?'}, /* R Shift           | R Shift           | 0x36 */
+    { 0 ,  0 }, /* R Shift           | R Shift           | 0x36 */
     {'*', '*'}, /* N Asterisk        | None              | 0x37 */
-    {'?', '?'}, /* Alt left          | None              | 0x38 */
+    { 0 ,  0 }, /* Alt left          | None              | 0x38 */
     {' ', ' '}, /* Spacebar          | Spacebar          | 0x39 */
-    {'?', '?'}, /* Caps Lock         | Caps Lock         | 0x3A */
+    { 0 ,  0 }, /* Caps Lock         | Caps Lock         | 0x3A */
 
-    {'?', '?'}, /* F1 key            | None              | 0x3B */
-    {'?', '?'}, /* F2 key            | None              | 0x3C */
-    {'?', '?'}, /* F3 key            | None              | 0x3D */
-    {'?', '?'}, /* F4 key            | None              | 0x3E */
-    {'?', '?'}, /* F5 key            | None              | 0x3F */
-    {'?', '?'}, /* F6 key            | None              | 0x40 */
-    {'?', '?'}, /* F7 key            | None              | 0x41 */
-    {'?', '?'}, /* F8 key            | None              | 0x42 */
-    {'?', '?'}, /* F9 key            | None              | 0x43 */
-    {'?', '?'}, /* F10 key           | None              | 0x44 */
+    { 0 ,  0 }, /* F1 key            | None              | 0x3B */
+    { 0 ,  0 }, /* F2 key            | None              | 0x3C */
+    { 0 ,  0 }, /* F3 key            | None              | 0x3D */
+    { 0 ,  0 }, /* F4 key            | None              | 0x3E */
+    { 0 ,  0 }, /* F5 key            | None              | 0x3F */
+    { 0 ,  0 }, /* F6 key            | None              | 0x40 */
+    { 0 ,  0 }, /* F7 key            | None              | 0x41 */
+    { 0 ,  0 }, /* F8 key            | None              | 0x42 */
+    { 0 ,  0 }, /* F9 key            | None              | 0x43 */
+    { 0 ,  0 }, /* F10 key           | None              | 0x44 */
 
-    {'?', '?'}, /* Num Lock          | None              | 0x45 */
-    {'?', '?'}, /* Scroll Lock       | None              | 0x46 */
-    {'?', '?'}, /* Home              | None              | 0x47 */
+    { 0 ,  0 }, /* Num Lock          | None              | 0x45 */
+    { 0 ,  0 }, /* Scroll Lock       | None              | 0x46 */
+    { 0 ,  0 }, /* Home              | None              | 0x47 */
     { 24, 227}, /* Up Arrow          | Pi Sign           | 0x48 */
-    {'?', '?'}, /* Page Up           | None              | 0x49 */
-    {'-', '-'}, /* Minus             | None              | 0x4A */
-    { 27,  27}, /* Left Arrow        | None              | 0x4B */
-    {'?', '?'}, /* Center            | None              | 0x4C */
-    { 26,  26}, /* Right Arrow       | None              | 0x4D */
-    {'+', '+'}, /* Plus              | None              | 0x4E */
-    {'?', '?'}, /* End               | None              | 0x4F */
-    { 25,  25}, /* Down Arrow        | None              | 0x50 */
-    {'?', '?'}, /* Page Down         | None              | 0x51 */
-    {'?', '?'}, /* Insert            | None              | 0x52 */
-    {'?', '?'}, /* Delete            | None              | 0x53 */
+    { 0 ,  0 }, /* Page Up           | None              | 0x49 */
+    {'-', '-'}, /* Minus             | Minus             | 0x4A */
+    { 27,  27}, /* Left Arrow        | Left Arrow        | 0x4B */
+    { 0 ,  0 }, /* Center            | None              | 0x4C */
+    { 26,  26}, /* Right Arrow       | Right Arrow       | 0x4D */
+    {'+', '+'}, /* Plus              | Plus              | 0x4E */
+    { 0 ,  0 }, /* End               | None              | 0x4F */
+    { 25,  25}, /* Down Arrow        | Down Arrow        | 0x50 */
+    { 0 ,  0 }, /* Page Down         | None              | 0x51 */
+    { 0 ,  0 }, /* Insert            | None              | 0x52 */
+    { 0 ,  0 }, /* Delete            | None              | 0x53 */
 
-    {'?', '?'}, /* Unknown           | Unknown           | 0x54 */
-    {'?', '?'}, /* Unknown           | Unknown           | 0x55 */
-    {'?', '?'}, /* Unknown           | Unknown           | 0x56 */
+    { 0 ,  0 }, /* Unknown           | Unknown           | 0x54 */
+    { 0 ,  0 }, /* Unknown           | Unknown           | 0x55 */
+    { 0 ,  0 }, /* Unknown           | Unknown           | 0x56 */
 
-    {'?', '?'}, /* F11               | None              | 0x57 */
-    {'?', '?'}, /* F12               | None              | 0x58 */
+    { 0 ,  0 }, /* F11               | None              | 0x57 */
+    { 0 ,  0 }, /* F12               | None              | 0x58 */
 };
 
+/* TODO: Implement getchr() and basic input routines from C */
 
-/** @note If you are on a Virtual Machine, probablily this doesn't works */
+/** @note If you are on a Virtual Machine, probablily this doesn't works, LOL */
 static void setKeyboardLeds(bool caps, bool num, bool scroll) {
     uint8_t data = (caps << 2) | (num << 1) | scroll;
     writeByteToPort(0x64, 0xED);
     writeByteToPort(0x60, data);
 }
 
-
 /**
  * Callback function for keyboard interrupt.
  *
  * @param regs  Register state at the time of interrupt.
  */
-static void keyboardCallback(reg_t *regs) {
+static void keyboardCallback(registers_t *regs) {
     /* The PIC leaves us the scancode in port 0x60 */
     uint8_t scancode = readByteFromPort(0x60);
 
@@ -154,11 +159,18 @@ static void keyboardCallback(reg_t *regs) {
 
     /* F1 - Clear the screen, like an Commodore*/
     } else if (scancode == KEY_F1) {
-        clearScreen(BG_BLACK | FG_WHITE);
+        configureScreen(text_mode, false);
+        clearScreen();
         configureKeyboard();
 
+    /* F2 - Change to text mode */
+    } else if (scancode == KEY_F2) {
+        clearScreen();
+        configureScreen(video_mode, true);
+        fillScreen(0x00);
+
     } else if (scancode == ENTER) {
-        cosoleHandler(buffer);
+        monarchConsoleMain(buffer);
         configureKeyboard();
 
     } else if (scancode == TAB) {
@@ -180,6 +192,7 @@ static void keyboardCallback(reg_t *regs) {
         // Check if there is enough space in the buffer to append the letter
         if (lengthString(buffer) + 1 < BUFFER_SIZE) {
 
+	    /* For avoid delete accidentally the prompt, we use a special null terminator*/
             if (getCharacter() == ' ' || getCharacter() == '\0') {
                 appendChar(buffer, letter);
 
@@ -188,10 +201,12 @@ static void keyboardCallback(reg_t *regs) {
             }
         }
     }
+
     UNUSED(regs);
 }
 
-void configureKeyboard(void) {
+/* Resets the prompt */
+void configureKeyboard() {
     keybaord_enabled = false;
     buffer[0] = '\0';
     setCursor(0x00);
@@ -203,16 +218,16 @@ void configureKeyboard(void) {
 /**
  * Initializes the keyboard by registering the keyboard callback function.
  */
-void initializeKeyboard(void) {
-    printColor("[-] ", BG_BLACK | FG_LTGREEN); printString("Initializing keyboard handler at IRQ1 ...\n");
+void initializeKeyboard() {
+    printOutput("[...] ", BG_BLACK | FG_LTGREEN, "Initializing keyboard handler at IRQ1\n");
     registerInterruptHandler(IRQ1, keyboardCallback);
 }
 
 /**
  * Terminate the keyboard by unregistering the keyboard callback function.
  */
-void terminateKeyboard(void) {
-    printColor("[-] ", BG_BLACK | FG_LTRED); printString("Terminating and cleaning keyboard handler at IRQ1 ...\n");
-    unregisterInterruptHandler(IRQ1);
+void terminateKeyboard() {
     keybaord_enabled = false;
+    printOutput("[...] ", BG_BLACK | FG_LTRED, "Terminating and cleaning keyboard handler at IRQ1\n");
+    unregisterInterruptHandler(IRQ1);
 }

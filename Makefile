@@ -12,28 +12,52 @@ CYAN =\033[0;36m
 GREEN =\033[0;32m
 RESET =\033[0m
 
-QEMU_ARGS := $(strip                       \
-    -boot menu=off                         \
-    -m 8M                                  \
-    -cpu max                               \
-    -device VGA,vgamem_mb=32               \
-    -display sdl,gl=on                     \
-    -audiodev dsound,id=0                  \
-    -machine pcspk-audiodev=0              \
-    -rtc base=localtime,clock=host         \
+# Compiler and linker configuration
+CC = i686-elf-gcc
+LD = i686-elf-ld
+
+CWFLAGS = -Wall -Wextra -Werror -Wfloat-equal -Wundef -Winit-self -Wpedantic -pedantic -Wno-int-conversion -Wno-unused-parameter -Wno-unused-function -Wstrict-prototypes 
+LDFLAGS = -m elf_i386 --allow-multiple-definition -nostdlib -s --gc-sections
+
+# GCC compilation flags
+CCFLAGS := $(strip                  \
+    -std=c99                        \
+    -m32                            \
+    -O2                             \
+    -g0                             \
+    -fno-pie                        \
+    -fno-ident                      \
+    -fstrength-reduce               \
+    -fomit-frame-pointer            \
+    -finline-functions              \
+    -fno-builtin                    \
+    -ffreestanding                  \
+)
+
+# Qemu virtual machine config
+QEMU_ARGS := $(strip                \
+    -boot menu=off                  \
+    -m 32M                          \
+    -cpu max                        \
+    -device VGA,vgamem_mb=16        \
+    -display sdl,gl=on              \
+    -audiodev dsound,id=0           \
+    -machine pcspk-audiodev=0       \
+    -rtc base=localtime,clock=host  \
 )
 
 # C Source files
-SOURCES = $(wildcard         		       \
+SOURCES = $(wildcard                       \
 	$(SOURCE_DIR)/common/*.c               \
-	$(SOURCE_DIR)/kernel/CPU/BIOS/*.c      \
 	$(SOURCE_DIR)/kernel/CPU/CMOS/*.c      \
 	$(SOURCE_DIR)/kernel/CPU/FPU/*.c       \
+	$(SOURCE_DIR)/kernel/CPU/GDT/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/IDT/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/ISR/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/PIT/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/RTC/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/*.c           \
+	$(SOURCE_DIR)/kernel/drivers/VGA/*.c   \
 	$(SOURCE_DIR)/kernel/drivers/*.c       \
 	$(SOURCE_DIR)/kernel/memory/*.c        \
 	$(SOURCE_DIR)/kernel/power/*.c         \
@@ -41,17 +65,18 @@ SOURCES = $(wildcard         		       \
 	$(SOURCE_DIR)/kernel/*.c               \
 )
 
-# C headers files
+# C Headers files
 HEADERS = $(wildcard                       \
 	$(SOURCE_DIR)/common/*.h               \
-	$(SOURCE_DIR)/kernel/CPU/BIOS/*.h      \
 	$(SOURCE_DIR)/kernel/CPU/CMOS/*.h      \
-	$(SOURCE_DIR)/kernel/CPU/FPU/*.H       \
+	$(SOURCE_DIR)/kernel/CPU/FPU/*.h       \
+	$(SOURCE_DIR)/kernel/CPU/GDT/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/IDT/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/ISR/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/PIT/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/RTC/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/*.h           \
+	$(SOURCE_DIR)/kernel/drivers/VGA/*.h   \
 	$(SOURCE_DIR)/kernel/drivers/*.h       \
 	$(SOURCE_DIR)/kernel/memory/*.h        \
 	$(SOURCE_DIR)/kernel/power/*.h         \
@@ -61,14 +86,6 @@ HEADERS = $(wildcard                       \
 
 # Object files
 OBJECTS = ${SOURCES:.c=.o $(SOURCE_DIR)/boot/binaries.o $(SOURCE_DIR)/boot/bootmain.o}
-
-
-# Compiler and linker configuration
-CC = i686-elf-gcc
-LD = i686-elf-ld
-CCFLAGS = -std=gnu99 -m32 -Os -g0 -fno-pie -fstrength-reduce -fomit-frame-pointer -finline-functions -fno-builtin -ffreestanding
-CWFLAGS = -Wall -Wextra -Werror
-LDFLAGS = -m elf_i386 --allow-multiple-definition -nostdlib -s
 
 
 ### First rule is the one executed when no parameters are fed to the Makefile
@@ -87,8 +104,8 @@ OS.iso: kernel.elf
 	@mkdir -p ./grub/temp/boot/grub
 	@cp $< ./grub/temp/boot/kernel.elf
 	@cp ./grub/menu.lst ./grub/temp/boot/grub/menu.lst
-	@cp ./grub/grub ./grub/temp/boot/grub/grub
-	@xorriso -as mkisofs -V Butterfly -R -b boot/grub/grub -no-emul-boot -quiet -boot-load-size 4 -boot-info-table -o $@ grub/temp/
+	@cp ./grub/stage2 ./grub/temp/boot/grub/stage2
+	@xorriso -as mkisofs -V Butterfly -R -b boot/grub/stage2 -no-emul-boot -quiet -boot-load-size 4 -boot-info-table -o $@ grub/temp/
 	@$(RM) -rf ./grub/temp
 
 
@@ -132,4 +149,3 @@ clean:
 	@$(RM) *.bin *.o *.dis *.elf *.img *.iso
 	@$(RM) -rf ./grub/temp
 	@find $(SOURCE_DIR) -name '*.o' -type f -delete
-	@find $(SOURCE_DIR) -name '*.bin' -type f -delete

@@ -1,10 +1,10 @@
 #include "timer.h"
 
 #include "../../../common/sysutils.h"
-#include "../../drivers/screen.h"
+#include "../../drivers/console.h"
 
 #include "../ISR/ISR.h"
-#include "../ports.h"
+#include "../HAL.h"
 
 /*
 * PIT - Programmable Interval Timer. The PIT is like a stopwatch with periodic alarm
@@ -15,7 +15,7 @@
 // FIX FIX THIS SHIT!: this will overflow after about an hour of runtime, use uint64_t and either link against libgcc or write a 64bit os
 volatile uint32_t timerTicks;
 
-uint32_t getElapsedTimer() {
+uint32_t timerGetTicks() {
     return timerTicks;
 }
 
@@ -28,7 +28,7 @@ uint32_t getElapsedTimer() {
  *
  * @return The elapsed PIT seconds.
  */
-uint32_t getTimerSeconds() {
+uint32_t timerGetSeconds() {
     return (timerTicks / 100) % 60;
 }
 
@@ -41,7 +41,7 @@ uint32_t getTimerSeconds() {
  *
  * @return The elapsed PIT minutes.
  */
-uint32_t getTimerMinutes() {
+uint32_t timerGetMinutes() {
     return (timerTicks / (100 * 60)) % 60;
 }
 
@@ -54,7 +54,7 @@ uint32_t getTimerMinutes() {
  *
  * @return The elapsed PIT hours.
  */
-uint32_t getTimerHours() {
+uint32_t timerGetHours() {
     return timerTicks / (100 * 60 * 60);
 }
 
@@ -63,7 +63,7 @@ uint32_t getTimerHours() {
  *
  * @param regs  The interrupt's caller registers.
  */
-static void timerCallback(reg_t *regs) {
+static void timerCallback(registers_t *regs) {
     timerTicks++;
     UNUSED(regs);
 }
@@ -84,7 +84,7 @@ void initializeTimer(uint32_t frequency) {
     uint8_t low = (uint8_t)(divisor & 0xFF);
     uint8_t high = (uint8_t)((divisor >> 8) & 0xFF);
 
-    printColor("[-] ", BG_BLACK | FG_LTGREEN); printString("Initializing PIT handler at IRQ0 ...\n");
+    printOutput("[...] ", BG_BLACK | FG_LTGREEN, "Initializing PIT handler at IRQ0 ...\n");
 
     // Install the timerCallback function
     registerInterruptHandler(IRQ0, timerCallback);
@@ -94,8 +94,8 @@ void initializeTimer(uint32_t frequency) {
     writeByteToPort(0x40, high);
 }
 
-void terminateTimer(void) {
-    printColor("[-] ", BG_BLACK | FG_LTRED); printString("Terminating and cleaning PIT handler at IRQ0 ...\n");
+void terminateTimer() {
+    printOutput("[...] ", BG_BLACK | FG_LTRED, "Terminating and cleaning PIT handler at IRQ0 ...\n");
 
     // Unnstall the timerCallback function
     unregisterInterruptHandler(IRQ0);

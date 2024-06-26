@@ -1,10 +1,8 @@
 #include "power.h"
 
-#include "../CPU/ports.h"
 #include "../CPU/ISR/ISR.h"
-
-#include "../kernel.h"
-
+#include "../CPU/HAL.h"
+#include "../drivers/console.h"
 
 /**
  * Halt the CPU with security and stops all.
@@ -15,7 +13,7 @@ void powerHalt(uint32_t time) {
 
     operationSleep(time);
 
-    __asm__ __volatile__("hlt"); // Halt the CPU
+    __asm__ __volatile__ ("hlt"); // Halt the CPU
 }
 
 /**
@@ -24,9 +22,8 @@ void powerHalt(uint32_t time) {
  * @param time The time to wait in milliseconds before rebooting.
  */
 void powerReboot(uint32_t time) {
-
-    terminateKernel(); // Clean drivers and kernel
-
+    clearScreen();
+    IRQ_uninstall();
     operationSleep(time);
 
     // Wait until the input buffer is empty
@@ -36,7 +33,7 @@ void powerReboot(uint32_t time) {
     }
 
     writeByteToPort(0x64, 0xFE); // Send the reboot command
-    __asm__ __volatile__("hlt"); // Halt the CPU
+    __asm__ __volatile__ ("hlt"); // Halt the CPU
 }
 
 /**
@@ -45,9 +42,8 @@ void powerReboot(uint32_t time) {
  * @param time The time to wait in milliseconds before shutting down.
  */
 void powerShutdown(uint32_t time) {
-
-    terminateKernel(); // Clean drivers and kernel
-
+    clearScreen();
+    IRQ_uninstall();
     operationSleep(time);
 
     writeWordToPort(0xB004, 0x2000); // Bochs (BIOS)

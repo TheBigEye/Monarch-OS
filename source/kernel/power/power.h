@@ -1,8 +1,7 @@
 #ifndef _KERNEL_POWER_H
 #define _KERNEL_POWER_H 1
 
-#include <stdint.h>
-#include <stdbool.h>
+#include "../../common/sysutils.h"
 
 /**
  * Halt the CPU with security and stops all.

@@ -1,33 +1,33 @@
 #include "bugfault.h"
 
 #include "../common/sysutils.h"
-#include "../common/sysutils.h"
 
 #include "CPU/ISR/ISR.h"
-#include "CPU/ports.h"
-#include "drivers/screen.h"
+#include "CPU/PIT/timer.h"
+#include "CPU/HAL.h"
+#include "drivers/console.h"
 #include "drivers/sound.h"
 #include "power/power.h"
 
-extern char butterfly[];
+#include "binaries.h"
 
 void printStackTrace(unsigned int ebp, int column, int row) {
-    unsigned int *stackPosition = (unsigned int *)ebp;
-    unsigned char index = row;
+    uint32_t *stackPosition = (uint32_t *) ebp;
+    uint32_t index = row;
 
     while (stackPosition != 0) {
-        //methodLocation is the dereference of EIP
-        //(which is itself just above EBP on the stack)
-        unsigned int methodLocation = *(stackPosition + 1);
+        // methodLocation is the dereference of EIP
+        // (which is itself just above EBP on the stack)
+        uint32_t methodLocation = *(stackPosition + 1);
 
-        //You can look methodLocation up to get a method name
+        //  You can look methodLocation up to get a method name
         putString(htoa(methodLocation), column, index, BG_BLACK | FG_LTRED);
         if (*stackPosition != 0) {
             index++;
         }
-        //Keep derefencing EBP until we reach 0. If you infinite
-        //loop here, make certain you set EBP to zero in the assembly stub
-        stackPosition = (unsigned int *)(*stackPosition);
+        // Keep derefencing EBP until we reach 0. If you infinite
+        // loop here, make certain you set EBP to zero in the assembly stub
+        stackPosition = (uint32_t *)(*stackPosition);
     }
 }
 
@@ -38,17 +38,18 @@ void printStackTrace(unsigned int ebp, int column, int row) {
  * @param interrupt The IRQ value that triggered the exception.
  * @param regpointer The memory pointer to the ISR register.
  */
-void kernelException(const char *reason, uint32_t interrupt, uint32_t segment, reg_t *registers) {
+void kernelException(const char *reason, uint32_t interrupt, uint32_t segment, registers_t *registers) {
 
     __asm__ __volatile__ ("cli"); // DISABLE INTERRUPTS
 
-    clearScreen(BG_BLACK | FG_WHITE);
+    clearScreen();
     operationSleep(50);
     setCursor(0x3F);
 
     putString(butterfly, 0, 1, BG_BLACK | FG_LTRED);
 
-    putString(" Uh Oh ... This isn't good ... ", 21, 20, BG_BLACK | FG_LTRED); operationSleep(1000);
+    putString(" Uh Oh ... This isn't good ... ", 21, 20, BG_BLACK | FG_LTRED);
+    operationSleep(1000);
     putString("                               ", 21, 20, BG_BLACK | FG_LTRED);
 
     if (registers) {
@@ -81,10 +82,10 @@ void kernelException(const char *reason, uint32_t interrupt, uint32_t segment, r
     char msg_line_6[] = "  your system administrator or technical.";
     char msg_line_7[] = "Rebooting...";
 
-    operationSleep(666);
-    clearScreen(BG_RED | FG_WHITE);
-    operationSleep(50);
-    clearScreen(BG_BLACK | FG_WHITE);
+    timerSleep(500);
+    setScreen(BG_RED | FG_WHITE);
+    timerSleep(50);
+    clearScreen();
     setCursor(0x3F);
 
     putString(title, 38, 20, BG_LTGRAY | FG_BLACK);
@@ -99,10 +100,10 @@ void kernelException(const char *reason, uint32_t interrupt, uint32_t segment, r
     putString(msg_line_6, 10, 31, BG_BLACK | FG_WHITE);
 
     playBeep(100, 3000);
-    operationSleep(5000);
+    timerSleep(1500);
     putString(msg_line_7, 38, 34, BG_BLACK | FG_DKGRAY);
-    operationSleep(3000);
-    clearScreen(BG_BLACK | FG_WHITE);
+    timerSleep(500);
+    clearScreen();
     powerReboot(100);
 }
 
@@ -133,7 +134,7 @@ void kernelPanic(const char *message, const char *file, uint32_t line) {
  */
 void kernelAssert(const char *file, uint32_t line, const char *desc) {
     // Assertion failure
-    __asm__ __volatile__("cli");
+    __asm__ __volatile__ ("cli");
     printColor("[ASSERTION FAILURE] ", BG_BLACK | FG_BROWN);
     printColor(desc, BG_BLACK | FG_LTGRAY);
     printColor(" [@", BG_BLACK | FG_BROWN);

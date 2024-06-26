@@ -1,4 +1,4 @@
-#include "ports.h"
+#include "HAL.h"
 
 /*
 * IO Ports - Input/Output Ports, hardware interfaces used by a computer to communicate with
@@ -8,7 +8,7 @@
 *  @see https://wiki.osdev.org/Port_IO
 */
 
-void operationWait(void) {
+void operationWait() {
     __asm__ __volatile__ ("outb %%al, $0x80" : : "a"(0));
 }
 

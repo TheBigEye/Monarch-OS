@@ -1,7 +1,7 @@
 #ifndef _CPU_PORTS_H
 #define _CPU_PORTS_H 1
 
-#include <stdint.h>
+#include "../../common/sysutils.h"
 
 void operationWait(void);
 
@@ -61,7 +61,5 @@ uint8_t readRegisterValue(uint8_t reg);
  * @param value The value to write to the register
  */
 void writeRegisterValue(uint8_t reg, uint8_t value);
-
-
 
 #endif /* _CPU_PORTS_H */
