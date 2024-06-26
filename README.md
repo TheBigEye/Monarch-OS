@@ -25,7 +25,10 @@
 
 **Monarch OS** is an simple Operating System designed to run on 32-bit architectures, supports VGA 90x60 text mode and 640x480 4bpp graphic (planar) mode, it is composed of a Kernel (as the main program) and GRUB Legacy as bootloader, it also contains a Memory manager, PC Speaker drivers and a Commands interpreter.
 
-It has been created from scratch using several videos from Youtube as a base, and https://wiki.osdev.org, with the aim of trying to make a real OS, currently still under development :)
+It has been created from scratch using some videos from Youtube as a base, and https://wiki.osdev.org, with the aim of trying to make a real OS, currently still under development :)
+
+## So, why do I do this?
+**The reason is simple:** the pure passion for creating and the challenge it entails. Although this project may be a minimalist kernel, and its practical utility may be _questionable_, it turns out to be enjoyable. First, there’s _the gratification of building something from scratch_, understanding every bit and byte that constitutes the heart of a PC. It’s also _an excellent way to learn and refine low-level concepts and computer system architecture_. Of course, **the disadvantages are evident:** it’s a journey filled with complexities, frustrations, and errors that could even overwhelm the most experienced developer. However, even in those moments of despair, there’s an intrinsic beauty in the learning process and problem-solving that only true enthusiasts can appreciate. After all, _isn’t that the true essence of programming?_.
 
 ## How do I build this?
 To build, you will need NASM, GCC and a 32 bit processor, **MANDATORY** we will need a UNIX environment, to use tools such as QEMU, make, some bash features and the C cross compiler
