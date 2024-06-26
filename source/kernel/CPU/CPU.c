@@ -1,5 +1,6 @@
 #include "CPU.h"
-#include "../drivers/screen.h"
+
+#include "../drivers/console.h"
 
 #define EDX_SYSCALL                     (1 << 11)   // SYSCALL/SYSRET
 #define EDX_XD                          (1 << 20)   // Execute Disable Bit
@@ -7,12 +8,12 @@
 #define EDX_RDTSCP                      (1 << 27)   // RDTSCP and IA32_TSC_AUX
 #define EDX_64_BIT                      (1 << 29)   // 64-bit Architecture
 
-struct TableInfo {
+struct processor_info {
     uint32_t bit;
     const char* name;
 };
 
-static const struct TableInfo features[] = {
+static const struct processor_info features[29] = {
     /* {BIT, FEATURE NAME} |  DEFINITION     | DESCRIPTION                                   */
     /*---------------------|-----------------|---------------------------------------------- */
     {(1 << 0), "FPU"},     /* EDX_FPU        | Floating-Point Unit On-Chip                   */
@@ -43,10 +44,11 @@ static const struct TableInfo features[] = {
     {(1 << 27), "SS"},     /* EDX_SS         | Self Snoop                                    */
     {(1 << 28), "HTT"},    /* EDX_HTT        | Multi-Threading                               */
     {(1 << 29), "TM"},     /* EDX_TM         | Thermal Monitor                               */
-    {(1 << 31), "PBE"}     /* EDX_PBE        | Pending Break Enable                          */
+
+    {(0x80000000), "PBE"}  /* EDX_PBE        | Pending Break Enable                          */
 };
 
-static const struct TableInfo instructions[] = {
+static const struct processor_info instructions[29] = {
     /* {BIT, INSTRUCTION}   |  DEFINITION     | DESCRIPTION                                  */
     /*----------------------|-----------------|--------------------------------------------- */
     {(1 << 0), "SSE3"},     /* ECX_SSE3       | Streaming SIMD Extensions 3                  */
@@ -82,7 +84,7 @@ static const struct TableInfo instructions[] = {
 
 
 static inline void cpuid(uint32_t reg, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
-    __asm__ __volatile__("cpuid"
+    __asm__ __volatile__ ("cpuid"
         : "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
         : "0" (reg)
     );
@@ -90,20 +92,20 @@ static inline void cpuid(uint32_t reg, uint32_t *eax, uint32_t *ebx, uint32_t *e
 
 
 // Function to check and print features
-static void checkAndPrintInfo(const struct TableInfo *table, uint32_t infoBits, const char* label) {
+static void checkAndPrintInfo(const struct processor_info *table, uint32_t infoBits, const char* label) {
     printOutput("[o] ", BG_BLACK | FG_YELLOW, label);
 
     // Print features or instructions with aligned names
     for (uint16_t i = 0, x = 0; i < sizeof(features) / sizeof(features[0]); ++i) {
         if (infoBits & table[i].bit) {
-            if (x++ % 6 == 0) {
+            if (x++ % 12 == 0) {
                 printString("\t");
             }
 
             printOutput("- ", BG_BLACK | FG_DKGRAY, table[i].name);
 
             // Calculate the number of spaces needed to align feature names
-            for (int j = 0; j < 10 - lengthString(table[i].name) + 1; ++j) {
+            for (int j = 0; j < 20 - lengthString(table[i].name) + 1; ++j) {
                 printString(" ");
             }
         }
@@ -113,7 +115,7 @@ static void checkAndPrintInfo(const struct TableInfo *table, uint32_t infoBits, 
 }
 
 
-void detectCPU(void) {
+void processorGetStatus() {
     // Register storage
     uint32_t eax, ebx, ecx, edx;
 
@@ -167,9 +169,8 @@ void detectCPU(void) {
     }
 }
 
-// rdtsc
-uint32_t getCpuTicks() {
-    uint32_t lo;
-    __asm__ __volatile__ ("rdtsc" : "=a" (lo));
-    return lo;
+uint32_t processorGetTicks() {
+    uint32_t ticks;
+    __asm__ __volatile__ ("rdtsc" : "=a" (ticks));
+    return ticks;
 }

@@ -1,22 +1,19 @@
 #include "sound.h"
 
-#include "../../common/sysutils.h"
 #include "../CPU/PIT/timer.h"
-#include "../CPU/ports.h"
-
+#include "../CPU/HAL.h"
 
 /** @see https://wiki.osdev.org/PC_Speaker **/
 
-//
-// PRIVATE API ROUTINES
-//
+
+/* Private functions */
 
 /**
  * Play sound with the specified frequency.
  *
  * @param frequency The frequency of the sound.
  */
-void playSound(uint32_t frequency) {
+static void playSound(uint32_t frequency) {
     if (frequency == 0) {
         writeByteToPort(0x61, readByteFromPort(0x61) & ~3);
         return;
@@ -31,15 +28,12 @@ void playSound(uint32_t frequency) {
 /**
  * Stop the currently playing sound.
  */
-void stopSound(void) {
-    uint8_t tmp = readByteFromPort(0x61) & 0xFC;
-    writeByteToPort(0x61, tmp);
+static inline void stopSound(void) {
+    writeByteToPort(0x61, (readByteFromPort(0x61) & 0xFC));
 }
 
 
-//
-// PUBLIC API ROUTINES
-//
+/* Public functions */
 
 /**
  * Make a beep sound with the specified frequency and duration.
@@ -85,7 +79,7 @@ void playChord(char chord[], int position) {
 /**
  * Play the startup sound.
  */
-void startupSound(void) {
+void startupSound() {
     timerSleep(30);
     playBeep(262, 30);  // C4
     playBeep(294, 15);  // D4
@@ -100,7 +94,7 @@ void startupSound(void) {
 /**
  * Play the shutdown sound.
  */
-void shutdownSound(void) {
+void shutdownSound() {
     timerSleep(5);
     playBeep(523, 30);  // C5
     playBeep(494, 15);  // B4

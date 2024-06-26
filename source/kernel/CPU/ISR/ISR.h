@@ -1,26 +1,26 @@
 #ifndef _CPU_ISR_H
 #define _CPU_ISR_H 1
 
-#include <stdint.h>
+#include "../../../common/sysutils.h"
 
 /* ISRs reserved for CPU exceptions - these are function prototypes for all of the exception handlers:
   The first 32 entries in the IDT are reserved, and are designed to service exceptions! */
 
-extern void ISR_0();  extern void ISR_1();  extern void ISR_2();  extern void ISR_3();
-extern void ISR_4();  extern void ISR_5();  extern void ISR_6();  extern void ISR_7();
-extern void ISR_8();  extern void ISR_9();  extern void ISR_10(); extern void ISR_11();
-extern void ISR_12(); extern void ISR_13(); extern void ISR_14(); extern void ISR_15();
-extern void ISR_16(); extern void ISR_17(); extern void ISR_18(); extern void ISR_19();
-extern void ISR_20(); extern void ISR_21(); extern void ISR_22(); extern void ISR_23();
-extern void ISR_24(); extern void ISR_25(); extern void ISR_26(); extern void ISR_27();
-extern void ISR_28(); extern void ISR_29(); extern void ISR_30(); extern void ISR_31();
+extern void ISR_0(void);  extern void ISR_1(void);  extern void ISR_2(void);  extern void ISR_3(void);
+extern void ISR_4(void);  extern void ISR_5(void);  extern void ISR_6(void);  extern void ISR_7(void);
+extern void ISR_8(void);  extern void ISR_9(void);  extern void ISR_10(void); extern void ISR_11(void);
+extern void ISR_12(void); extern void ISR_13(void); extern void ISR_14(void); extern void ISR_15(void);
+extern void ISR_16(void); extern void ISR_17(void); extern void ISR_18(void); extern void ISR_19(void);
+extern void ISR_20(void); extern void ISR_21(void); extern void ISR_22(void); extern void ISR_23(void);
+extern void ISR_24(void); extern void ISR_25(void); extern void ISR_26(void); extern void ISR_27(void);
+extern void ISR_28(void); extern void ISR_29(void); extern void ISR_30(void); extern void ISR_31(void);
 
 /* IRQ definitions */
 
-extern void IRQ_0();  extern void IRQ_1(); extern void IRQ_2();  extern void IRQ_3();
-extern void IRQ_4();  extern void IRQ_5(); extern void IRQ_6();  extern void IRQ_7();
-extern void IRQ_8();  extern void IRQ_9(); extern void IRQ_10(); extern void IRQ_11();
-extern void IRQ_12(); extern void IRQ_13(); extern void IRQ_14(); extern void IRQ_15();
+extern void IRQ_0(void);  extern void IRQ_1(void); extern void IRQ_2(void);  extern void IRQ_3(void);
+extern void IRQ_4(void);  extern void IRQ_5(void); extern void IRQ_6(void);  extern void IRQ_7(void);
+extern void IRQ_8(void);  extern void IRQ_9(void); extern void IRQ_10(void); extern void IRQ_11(void);
+extern void IRQ_12(void); extern void IRQ_13(void); extern void IRQ_14(void); extern void IRQ_15(void);
 
 #define IRQ0      32 // Programmable Interrupt Timer Interrupt
 #define IRQ1      33 // Keyboard Interrupt
@@ -51,16 +51,16 @@ typedef struct {
     uint32_t edi, esi, ebp, useless, ebx, edx, ecx, eax; /* Pushed by pusha. */
     uint32_t int_no, err_code; /* Interrupt number and error code (if applicable) */
     uint32_t eip, cs, eflags, esp, ss; /* Pushed by the processor automatically */
-} reg_t;
+} registers_t;
 
-void ISR_install();
-void ISR_handler(reg_t *registers);
+void isrDoInstall(void);
+void ISR_handler(registers_t *registers);
 
-void IRQ_install();
-void IRQ_uninstall();
+void irqDoInstall(void);
+void IRQ_uninstall(void);
 
-typedef void (*isr_t)(reg_t*);
-void registerInterruptHandler(uint8_t irq, isr_t handler);
+typedef void (*interrupt_t)(registers_t *);
+void registerInterruptHandler(uint8_t irq, interrupt_t handler);
 void unregisterInterruptHandler(uint8_t irq);
 
 #endif /* _CPU_ISR_H */

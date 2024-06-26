@@ -1,7 +1,7 @@
 #ifndef _CPU_CLOCK_H
 #define _CPU_CLOCK_H 1
 
-#include <stdint.h>
+#include "../../../common/sysutils.h"
 
 typedef struct {
     uint8_t second;
@@ -19,7 +19,7 @@ typedef struct {
  *
  * @param time  Pointer to the time object to store the current time
  */
-void getTime(time_t* time);
+void clockGetTime(time_t* time);
 
 /**
  * Initialize the Real Time Clock chip and add its handler to the IDT.

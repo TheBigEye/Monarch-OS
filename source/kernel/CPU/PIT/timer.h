@@ -1,10 +1,9 @@
 #ifndef _CPU_TIMER_H
 #define _CPU_TIMER_H 1
 
-#include <stdint.h>
+#include "../../../common/sysutils.h"
 
-
-uint32_t getElapsedTimer();
+uint32_t timerGetTicks(void);
 
 /**
  * Get the elapsed seconds based on the PIT tick count.
@@ -15,7 +14,7 @@ uint32_t getElapsedTimer();
  *
  * @return The elapsed PIT seconds.
  */
-uint32_t getTimerSeconds();
+uint32_t timerGetSeconds(void);
 
 /**
  * Get the elapsed minutes based on the PIT tick count.
@@ -26,7 +25,7 @@ uint32_t getTimerSeconds();
  *
  * @return The elapsed PIT minutes.
  */
-uint32_t getTimerMinutes();
+uint32_t timerGetMinutes(void);
 
 /**
  * Get the elapsed hours based on the PIT tick count.
@@ -37,7 +36,7 @@ uint32_t getTimerMinutes();
  *
  * @return The elapsed PIT hours.
  */
-uint32_t getTimerHours();
+uint32_t timerGetHours(void);
 
 
 /**

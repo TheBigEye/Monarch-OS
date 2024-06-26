@@ -9,7 +9,7 @@
  * @param position The starting position in the input.
  * @return The result of the operation on the numbers (as a float).
  */
-double getArithmeticInput(char input[], int position) {
+double getMath(char input[], int position) {
     double result = 0.0;
     double number = 0.0;
     char operation = '+';
@@ -32,7 +32,7 @@ double getArithmeticInput(char input[], int position) {
                 case '+': result += number; break;
                 case '-': result -= number; break;
                 case '*': result *= number; break;
-                case '/': result = number ? result / number : 0.0; break;
+                case '/': result = ABS(number) > EPSILON ? result / number : 0.0; break;
                 default: break;
             }
             number = 0.0;
@@ -46,7 +46,7 @@ double getArithmeticInput(char input[], int position) {
         case '+': result += number; break;
         case '-': result -= number; break;
         case '*': result *= number; break;
-        case '/': result = number ? result / number : 0.0; break;
+        case '/': result = ABS(number) > EPSILON ? result / number : 0.0; break;
         default: break;
     }
 

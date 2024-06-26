@@ -1,12 +1,12 @@
 #include "FPU.h"
 
 #include "../../../common/sysutils.h"
-#include "../../drivers/screen.h"
+#include "../../drivers/console.h"
 #include "../../memory/memory.h"
 
 #include "../CMOS/CMOS.h"
 #include "../ISR/ISR.h"
-#include "../ports.h"
+#include "../HAL.h"
 
 bool coprocessorInstalled = false;
 
@@ -19,7 +19,7 @@ void setControlWord(const uint16_t cw) {
  *
  * @param regs  The interrupt's caller registers.
  */
-static void coprocessorCallback(reg_t *regs) {
+static void coprocessorCallback(registers_t *regs) {
     if (!coprocessorInstalled) {
         uint32_t cr4;
         __asm__ __volatile__ ("mov %%cr4, %0" :"=r"(cr4));
@@ -35,12 +35,12 @@ static void coprocessorCallback(reg_t *regs) {
 }
 
 
-void initializeCoprocessor(void){
-    printColor("[-] ", BG_BLACK | FG_LTGREEN); printString("Initializing FPU handler at IRQ13 ...\n");
+void initializeCoprocessor(){
+    printOutput("[...] ", BG_BLACK | FG_LTGREEN, "Initializing FPU handler at IRQ13 ...\n");
     registerInterruptHandler(IRQ13, coprocessorCallback);
 }
 
-void terminateCoprocessor(void) {
-    printColor("[-] ", BG_BLACK | FG_LTRED); printString("Terminating and cleaning FPU handler at IRQ13 ...\n");
+void terminateCoprocessor() {
+    printOutput("[...] ", BG_BLACK | FG_LTRED, "Terminating and cleaning FPU handler at IRQ13 ...\n");
     unregisterInterruptHandler(IRQ13);
 }
