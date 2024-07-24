@@ -1,52 +1,40 @@
 #include "power.h"
 
-#include "../CPU/ISR/ISR.h"
 #include "../CPU/HAL.h"
-#include "../drivers/console.h"
+#include "../bugfault.h"
 
 /**
- * Halt the CPU with security and stops all.
+ * Controls the power state of the system.
  *
- * @param time The time to wait in milliseconds before halt.
+ * @param status The desired power operation (halt, reboot, shutdown).
  */
-void powerHalt(uint32_t time) {
+void powerControl(int status) {
+    OPERATION_WAIT
 
-    operationSleep(time);
+    switch (status) {
+        case POWER_HALT:
+            __asm__ __volatile__ ("hlt"); // Halt the CPU
+            break;
 
-    __asm__ __volatile__ ("hlt"); // Halt the CPU
-}
+        case POWER_REBOOT:
+            // Wait until the input buffer is empty
+            while (readByteFromPort(0x64) & 0x02);
 
-/**
- * Reboots the computer after the specified time.
- *
- * @param time The time to wait in milliseconds before rebooting.
- */
-void powerReboot(uint32_t time) {
-    clearScreen();
-    IRQ_uninstall();
-    operationSleep(time);
+            writeByteToPort(0x64, 0xFE); // Send the reboot command
+            __asm__ __volatile__ ("hlt"); // Halt the CPU
+            break;
 
-    // Wait until the input buffer is empty
-    bool good = true;
-    while (good & 0x02) {
-        good = readByteFromPort(0x64);
+        case POWER_SHUTDOWN:
+            writeWordToPort(0xB004, 0x2000); // Bochs (BIOS)
+            writeWordToPort(0x604, 0x2000); // QEMU (BIOS)
+            writeWordToPort(0x4004, 0x3400); // VirtualBox (BIOS)
+
+            __asm__ __volatile__ ("hlt"); // Halt the CPU
+            break;
+
+        default:
+            // Invalid operation, we return;
+            BUG_CHECK(status > 2 || status < 0, "Invalid power operation!");
+            break;
     }
-
-    writeByteToPort(0x64, 0xFE); // Send the reboot command
-    __asm__ __volatile__ ("hlt"); // Halt the CPU
-}
-
-/**
- * Shuts down the computer after the specified time.
- *
- * @param time The time to wait in milliseconds before shutting down.
- */
-void powerShutdown(uint32_t time) {
-    clearScreen();
-    IRQ_uninstall();
-    operationSleep(time);
-
-    writeWordToPort(0xB004, 0x2000); // Bochs (BIOS)
-    writeWordToPort(0x604, 0x2000); // QEMU (BIOS)
-    writeWordToPort(0x4004, 0x3400); // VirtualBox (BIOS)
 }

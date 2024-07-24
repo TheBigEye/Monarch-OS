@@ -4,9 +4,8 @@
 #include "../common/multiboot.h"
 #include "../common/sysutils.h"
 
-extern multiboot_info_t butterfly_info;
-
-void configureKernel(multiboot_info_t* multiboot_header);
-void butterflyGetStatus(void);
+void initializeKernel(multiboot_info_t* multiboot_header);
+void multibootGetInfo(void);
+void ramdiskGetContent(void);
 
 #endif /* _KERNEL_BUTTERFLY_H */

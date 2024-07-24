@@ -1,4 +1,4 @@
-#include "sound.h"
+#include "speaker.h"
 
 #include "../CPU/PIT/timer.h"
 #include "../CPU/HAL.h"
@@ -56,7 +56,7 @@ void playBeep(uint32_t frequency, uint32_t duration) {
  * @param position The starting position of the chord.
  */
 void playChord(char chord[], int position) {
-    int len = lengthString(chord);  // Length of the chord array
+    int len = stringLength(chord);  // Length of the chord array
     int frequency = 1;  // Default frequency value
 
     // Iterate over the chord starting at the given position
@@ -79,7 +79,7 @@ void playChord(char chord[], int position) {
 /**
  * Play the startup sound.
  */
-void startupSound() {
+void startupSound(void) {
     timerSleep(30);
     playBeep(262, 30);  // C4
     playBeep(294, 15);  // D4
@@ -94,7 +94,7 @@ void startupSound() {
 /**
  * Play the shutdown sound.
  */
-void shutdownSound() {
+void shutdownSound(void) {
     timerSleep(5);
     playBeep(523, 30);  // C5
     playBeep(494, 15);  // B4

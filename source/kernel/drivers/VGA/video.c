@@ -1,25 +1,24 @@
-#include "VGA.h"
+#include "video.h"
 
-#include "../../CPU/PIT/timer.h"
 #include "../../CPU/HAL.h"
 #include "../../memory/memory.h"
 
 static uint32_t getSegment(void) {
-	uint32_t segment;
+    uint32_t segment;
 
-	writeByteToPort(GRAPHICS_INDEX, 6);
-	segment = readByteFromPort(GRAPHICS_DATA);
+    writeByteToPort(GRAPHICS_INDEX, 6);
+    segment = readByteFromPort(GRAPHICS_DATA);
 
-	segment >>= 2;
-	segment &= 3;
+    segment >>= 2;
+    segment &= 3;
 
-	switch (segment) {
+    switch (segment) {
         case 0:
         case 1: segment = 0xA0000; break;
         case 2: segment = 0xB0000; break;
         case 3: segment = 0xB8000; break;
-	}
-	return segment;
+    }
+    return segment;
 }
 
 static inline void writeRegister(uint16_t port, uint8_t reg, uint8_t val) {
@@ -37,18 +36,20 @@ static inline void writeVideoMemory(uint32_t destOffset, uint8_t *source, uint32
 }
 
 static void setPlane(uint8_t plane) {
-	uint8_t mask;
+    uint8_t mask;
 
-	plane &= 3;
-	mask = 1 << plane;
+    // Ensures that 'plane' is in the range 0 to 3 ...
+    // since there are 4 memory planes in VGA ...
+    plane &= 3;
+    mask = 1 << plane;
 
-    /* set read plane */
-	writeByteToPort(GRAPHICS_INDEX, REG_GRAPHICS_MAP_READ);
-	writeByteToPort(GRAPHICS_DATA, plane);
+    /* Set read plane */
+    writeByteToPort(GRAPHICS_INDEX, REG_GRAPHICS_MAP_READ);
+    writeByteToPort(GRAPHICS_DATA, plane);
 
-    /* set write plane */
-	writeByteToPort(SEQUENCER_INDEX, REG_SEQUENCER_MASK);
-	writeByteToPort(SEQUENCER_DATA, mask);
+    /* Set write plane */
+    writeByteToPort(SEQUENCER_INDEX, REG_SEQUENCER_MASK);
+    writeByteToPort(SEQUENCER_DATA, mask);
 }
 
 static void writeColorPallete(uint8_t index, uint32_t RGB) {
@@ -58,7 +59,7 @@ static void writeColorPallete(uint8_t index, uint32_t RGB) {
     // For each color component (R, G, B)
     for (uint16_t i = 0; i < 3; i++) {
         // Shift the color bits and take only the last 6 bits
-        uint8_t colorComponent = (RGB >> (i * 6)) & 0x3f;
+        uint8_t colorComponent = (RGB >> (i * 6)) & 0x3F;
 
         // Write the color component to port 0x3c9
         writeByteToPort(DIGANALOG_DATA, colorComponent);
@@ -66,6 +67,7 @@ static void writeColorPallete(uint8_t index, uint32_t RGB) {
 }
 
 
+/// THESE ARE UNSUED FOR NOW ...
 /*
 static void vpokeb(unsigned off, char val) {
    char *pokebyte=(char *)(getSegment()+off);
@@ -74,50 +76,66 @@ static void vpokeb(unsigned off, char val) {
 
 static char vpeekb(unsigned off) {
    char *pokebyte=(char *)(getSegment()+off);
-	return (*pokebyte);
+    return (*pokebyte);
 }
 */
 
 static void writeFont(uint8_t *buffer, uint8_t fontHeight) {
     uint8_t seq2, seq4, gc4, gc5, gc6;
 
-    /* save registers
-    setPlane() modifies GC 4 and SEQ 2, so save them as well */
+    // Save current state of SEQ and GC registers that will be modified
     writeByteToPort(SEQUENCER_INDEX, 2);
     seq2 = readByteFromPort(SEQUENCER_DATA);
-
     writeByteToPort(SEQUENCER_INDEX, 4);
     seq4 = readByteFromPort(SEQUENCER_DATA);
 
-    /* turn off even-odd addressing (set flat addressing)
-    assume: chain-4 addressing already off */
+    // Turn off even-odd addressing to enable flat addressing mode
+    // Assuming chain-4 addressing is already off
     writeByteToPort(SEQUENCER_DATA, seq4 | 0x04);
 
     writeByteToPort(GRAPHICS_INDEX, 4);
     gc4 = readByteFromPort(GRAPHICS_DATA);
-
     writeByteToPort(GRAPHICS_INDEX, 5);
     gc5 = readByteFromPort(GRAPHICS_DATA);
 
-    /* turn off even-odd addressing */
+    // Disable even-odd addressing for graphics controller
     writeByteToPort(GRAPHICS_DATA, gc5 & ~0x10);
-
     writeByteToPort(GRAPHICS_INDEX, 6);
     gc6 = readByteFromPort(GRAPHICS_DATA);
-    /* turn off even-odd addressing */
+
+    // Turn off even-odd addressing for memory mode register
     writeByteToPort(GRAPHICS_DATA, gc6 & ~0x02);
 
-    /* write font to plane P4 */
+    // Set the plane to 2 for font writing
     setPlane(2);
 
-    /* write font 0 */
+    /* @see https://forum.osdev.org/viewtopic.php?p=160494 */
+
+    // Write the font data to video memory, one character at a time
     for (uint16_t i = 0; i < 256; i++) {
-        // We overwrite the video font bitmap in memory, this is DANGEROUS!
+
+        /*
+        * So.. what the FUCK is this!?
+        *
+        * - The value 16384 (or 0x4000 in hexadecimal) represents the size of the
+        *   memory block in which VGA font bitmaps are stored. In VGA, each plane
+        *   has a size of 64 KB (65536 bytes), and 16384 bytes is a quarter of that
+        *   size, because fonts are stored in 16 KB segments.
+        *
+        * - In this context, 16384u * 0 is simply 0, but in the case of having more
+        *   fonts, another multiplier could be used (such as 16384u * 1 for the next
+        *   font).
+        *
+        * - The memory operation here directly overwrites the area where the BIOS
+        *   stores a copy of its default font. By overwriting this memory region,
+        *   we can change the font that is used by the system. Cool, right?
+        */
+
         writeVideoMemory(16384U * 0 + i * 32, buffer, fontHeight);
         buffer += fontHeight;
     }
 
-    /* restore registers */
+    // Restore the original state of SEQ and GC registers
     writeByteToPort(SEQUENCER_INDEX, 2);
     writeByteToPort(SEQUENCER_DATA, seq2);
     writeByteToPort(SEQUENCER_INDEX, 4);
@@ -131,9 +149,10 @@ static void writeFont(uint8_t *buffer, uint8_t fontHeight) {
 }
 
 
-void configureScreen(uint8_t *registers, bool isVideoMode) {
-    /* We need clear the text mode buffer 0xB8000 always! */
-    fastWideMemorySet((uint16_t *) TEXTMODE_BUFFER, (0 << 8) | (0x00), TEXTMODE_SIZE);
+void initializeVGA(uint8_t *registers) {
+    /* We need clear the buffers always! */
+    fastMemorySet((uint16_t *) GRAPHMODE_BUFFER, 0, GRAPHMODE_SIZE);
+    fastMemorySet((uint16_t *) TEXTMODE_BUFFER, 0, TEXTMODE_SIZE);
 
     /* write MISCELLANEOUS register */
     writeByteToPort(MISCELLANEOUS_WRITE, *registers);
@@ -146,31 +165,31 @@ void configureScreen(uint8_t *registers, bool isVideoMode) {
         registers++;
     }
 
-    /* unlock CRTC registers */
+    /* Unlock CRTC registers */
     writeByteToPort(CATHODERAY_INDEX, 0x03);
     writeByteToPort(CATHODERAY_DATA, readByteFromPort(CATHODERAY_DATA) | 0x80);
     writeByteToPort(CATHODERAY_INDEX, 0x11);
     writeByteToPort(CATHODERAY_DATA, readByteFromPort(CATHODERAY_DATA) & ~0x80);
 
-    /* make sure they remain unlocked */
+    /* Make sure they remain unlocked */
     registers[0x03] |= 0x80;
     registers[0x11] &= ~0x80;
 
-    /* write CRTC registers */
+    /* Write CRTC registers */
     for (uint8_t i = 0; i < NUM_CATHODERAY_REGS; i++) {
         writeByteToPort(CATHODERAY_INDEX, i);
         writeByteToPort(CATHODERAY_DATA, *registers);
         registers++;
     }
 
-    /* write GRAPHICS CONTROLLER registers */
+    /* Write GRAPHICS CONTROLLER registers */
     for (uint8_t i = 0; i < NUM_GRAPHICS_REGS; i++) {
         writeByteToPort(GRAPHICS_INDEX, i);
         writeByteToPort(GRAPHICS_DATA, *registers);
         registers++;
     }
 
-    /* write ATTRIBUTE CONTROLLER registers */
+    /* Write ATTRIBUTE CONTROLLER registers */
     for (uint8_t i = 0; i < NUM_ATTRIBUTE_REGS; i++) {
         (void) readByteFromPort(INPUT_STATE_READ);
         writeByteToPort(ATTRIBUTE_INDEX, i);
@@ -184,11 +203,11 @@ void configureScreen(uint8_t *registers, bool isVideoMode) {
         }
     }*/
 
-    /* lock 16-color palette and unblank display */
+    /* Lock 16-color palette and unblank display */
     (void) readByteFromPort(INPUT_STATE_READ);
     writeByteToPort(ATTRIBUTE_INDEX, 0x20);
 
-    if (!isVideoMode) {
+    if (!registers[62]) {
         writeFont(small_font, 8);
     }
 }

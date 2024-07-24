@@ -18,13 +18,13 @@ bootmain:
 ; This part MUST be 4byte aligned, so we solve that issue using 'ALIGN 4', LOL
 ALIGN 4
 multiboot:
+
     ; Multiboot macros to make a few lines later more readable
     MULTIBOOT_PAGE_ALIGN	  equ 1 << 0
     MULTIBOOT_MEMORY_INFO	  equ 1 << 1
     MULTIBOOT_GRAPH_MODE      equ 1 << 2
-    MULTIBOOT_AOUT_KLUDGE	  equ 1 << 16
     MULTIBOOT_HEADER_MAGIC	  equ 0x1BADB002
-    MULTIBOOT_HEADER_FLAGS	  equ MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_GRAPH_MODE | MULTIBOOT_AOUT_KLUDGE
+    MULTIBOOT_HEADER_FLAGS	  equ MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_GRAPH_MODE
     MULTIBOOT_CHECKSUM	      equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
     EXTERN code, bss, end
 
@@ -38,14 +38,6 @@ multiboot:
     ; dd 0 ; 0 = set graphics mode
     ; dd 800, 600, 32 ; Width, height, depth
 
-    ; AOUT kludge - must be physical addresses. Make a note of these:
-    ; The linker script fills in the data for these ones!
-    dd multiboot
-    dd code
-    dd bss
-    dd end
-    dd bootmain
-
 ; This is an endless loop here. Make a note of this: Later on, we
 ; will insert an 'extern _main', followed by 'call _main', right
 ; before the 'jmp $'.
@@ -53,22 +45,26 @@ stublet:
     push esp
 
     ; Push the incoming mulitboot headers
-	push eax ; Header magic
-	push ebx ; Header pointer
+	push eax ; Header mutiboot magic
+	push ebx ; Header pointer to info structure
 
-    extern monarchKernelMain
-    call monarchKernelMain
+    extern kernelMain
+    call kernelMain
     jmp $
 
+
+;-----------------------------------------------------------------------------;
+;                          Butterfly Kernel GDT Stuff                         ;
+;-----------------------------------------------------------------------------;
 
 ; This will set up our new segment registers. We need to do
 ; something special in order to set CS. We do what is called a
 ; far jump. A jump that includes a segment as well as an offset.
 ; This is declared in C as 'extern void gdtDoFlush();'
 global gdtDoFlush
-[extern gp]
+[extern descriptor_pointer]
 gdtDoFlush:
-    lgdt [gp]
+    lgdt [descriptor_pointer]
     mov ax, 0x10
     mov ds, ax
     mov es, ax
@@ -79,9 +75,8 @@ gdtDoFlush:
 gdt_end:
     ret
 
-
 ;-----------------------------------------------------------------------------;
-;                      Butterfly Kernel IRQ and ISR Handlers                  ;
+;                    Butterfly Kernel IRQ and ISR Handlers                    ;
 ;-----------------------------------------------------------------------------;
 
 ; Defined in ISR.c

@@ -16,7 +16,7 @@ double getMath(char input[], int position) {
     double decimal = 0.1;
     bool isfloat = false;
 
-    for (int i = position; i < lengthString(input); i++) {
+    for (int i = position; i < stringLength(input); i++) {
         if (input[i] >= '0' && input[i] <= '9') {
             if (isfloat) {
                 number += (input[i] - '0') * decimal;

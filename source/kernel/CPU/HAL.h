@@ -3,7 +3,12 @@
 
 #include "../../common/sysutils.h"
 
-void operationWait(void);
+#define LOWER_WORD(word) ((uint32_t)(word) & 0xFFFF)
+#define UPPER_WORD(word) (((uint32_t)(word) >> 16) & 0xFFFF)
+#define LOWER_BYTE(byte) ((byte) & 0xFF)
+#define UPPER_BYTE(byte) (((byte) >> 8) & 0xFF)
+
+#define OPERATION_WAIT __asm__ __volatile__ ("outb %%al, $0x80" : : "a"(0));
 
 /**
  * Sleeps for the specified number of milliseconds.

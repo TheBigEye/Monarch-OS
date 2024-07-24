@@ -1,5 +1,4 @@
 #include "CPU.h"
-
 #include "../drivers/console.h"
 
 #define EDX_SYSCALL                     (1 << 11)   // SYSCALL/SYSRET
@@ -82,7 +81,6 @@ static const struct processor_info instructions[29] = {
     {(1 << 30), "RDRAND"}   /* ECX_RDRAND     | RDRAND Instruction                           */
 };
 
-
 static inline void cpuid(uint32_t reg, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
     __asm__ __volatile__ ("cpuid"
         : "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
@@ -90,32 +88,45 @@ static inline void cpuid(uint32_t reg, uint32_t *eax, uint32_t *ebx, uint32_t *e
     );
 }
 
-
-// Function to check and print features
+// Function to check and print features or instructions
 static void checkAndPrintInfo(const struct processor_info *table, uint32_t infoBits, const char* label) {
-    printOutput("[o] ", BG_BLACK | FG_YELLOW, label);
+    ttyPrintOut(LINE, "%s", label);
 
-    // Print features or instructions with aligned names
-    for (uint16_t i = 0, x = 0; i < sizeof(features) / sizeof(features[0]); ++i) {
-        if (infoBits & table[i].bit) {
-            if (x++ % 12 == 0) {
-                printString("\t");
-            }
+    const int columnWidth = 30;
 
-            printOutput("- ", BG_BLACK | FG_DKGRAY, table[i].name);
+    // Iterate through each entry in the table
+    for (int i = 0; i < 29; ++i) {
+        const struct processor_info *info = &table[i];
+        const char* name = info->name;
 
-            // Calculate the number of spaces needed to align feature names
-            for (int j = 0; j < 20 - lengthString(table[i].name) + 1; ++j) {
-                printString(" ");
-            }
+        // Print padding spaces
+        for (int j = 0; j < 4; ++j) {
+            ttyPrintStr(" ");
+        }
+
+        // Check if the feature or instruction is supported
+        bool supported = (infoBits & info->bit) != 0;
+
+        // Print feature or instruction name
+        if (supported) {
+            ttyPutText(name, -1, -1, (BG_BLACK | FG_LTGREEN));
+        } else {
+            ttyPutText(name, -1, -1, (BG_BLACK | FG_LTRED));
+        }
+
+        // Calculate padding spaces for alignment
+        int padding = (columnWidth - stringLength(name)) - 4;
+
+        // Print padding spaces
+        for (int j = 0; j < padding; ++j) {
+            ttyPrintStr(" ");
         }
     }
 
-    printString("\n\n");
+    ttyPrintStr("\n\n");
 }
 
-
-void processorGetStatus() {
+void processorGetStatus(void) {
     // Register storage
     uint32_t eax, ebx, ecx, edx;
 
@@ -126,7 +137,7 @@ void processorGetStatus() {
     cpuid(0, &largestStandardFunc, (uint32_t *)(vendor + 0), (uint32_t *)(vendor + 8), (uint32_t *)(vendor + 4));
     vendor[12] = '\0';
 
-    printOutput("[o] ", BG_BLACK | FG_YELLOW, "CPU Vendor: %s\n", vendor);
+    ttyPrintOut(LINE, "CPU Vendor: %s\n", vendor);
 
     // Function 0x01 - Feature Information
 
@@ -147,7 +158,7 @@ void processorGetStatus() {
         cpuid(0x80000001, &eax, &ebx, &ecx, &edx);
 
         if (edx & EDX_64_BIT) {
-            printOutput("[-] ", BG_BLACK | FG_YELLOW, "64-bit Architecture\n\n", BG_BLACK | FG_CYAN);
+            ttyPrintLog(INFO "Its an 64-bit proccessor!\n\n");
         }
     }
 
@@ -165,11 +176,11 @@ void processorGetStatus() {
             ++p;
         }
 
-        printOutput("[o] ", BG_BLACK | FG_YELLOW, "CPU Name: %s\n", p);
+        ttyPrintOut(LINE, "CPU Name: %s\n", p);
     }
 }
 
-uint32_t processorGetTicks() {
+uint32_t processorGetTicks(void) {
     uint32_t ticks;
     __asm__ __volatile__ ("rdtsc" : "=a" (ticks));
     return ticks;

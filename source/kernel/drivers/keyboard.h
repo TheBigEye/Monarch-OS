@@ -3,35 +3,51 @@
 
 #include "../../common/sysutils.h"
 
-#define BACKSPACE 0x0E
-#define CAPSLOCK 0x3A
-#define ENTER 0x1C
-#define LEFT_SHIFT 0x2A
-#define RIGHT_SHIFT 0x36
-#define LEFT_CTRL 0x1D
-#define RIGHT_CTRL 0xE01D
-#define LEFT_ALT 0x38
-#define RIGHT_ALT 0xE038
-#define SPACEBAR 0x39
-#define DEL 0x53
-#define TAB 0x0F
-#define ESC 0x01
+#define KBD_PORT 0x60
+#define KBD_CTRL 0x64
 
-#define KEY_F1 0x3B
-#define KEY_F2 0x3C
-#define KEY_F3 0x3D
 
+#define KEY_BACKSPACE       0x0E
+#define KEY_CAPSLOCK        0x3A
+
+#define KEY_RETURN          0x1C
+#define KEY_ENTER           0xFC
+
+#define KEY_L_SHIFT         0x2A
+#define KEY_R_SHIFT         0x36
+
+#define KEY_L_CTRL          0x1D
+#define KEY_R_CTRL          0xFD
+
+#define KEY_L_ALT           0x38
+#define KEY_R_ALT           0xF8
+
+#define KEY_SPACE           0x39
+#define KEY_DELETE          0x53
+
+#define KEY_TAB             0x0F
+#define KEY_ESC             0x01
+
+#define KEY_F01             0x3B
+#define KEY_F02             0x3C
+#define KEY_F03             0x3D
+#define KEY_F04             0x3E
+#define KEY_F05             0x3F
+#define KEY_F06             0x40
+#define KEY_F07             0x41
+#define KEY_F08             0x42
+#define KEY_F09             0x43
+#define KEY_F10             0x44
+
+#define PROMPT  "\033[32;40m\n[@]\033[0m"
 
 void configureKeyboard(void);
+
+void waitPressKeyboard(uint8_t keycode);
 
 /**
  * Initializes the keyboard by registering the keyboard callback function.
  */
 void initializeKeyboard(void);
-
-/**
- * Terminate the keyboard by unregistering the keyboard callback function.
- */
-void terminateKeyboard(void);
 
 #endif /* _DRIVER_KEYBOARD_H */

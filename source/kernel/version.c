@@ -2,12 +2,10 @@
 
 /* Kernel name */
 const char * __kernel_name = "butterfly";
-const char * __kernel_version = "1.5.2";
+const char * __kernel_version = "1.7.3";
 
-/* The release codename.
- *
- * History:
- *  * 0.0.X+ are part of the "whitewings" family
+/*
+ * The release codename.
  */
 const char * __kernel_version_codename = "bluewings";
 

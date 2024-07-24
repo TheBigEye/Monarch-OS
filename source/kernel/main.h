@@ -5,6 +5,6 @@
 #include "../common/randomly.h"
 #include "../common/sysutils.h"
 
-void monarchConsoleMain(char *input);
+void consoleMain(char *input);
 
 #endif /* _KERNEL_MAIN_H */

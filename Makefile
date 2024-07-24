@@ -16,8 +16,8 @@ RESET =\033[0m
 CC = i686-elf-gcc
 LD = i686-elf-ld
 
-CWFLAGS = -Wall -Wextra -Werror -Wfloat-equal -Wundef -Winit-self -Wpedantic -pedantic -Wno-int-conversion -Wno-unused-parameter -Wno-unused-function -Wstrict-prototypes 
-LDFLAGS = -m elf_i386 --allow-multiple-definition -nostdlib -s --gc-sections
+CWFLAGS = -Wall -Wextra -Werror -Wfloat-equal -Wundef -Winit-self -Wno-int-conversion -Wno-unused-parameter -Wno-unused-function -Wstrict-prototypes
+LDFLAGS = -m elf_i386 --allow-multiple-definition -nostdlib -s --gc-sections -Map=kernel.map
 
 # GCC compilation flags
 CCFLAGS := $(strip                  \
@@ -34,22 +34,25 @@ CCFLAGS := $(strip                  \
     -ffreestanding                  \
 )
 
+
 # Qemu virtual machine config
 QEMU_ARGS := $(strip                \
     -boot menu=off                  \
     -m 32M                          \
     -cpu max                        \
+	-serial stdio                   \
+	-display sdl,gl=on              \
     -device VGA,vgamem_mb=16        \
-    -display sdl,gl=on              \
     -audiodev dsound,id=0           \
     -machine pcspk-audiodev=0       \
+    -machine q35                    \
     -rtc base=localtime,clock=host  \
 )
 
 # C Source files
 SOURCES = $(wildcard                       \
 	$(SOURCE_DIR)/common/*.c               \
-	$(SOURCE_DIR)/kernel/CPU/CMOS/*.c      \
+	$(SOURCE_DIR)/kernel/BFS/*.c           \
 	$(SOURCE_DIR)/kernel/CPU/FPU/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/GDT/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/IDT/*.c       \
@@ -57,6 +60,7 @@ SOURCES = $(wildcard                       \
 	$(SOURCE_DIR)/kernel/CPU/PIT/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/RTC/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/*.c           \
+	$(SOURCE_DIR)/kernel/drivers/COM/*.c   \
 	$(SOURCE_DIR)/kernel/drivers/VGA/*.c   \
 	$(SOURCE_DIR)/kernel/drivers/*.c       \
 	$(SOURCE_DIR)/kernel/memory/*.c        \
@@ -68,7 +72,7 @@ SOURCES = $(wildcard                       \
 # C Headers files
 HEADERS = $(wildcard                       \
 	$(SOURCE_DIR)/common/*.h               \
-	$(SOURCE_DIR)/kernel/CPU/CMOS/*.h      \
+	$(SOURCE_DIR)/kernel/BFS/*.h           \
 	$(SOURCE_DIR)/kernel/CPU/FPU/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/GDT/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/IDT/*.h       \
@@ -76,6 +80,7 @@ HEADERS = $(wildcard                       \
 	$(SOURCE_DIR)/kernel/CPU/PIT/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/RTC/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/*.h           \
+	$(SOURCE_DIR)/kernel/drivers/COM/*.h   \
 	$(SOURCE_DIR)/kernel/drivers/VGA/*.h   \
 	$(SOURCE_DIR)/kernel/drivers/*.h       \
 	$(SOURCE_DIR)/kernel/memory/*.h        \
@@ -110,6 +115,7 @@ OS.iso: kernel.elf
 
 
 # Run the OS image in QEMU
+# If you want test the file system, create a img virtual disk, add it with -hda, and enable the FS on main.c
 run: OS.iso
 	@echo -e "${GREEN}[-]${RESET} Starting QEMU virtual machine for '${BROWN}./$^${RESET}' ..."
 	@qemu-system-i386 -cdrom $< $(QEMU_ARGS)
@@ -146,6 +152,6 @@ echo: OS.iso
 # Clean the project folder
 clean:
 	@echo -e "${GREEN}[-]${RESET} Cleaning objects and output files ..."
-	@$(RM) *.bin *.o *.dis *.elf *.img *.iso
+	@$(RM) *.bin *.o *.dis *.elf *.iso *.map
 	@$(RM) -rf ./grub/temp
 	@find $(SOURCE_DIR) -name '*.o' -type f -delete

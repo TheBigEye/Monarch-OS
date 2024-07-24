@@ -1,10 +1,11 @@
 #include "timer.h"
 
+#include "../ISR/ISR.h"
+#include "../HAL.h"
+
 #include "../../../common/sysutils.h"
 #include "../../drivers/console.h"
 
-#include "../ISR/ISR.h"
-#include "../HAL.h"
 
 /*
 * PIT - Programmable Interval Timer. The PIT is like a stopwatch with periodic alarm
@@ -12,11 +13,10 @@
 * @see https://wiki.osdev.org/PIT#Programmable-Interval-Timer
 */
 
-// FIX FIX THIS SHIT!: this will overflow after about an hour of runtime, use uint64_t and either link against libgcc or write a 64bit os
-volatile uint32_t timerTicks;
+static volatile uint32_t ticksSinceBoot;
 
-uint32_t timerGetTicks() {
-    return timerTicks;
+uint32_t timerGetTicks(void) {
+    return ticksSinceBoot;
 }
 
 /**
@@ -29,7 +29,7 @@ uint32_t timerGetTicks() {
  * @return The elapsed PIT seconds.
  */
 uint32_t timerGetSeconds() {
-    return (timerTicks / 100) % 60;
+    return (ticksSinceBoot / 100) % 60;
 }
 
 /**
@@ -42,7 +42,7 @@ uint32_t timerGetSeconds() {
  * @return The elapsed PIT minutes.
  */
 uint32_t timerGetMinutes() {
-    return (timerTicks / (100 * 60)) % 60;
+    return (ticksSinceBoot / (100 * 60)) % 60;
 }
 
 /**
@@ -55,7 +55,7 @@ uint32_t timerGetMinutes() {
  * @return The elapsed PIT hours.
  */
 uint32_t timerGetHours() {
-    return timerTicks / (100 * 60 * 60);
+    return ticksSinceBoot / (100 * 60 * 60);
 }
 
 /**
@@ -64,51 +64,45 @@ uint32_t timerGetHours() {
  * @param regs  The interrupt's caller registers.
  */
 static void timerCallback(registers_t *regs) {
-    timerTicks++;
+    /* This is bad idea ... but is ok */
+    ticksSinceBoot++;
     UNUSED(regs);
 }
 
 /**
- * Initializes the timer with the specified frequency.
- *
- * @param frequency  The frequency at which the timer should generate interrupts.
+ * Initializes the timer
  */
-void initializeTimer(uint32_t frequency) {
-    timerTicks = 0;
+void initializeTimer() {
+    ticksSinceBoot = 0;
 
-    // Get the PIT value: hardware clock at 1193180 Hz
-    uint32_t divisor = 1193180 / frequency;
+    writeByteToPort(
+        PIT_COMMAND_PORT,
+        (PIT_TIMER_0_SELECT | PIT_WRITE_WORD | PIT_MODE_SQUARE_WAVE) // 0x36
+    );
 
-    writeByteToPort(0x43, 0x36); // Command port
+    // Get the PIT value
+    uint16_t timer_reload = (PIT_BASE_FRECUENCY / PIT_TICKS_PER_SECOND); // 1193180 / 100
 
-    uint8_t low = (uint8_t)(divisor & 0xFF);
-    uint8_t high = (uint8_t)((divisor >> 8) & 0xFF);
+    // Send the command into the timer's channel 0
+    writeByteToPort(PIT_TIMER_0_PORT, LOWER_BYTE(timer_reload)); // Low
+    writeByteToPort(PIT_TIMER_0_PORT, UPPER_BYTE(timer_reload)); // high
 
-    printOutput("[...] ", BG_BLACK | FG_LTGREEN, "Initializing PIT handler at IRQ0 ...\n");
+    ttyPrintOut(INIT, "Initializing PIT handler at IRQ0 ...\n");
 
     // Install the timerCallback function
     registerInterruptHandler(IRQ0, timerCallback);
-
-    // Send the command
-    writeByteToPort(0x40, low);
-    writeByteToPort(0x40, high);
-}
-
-void terminateTimer() {
-    printOutput("[...] ", BG_BLACK | FG_LTRED, "Terminating and cleaning PIT handler at IRQ0 ...\n");
-
-    // Unnstall the timerCallback function
-    unregisterInterruptHandler(IRQ0);
 }
 
 /**
  * Sleep an operation for shot time.
  *
- * @param time  The time to sleep in milliseconds.
+ * @param milliseconds  The time to sleep in milliseconds.
  */
-void timerSleep(uint32_t time) {
-    uint32_t target = timerTicks + time;
-    while (timerTicks < target) {
+void timerSleep(uint32_t milliseconds) {
+    uint32_t target = (ticksSinceBoot + milliseconds);
+
+    while (ticksSinceBoot < target) {
+        /* Doesnt remove this line, or all could FAIL */
         __asm__ __volatile__ ("sti//hlt//cli");
     }
 }

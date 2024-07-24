@@ -15,14 +15,20 @@
         %1_size: dq %1_size - %1          ; define the size of the file
 %endmacro
 
+; include the kernel poem text
+INCLUDE_BIN bootpoem, "source/binaries/strings/bootpoem.txt"
+
 ; include the ascii art
-INCLUDE_BIN butterfly, "source/binaries/butterfly.txt"
+INCLUDE_BIN butterfly, "source/binaries/strings/butterfly.txt"
+
+; include the "It's now safe to turn off your computer"
+INCLUDE_BIN turnoffpc, "source/binaries/strings/turnoffpc.txt"
 
 ; include the chess wallapaper :)
 INCLUDE_BIN wallpaper, "source/binaries/wallpaper.bin"
 
 ; include the leafs wallpaper ._.
-INCLUDE_BIN leafpaper, "source/binaries/leafpaper.bin"
+INCLUDE_BIN hillpaper, "source/binaries/hillpaper.bin"
 
 ; include the Windows Chicago wallpaper :D
 INCLUDE_BIN workpaper, "source/binaries/workpaper.bin"

@@ -1,9 +1,10 @@
 #include "console.h"
-#include "VGA/VGA.h"
+#include "VGA/video.h"
 
-#include "../CPU/PIT/timer.h"
 #include "../CPU/HAL.h"
 #include "../memory/memory.h"
+
+/* TODO: OPTIMIZE THE SIZE FOR THIS FILE! */
 
 /* Private functions */
 
@@ -12,15 +13,18 @@ static inline int getOffset(int col, int row) {
     return 2 * (row * TEXTMODE_WIDTH + col);
 }
 
+
 /* Get the row index of a character cell based on its offset in video memory */
 static inline int getOffsetRow(int offset) {
     return offset / (TEXTMODE_WIDTH << 1);
 }
 
+
 /* Get the column index of a character cell based on its offset in video memory */
 static inline int getOffsetCol(int offset) {
     return (offset % (TEXTMODE_WIDTH << 1)) / 2;
 }
+
 
 /* Get the current cursor offset from the hardware */
 static inline int getCursorOffset(void) {
@@ -36,19 +40,21 @@ static inline int getCursorOffset(void) {
     return offset * 2;
 }
 
+
 /* Set the cursor offset in video memory */
 static void setCursorOffset(int offset) {
     /* Convert the offset in bytes to an offset in character cells */
     offset /= 2;
 
-    /* Write the high byte of the cursor offset (14) to the data port */
-    writeByteToPort(CATHODERAY_INDEX, 14);
-    writeByteToPort(CATHODERAY_DATA, (uint8_t)(offset >> 8));
-
     /* Write the low byte of the cursor offset (15) to the data port */
     writeByteToPort(CATHODERAY_INDEX, 15);
-    writeByteToPort(CATHODERAY_DATA, (uint8_t)(offset & 0xff));
+    writeByteToPort(CATHODERAY_DATA, LOWER_BYTE(offset));
+
+    /* Write the high byte of the cursor offset (14) to the data port */
+    writeByteToPort(CATHODERAY_INDEX, 14);
+    writeByteToPort(CATHODERAY_DATA, UPPER_BYTE(offset));
 }
+
 
 /* Public functions */
 
@@ -65,8 +71,15 @@ void setCursor(uint8_t shape) {
 
 /**
  * Clear the text-mode screen content and change color scheme
+ *
+ * @param color The color to which the screen will be set
+ * @note If the color is NULL, the screen will be cleaned with the default scheme
  */
 void setScreen(uint8_t color) {
+    if (!color) {
+        color = (BG_BLACK | FG_WHITE);
+    }
+
     // Fill the entire screen memory
     fastWideMemorySet(
         (uint16_t *) TEXTMODE_BUFFER, // 0xB8000
@@ -78,12 +91,6 @@ void setScreen(uint8_t color) {
     setCursorOffset(getOffset(0, 0));
 }
 
-/**
- * Clear the text-mode screen content
- */
-void clearScreen() {
-    setScreen(BG_BLACK | FG_WHITE);
-}
 
 /**
  * Print a character at the specified position with the given attribute
@@ -99,17 +106,17 @@ void clearScreen() {
  *
  * @return The new offset of the cursor in video memory.
  */
-int putCharacter(char character, int col, int row, uint8_t color) {
+int ttyPutChar(char character, int col, int row, uint8_t color) {
     uint8_t *SCREEN_MEMORY = (uint8_t *) TEXTMODE_BUFFER;
 
     if (!color) {
-        color = BG_BLACK | FG_LTGRAY;
+        color = (BG_BLACK | FG_LTGRAY);
     }
 
     /* Error control: print a red 'E' if the coords aren't right */
     if (col >= TEXTMODE_WIDTH || row >= TEXTMODE_HEIGHT) {
-        SCREEN_MEMORY[2 * TEXTMODE_SIZE - 2] = 'E';
-        SCREEN_MEMORY[2 * TEXTMODE_SIZE - 1] = BG_BLACK | FG_LTRED;
+        SCREEN_MEMORY[TEXTMODE_SIZE - 2] = 'E';
+        SCREEN_MEMORY[TEXTMODE_SIZE - 1] = (BG_BLACK | FG_LTRED);
         return getOffset(col, row);
     }
 
@@ -158,7 +165,7 @@ int putCharacter(char character, int col, int row, uint8_t color) {
     }
 
     /* Check if the offset is over screen size and scroll */
-    if (offset >= (TEXTMODE_SIZE << 1)) {
+    if (offset >= TEXTMODE_SIZE) {
         fastFastMemoryCopy(
             SCREEN_MEMORY + getOffset(0, 0),
             SCREEN_MEMORY + getOffset(0, 1),
@@ -166,7 +173,9 @@ int putCharacter(char character, int col, int row, uint8_t color) {
         );
 
         /* Blank last line */
-        fastFastMemorySet((char *)(SCREEN_MEMORY + getOffset(0, TEXTMODE_HEIGHT - 1)), 0, (TEXTMODE_WIDTH << 1));
+        fastFastMemorySet(
+            (char *)(SCREEN_MEMORY + getOffset(0, TEXTMODE_HEIGHT - 1)), 0, (TEXTMODE_WIDTH << 1)
+        );
 
         offset -= (TEXTMODE_WIDTH << 1);
     }
@@ -174,6 +183,7 @@ int putCharacter(char character, int col, int row, uint8_t color) {
     setCursorOffset(offset);
     return offset;
 }
+
 
 /**
  * Print a string at the specified location on the screen
@@ -185,19 +195,321 @@ int putCharacter(char character, int col, int row, uint8_t color) {
  * @param row     The row index of the position.
  * @param color   The color attribute of the message.
  */
-int putString(const char *string, int col, int row, uint8_t color) {
+int ttyPutText(const char *string, int col, int row, uint8_t color) {
     int offset = (col >= 0 && row >= 0) ? getOffset(col, row) : getCursorOffset();
-    row = getOffsetRow(offset);
-    col = getOffsetCol(offset);
 
     while (*string != '\0') {
-        offset = putCharacter(*string++, col, row, color);
-        row = getOffsetRow(offset);
-        col = getOffsetCol(offset);
+        offset = ttyPutChar(*string++, getOffsetCol(offset), getOffsetRow(offset), color);
     }
 
     setCursorOffset(offset);
     return offset;
+}
+
+
+/* Parse an ANSI scape sequence string and return the color */
+static uint8_t parseScapeSequence(const char **string) {
+    uint8_t background = BG_BLACK;
+    uint8_t foreground = FG_LTGRAY;
+
+    // Skip escape character and '['
+    (*string) += 2;
+
+    // Parse ANSI color codes
+    while (**string && **string != 'm') {
+        // Skip delimiters
+        if (**string == ';') {
+            (*string)++;
+            continue;
+        }
+
+        // Parse color code
+        if (**string >= '0' && **string <= '9') {
+            uint8_t code = 0;
+
+            // Accumulate the color code
+            while (**string >= '0' && **string <= '9') {
+                code = code * 10 + (**string - '0');
+                (*string)++;
+            }
+
+            /* THIS SUCKS :( */
+
+            switch (code) {
+                // Dark colors
+                case 30: foreground = FG_BLACK; break;
+                case 31: foreground = FG_RED; break;
+                case 32: foreground = FG_GREEN; break;
+                case 33: foreground = FG_BROWN; break;
+                case 34: foreground = FG_BLUE; break;
+                case 35: foreground = FG_MAGENTA; break;
+                case 36: foreground = FG_CYAN; break;
+                case 37: foreground = FG_LTGRAY; break;
+
+                case 40: background = BG_BLACK; break;
+                case 41: background = BG_RED; break;
+                case 42: background = BG_GREEN; break;
+                case 43: background = BG_BKYELLOW; break;
+                case 44: background = BG_BLUE; break;
+                case 45: background = BG_MAGENTA; break;
+                case 46: background = BG_CYAN; break;
+                case 47: background = BG_LTGRAY; break;
+
+                // Bight colors
+                case 90: foreground = FG_DKGRAY; break;
+                case 91: foreground = FG_LTRED; break;
+                case 92: foreground = FG_LTGREEN; break;
+                case 93: foreground = FG_YELLOW; break;
+                case 94: foreground = FG_LTBLUE; break;
+                case 95: foreground = FG_LTMAGENTA; break;
+                case 96: foreground = FG_LTCYAN; break;
+                case 97: foreground = FG_WHITE; break;
+
+                case 100: background = BG_BKBLACK; break;
+                case 101: background = BG_BKRED; break;
+                case 102: background = BG_BKGREEN; break;
+                case 103: background = BG_BKYELLOW; break;
+                case 104: background = BG_BKBLUE; break;
+                case 105: background = BG_BKMAGENTA; break;
+                case 106: background = BG_BKCYAN; break;
+                case 107: background = BG_BKWHITE; break;
+
+                default:
+                    break; // Ignore unknown codes
+            }
+        } else {
+            (*string)++;
+        }
+    }
+
+    // Skip 'm' character
+    if (**string == 'm') {
+        (*string)++;
+    }
+
+    return (background | foreground);
+}
+
+
+static void parseVariadicFormat(const char *format, va_list args) {
+    // Flags and parameters for formatting
+    bool leftJustify, zeroPadding, precisionSpecified;
+    int minWidth, precision;
+
+    // Loop through the format string until the end
+    while (*format != '\0') {
+        if (*format == '%') { // Found a format specifier
+            format++; // Move past the '%'
+
+            // Reset flags and parameters for each format specifier
+            leftJustify = false; // Flag for left justification
+            zeroPadding = false; // Flag for zero padding
+            minWidth = 0; // Minimum field width
+            precision = 0; // Precision (number of digits for numeric types)
+            precisionSpecified = false; // Flag indicating if precision is specified
+
+            // Parse flags (such as '-' for left justify, '0' for zero padding)
+            while (*format == '-' || *format == '0') {
+                if (*format == '-') {
+                    leftJustify = true; // Enable left justification flag
+                } else if (*format == '0') {
+                    zeroPadding = true; // Enable zero padding flag
+                }
+                format++; // Move to the next character after parsing the flag
+            }
+
+            // Parse minimum field width (optional '*')
+            if (*format == '*') {
+                minWidth = va_arg(args, int); // Fetch width argument from va_list
+                format++; // Move past the '*'
+            } else if (*format >= '0' && *format <= '9') {
+                minWidth = atoi(format); // Convert string to integer for width
+                while (*format >= '0' && *format <= '9') {
+                    format++; // Move past the digits of the width
+                }
+            }
+
+            // Parse precision (optional '.')
+            if (*format == '.') {
+                format++; // Move past the '.'
+                precisionSpecified = true; // Precision is specified
+                if (*format == '*') {
+                    precision = va_arg(args, int); // Fetch precision argument
+                    format++; // Move past the '*'
+                } else if (*format >= '0' && *format <= '9') {
+                    precision = atoi(format); // Convert string to integer for precision
+                    while (*format >= '0' && *format <= '9') {
+                        format++; // Move past the digits of the precision
+                    }
+                } else {
+                    precision = 0; // Precision is zero if not specified
+                }
+            }
+
+            // Handle length specifier (e.g., 'l' for long, 'h' for short)
+            char length = '\0'; // Initialize length specifier
+            if (*format == 'l' || *format == 'h') {
+                length = *format; // Store length specifier
+                format++; // Move past the length specifier
+            }
+
+            // Handle format specifiers
+            switch (*format) {
+                case 'd': case 'i': { // Integer format specifier
+                    char buffer[16]; // Buffer for integer to string conversion
+
+                    /// Fetch and handle different integer types based on length specifier
+
+                    if (length == 'l') { // Long length:
+                        long value = va_arg(args, long); // Fetch long integer argument
+                        toString(value, buffer, 10); // Convert to decimal string
+                    } else if (length == 'h') { // Short length
+                        short value = va_arg(args, int); // Fetch short integer argument
+                        toString(value, buffer, 10); // Convert to decimal string
+                    } else {
+                        int value = va_arg(args, int); // Fetch integer argument
+                        toString(value, buffer, 10); // Convert to decimal string
+                    }
+
+                    int length = stringLength(buffer); // Calculate length of the string
+
+                    // Handle precision (padding with zeros)
+                    if (precisionSpecified && precision > length) {
+                        for (int i = 0; i < precision - length; i++) {
+                            ttyPutChar('0', -1, -1, (BG_BLACK | FG_DKGRAY)); // Output padding zeros
+                        }
+                    }
+
+                    // Handle justification and padding
+                    if (leftJustify) {
+                        ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output value
+                        for (int i = length; i < minWidth; i++) {
+                            ttyPutChar(' ', -1, -1, (BG_BLACK | FG_DKGRAY)); // Pad with spaces
+                        }
+                    } else {
+                        for (int i = length; i < minWidth; i++) {
+                            ttyPutChar(zeroPadding ? '0' : ' ', -1, -1, (BG_BLACK | FG_DKGRAY)); // Pad with zeros or spaces
+                        }
+                        ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output value
+                    }
+                    break;
+                }
+
+                case 'f': { // Float format specifier
+                    double value = va_arg(args, double); // Fetch double argument
+                    char *buffer = ftoa(value); // Convert double to string
+                    ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output value
+                    break;
+                }
+
+                case 'x': case 'X': { // Hexadecimal format specifier
+                    unsigned int value = va_arg(args, unsigned int); // Fetch unsigned integer argument
+                    char buffer[16]; // Buffer for integer to hexadecimal string conversion
+                    toString(value, buffer, 16); // Convert to hexadecimal string
+
+                    // Convert to lowercase or uppercase based on specifier ('x' or 'X')
+                    if (*format == 'x') {
+                        toLowercase(buffer); // Convert to lowercase
+                    } else {
+                        toUppercase(buffer); // Convert to uppercase
+                    }
+
+                    ttyPutText("0x", -1, -1, (BG_BLACK | FG_DKGRAY)); // Output prefix "0x"
+                    ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output hexadecimal value
+                    break;
+                }
+
+                case 'p': { // Pointer format specifier
+                    void *value = va_arg(args, void *); // Fetch void pointer argument
+                    uintptr_t addr = (uintptr_t)value; // Cast pointer to uintptr_t
+                    char buffer[16]; // Buffer for pointer to hexadecimal string conversion
+                    toString(addr, buffer, 16); // Convert pointer to hexadecimal string
+                    toLowercase(buffer); // Convert to lowercase
+                    ttyPutText("0x", -1, -1, (BG_BLACK | FG_DKGRAY)); // Output prefix "0x"
+                    ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output hexadecimal value
+                    break;
+                }
+
+                case 'o': { // Octal format specifier
+                    unsigned int value = va_arg(args, unsigned int); // Fetch unsigned integer argument
+                    char buffer[16]; // Buffer for integer to octal string conversion
+                    toString(value, buffer, 8); // Convert to octal string
+                    ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output octal value
+                    break;
+                }
+
+                case 's': { // String format specifier
+                    char *value = va_arg(args, char *); // Fetch string argument
+                    int length = stringLength(value); // Calculate length of the string
+
+                    // Truncate string if precision is specified and shorter than actual length
+                    if (precisionSpecified && precision < length) {
+                        value[precision] = '\0'; // Truncate string
+                        length = precision; // Update length to truncated length
+                    }
+
+                    // Handle justification and padding
+                    if (leftJustify) {
+                        ttyPutText(value, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output value
+                        for (int i = length; i < minWidth; i++) {
+                            ttyPutChar(' ', -1, -1, (BG_BLACK | FG_DKGRAY)); // Pad with spaces
+                        }
+                    } else {
+                        for (int i = length; i < minWidth; i++) {
+                            ttyPutChar(zeroPadding ? '0' : ' ', -1, -1, (BG_BLACK | FG_DKGRAY)); // Pad with zeros or spaces
+                        }
+                        ttyPutText(value, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output value
+                    }
+                    break;
+                }
+
+                case 'c': { // Character format specifier
+                    int value = va_arg(args, int); // Fetch integer argument (char is promoted to int)
+                    ttyPutChar((char)value, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output character
+                    break;
+                }
+
+                default: { // Unknown format specifier
+                    ttyPutChar('%', -1, -1, (BG_BLACK | FG_LTGRAY)); // Output '%'
+                    ttyPutChar(*format, -1, -1, (BG_BLACK | FG_LTGRAY)); // Output unknown specifier
+                    break;
+                }
+            }
+        } else {
+            ttyPutChar(*format, -1, -1, (BG_BLACK | FG_LTGRAY)); // Output regular character
+        }
+        format++; // Move to the next character in the format string
+    }
+}
+
+
+/**
+ * Get and print all the avialible charaters from the BIOS charset
+ */
+void ttyCharset(void) {
+    for (uint8_t i = 32; i != 255; i++) { // Only printable chars
+        int offset = getCursorOffset();
+        int column = getOffsetCol(offset) + 1;
+        int row = getOffsetRow(offset);
+
+        // Print the character at the current cursor position
+        ttyPutChar((char) i, column, row, BG_BLACK | FG_CYAN);
+
+        // Check if we've reached the end of the line
+        if (column == TEXTMODE_WIDTH) {
+            column = 0; // Reset column to the start
+
+            // Move to the next row, wrap around if at the bottom
+            row = (row == TEXTMODE_HEIGHT - 1) ? 0 : row + 1;
+
+            // Clear the new line before printing
+            for (uint16_t j = 0; j < TEXTMODE_WIDTH; j++) {
+                ttyPutChar(' ', j, row, BG_BLACK | FG_CYAN);
+            }
+        }
+    }
+
+    ttyPrintStr("\n"); // Print a newline after finishing the loop
 }
 
 
@@ -206,163 +518,140 @@ int putString(const char *string, int col, int row, uint8_t color) {
  *
  * @param string The string to print.
  */
-void printString(const char *string) {
-    putString(string, -1, -1, BG_BLACK | FG_LTGRAY);
+void ttyPrintStr(const char *string) {
+    ttyPutText(string, -1, -1, (BG_BLACK | FG_LTGRAY));
 }
 
 
 /**
- * Print a string at the current cursor position on the screen with the specified color.
+ * Print a string at the current cursor position on the screen
+ *
+ * @note Support ANSI color escape sequences
  *
  * @param string The string to print.
- * @param color  The color attribute of the message.
  */
-void printColor(const char *string, uint8_t color) {
-    putString(string, -1, -1, color);
-}
+void ttyPrintLog(const char *string) {
+    uint8_t *SCREEN_MEMORY = (uint8_t *) TEXTMODE_BUFFER;
+    uint8_t color = (BG_BLACK | FG_LTGRAY);
 
-/**
- * Get and print all the avialible charaters from the BIOS charset
- */
-void printCharset() {
-    for (uint16_t i = 32; i < 256; i++) { // Only printable chars
-        timerSleep(1);
+    int offset = getCursorOffset();
 
-        int offset = getCursorOffset();
-        int column = getOffsetCol(offset) + 1;
-        int row = getOffsetRow(offset);
+    while (*string) {
 
-        putCharacter((char) i, column, row, BG_BLACK | FG_CYAN);
-        if (column == TEXTMODE_WIDTH) {
-            column = 0;
-            row = (row == TEXTMODE_HEIGHT - 1) ? 0 : row + 1;
-            for (uint16_t j = 0; j < TEXTMODE_WIDTH; j++) {
-                putCharacter(' ', j, 0, BG_BLACK | FG_CYAN);
-            }
-        }
-    }
-    printString("\n");
-}
-
-void vprintFormat(const char *format, va_list args) {
-    while (*format != '\0') {
-        if (*format == '%') {
-            format++;
-
-            // Handle format specifiers
-            switch (*format) {
-                case 'd': case 'i': {
-                    int value = va_arg(args, int);
-                    char buffer[32];
-                    toString(value, buffer, 10);
-                    putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
-                    break;
-                }
-
-                case 'f': { // Float value
-                    float value = va_arg(args, double); // floats are promoted to double when passed through ...
-                    char *buffer = ftoa(value); // Use the ftoa function to convert float to string
-                    putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
-                    break;
-                }
-
-                case 'x': { // Hex value (lowercase)
-                    int value = va_arg(args, int);
-                    char buffer[32];
-                    toString(value, buffer, 16);
-                    toLowercase(buffer);
-                    putString("0x", -1, -1, BG_BLACK | FG_DKGRAY); // Print the "0x" prefix
-                    putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
-                    break;
-                }
-
-                case 'X': { // Hex value (uppercase)
-                    int value = va_arg(args, int);
-                    char buffer[32];
-                    toString(value, buffer, 16);
-                    toUppercase(buffer);
-                    putString("0x", -1, -1, BG_BLACK | FG_DKGRAY); // Print the "0x" prefix
-                    putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
-                    break;
-                }
-
-                case 'p': { // Pointer value (lowercase)
-                    void *value = va_arg(args, void *);
-                    uintptr_t addr = (uintptr_t)value;
-                    char buffer[32];
-                    toString(addr, buffer, 16); // Convert the address to a hexadecimal string
-                    toLowercase(buffer);
-                    putString("0x", -1, -1, BG_BLACK | FG_DKGRAY); // Print the "0x" prefix
-                    putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
-                    break;
-                }
-
-                case 'o': { // Octal value
-                    int value = va_arg(args, int);
-                    char buffer[16];
-                    toString(value, buffer, 8);
-                    putString(buffer, -1, -1, BG_BLACK | FG_DKGRAY);
-                    break;
-                }
-
-                case 's': { // String value
-                    char *value = va_arg(args, char *);
-                    putString(value, -1, -1, BG_BLACK | FG_DKGRAY);
-                    break;
-                }
-
-                case 'c': { // Char value
-                    int value = va_arg(args, int);
-                    putCharacter((char)value, -1, -1, BG_BLACK | FG_DKGRAY);
-                    break;
-                }
-
-                default: {
-                    putCharacter('%', -1, -1, BG_BLACK | FG_LTGRAY);
-                    putCharacter(*format, -1, -1, BG_BLACK | FG_LTGRAY);
-                    break;
-                }
-            }
+        // Start of an ANSI escape sequence
+        if (*string == '\033') {
+            color = parseScapeSequence(&string);
 
         } else {
-            putCharacter(*format, -1, -1, BG_BLACK | FG_LTGRAY);
+            if (*string == '\n') {
+                int row = getOffsetRow(offset);
+                offset = getOffset(0, row + 1);
+
+            } else if (*string == '\r') {
+                int row = getOffsetRow(offset);
+                offset = getOffset(0, row);
+
+            } else if (*string == '\b') {
+                offset -= 2;
+                if (offset < 0) offset = 0;
+                SCREEN_MEMORY[offset] = ' ';
+                SCREEN_MEMORY[offset + 1] = color;
+
+            } else if (*string == '\t') {
+                uint8_t spaces = 4 - (getOffsetCol(offset) % 4);
+                for (uint8_t i = 0; i < spaces; i++) {
+                    SCREEN_MEMORY[offset] = ' ';
+                    SCREEN_MEMORY[offset + 1] = color;
+                    offset += 2;
+                }
+
+            } else {
+                SCREEN_MEMORY[offset] = *string;
+                SCREEN_MEMORY[offset + 1] = color;
+                offset += 2;
+            }
+
+            string++;
         }
 
-        format++;
+        if (offset >= TEXTMODE_SIZE) {
+            // Scroll screen if needed
+            fastFastMemoryCopy(
+                SCREEN_MEMORY + getOffset(0, 0),
+                SCREEN_MEMORY + getOffset(0, 1),
+                TEXTMODE_WIDTH * (TEXTMODE_HEIGHT - 1) * 2
+            );
+
+            fastFastMemorySet(
+                (char *)(SCREEN_MEMORY + getOffset(0, TEXTMODE_HEIGHT - 1)), 0, (TEXTMODE_WIDTH << 1)
+            );
+
+            offset -= (TEXTMODE_WIDTH << 1);
+        }
     }
+
+    setCursorOffset(offset);
 }
 
+
+/*  If it weren't for VSCODE problems, I could had used doxygen here :(
+ *  https://stackoverflow.com/questions/76471935/line-breaks-are-not-preserved-following-brief-and-similar-doxygen-keywords-in-t)
+*/
+
 /**
- * Prints formatted output to the screen (printf)
+ * ### Prints formatted output to the screen (printf)
  *
- * @note - '%d' or '%i' for integers
- * @note - '%f' for floats
- * @note - '%x' for hexadecimal lowercase, and '%X' for hexadecimal uppercase
- * @note - '%o' for octal, '%s' for string, and '%c' for character
- * @exception - If an unsupported specifier is encountered, it prints the '%' character followed by the unsupported specifier
+ * - #### Arguments:
+ *     `format`: The format string containing format specifiers.
+ *     `...`   : Additional arguments corresponding to the format specifiers.
+ *
+ * - #### Supported format specifiers:
+ *     `%d` or `%i` for integers.
+ *     `%f` for floats.
+ *     `%x` for hexadecimal (lowercase) and `%X` for hexadecimal (uppercase).
+ *     `%o` for octal.
+ *     `%s` for strings.
+ *     `%c` for characters.
+ *
+ * - #### Flags:
+ *     `-` : Left-justify within the given field width.
+ *     `0` : Pad with zeros instead of spaces.
+ *
+ * - #### Optional Width and Precision:
+ *     `*` : Width or precision specified by an integer argument.
+ *     `.` : Precision specified by an integer argument.
+ *
+ * - #### Length Specifiers:
+ *     `l` : For long integers.
+ *     `h` : For short integers.
+ *
+ * - #### NOTE:
+ *     If an unsupported specifier is encountered, it prints `%` followed by the unsupported specifier.
  */
-void printFormat(const char *format, ...) {
+void ttyPrintFmt(const char *format, ...) {
     va_list args;
     va_start(args, format);
 
-    vprintFormat(format, args);
+    parseVariadicFormat(format, args);
 
     va_end(args);
 }
+
 
 /**
  * Print a pretty formatted output to the console (printf)
  */
-void printOutput(const char *prompt, uint8_t promptColor, const char *format, ...) {
-    printColor(prompt, promptColor);
+void ttyPrintOut(const char *prompt, const char *format, ...) {
+    ttyPrintLog(prompt);
 
     va_list args;
     va_start(args, format);
 
-    vprintFormat(format, args);
+    parseVariadicFormat(format, args);
 
     va_end(args);
 }
+
 
 /*
  * Updates the cursor position on screen
@@ -387,10 +676,11 @@ void moveCursor(uint16_t col, uint16_t row) {
     writeByteToPort(0x3D5, (uint8_t) ((newpos >> 8) & 0xFF));
 }
 
+
 /*
  * Get the last character from the video buffer
  */
-char getCharacter() {
+char getCharacter(void) {
     writeByteToPort(0x3D4, 0x0F);
     uint16_t pos = readByteFromPort(0x3D5);
     writeByteToPort(0x3D4, 0x0E);

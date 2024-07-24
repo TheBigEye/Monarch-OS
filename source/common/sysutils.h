@@ -16,11 +16,26 @@
          */
         #define UNUSED(x) (void)(x)
 
+        #define PRIVATE static
+        #define PUBLIC  extern
+
         #define NULL ((void *) 0UL)
 
         #define INF __builtin_inf()
         #define NAN __builtin_nan("")
+
+        /**
+         * @brief This definition of PI has 17 decimal digits, which is sufficient
+         * to accurately represent a `double` value according to the IEEE 754 standard.
+         * Although the GCC M_PI constant has 53 digits, only the first 17 are correct
+         * due to the 53-bit precision of a `double`.
+         */
         #define PI 3.141592653589793
+
+        /*
+        * NOTE: (355 ⁄ 113) and (22 / 7) are PI aproximations :)
+        */
+
         #define EPSILON 1e-9
 
         #define isInf __builtin_isinf
@@ -40,6 +55,7 @@
 
         #define FOREVER for (;;)
         #define NOTHING ;
+
         #define PACKED __attribute__ ((__packed__))
 
         #define DOUBLE_MAX 1E37
@@ -47,18 +63,24 @@
 
         #define ARRAY_LEN(a) (sizeof((a)) / sizeof(*(a)))
 
-        #define isDigit(c) ((unsigned) ((c) - '0') < 10)
-        #define isLower(c) ((unsigned) ((c) - 'a') < 26)
-        #define isUpper(c) ((unsigned) ((c) - 'A') < 26)
-        #define isPrint(c) ((unsigned) ((c) - ' ') < 95)
-        #define isAscii(c) ((unsigned) (c) < 128)
+        #define isDigit(c) ((unsigned int) ((c) - '0') < 10u)
+        #define isLower(c) ((unsigned int) ((c) - 'a') < 26u)
+        #define isUpper(c) ((unsigned int) ((c) - 'A') < 26u)
+        #define isPrint(c) ((unsigned int) ((c) - ' ') < 95u)
+        #define isAscii(c) ((unsigned int) (c) < 128u)
+
+        /** Character to lowercase */
+        #define toLower(c) (isUpper((c)) ? ((c) + 0x20) : (c))
+
+        /** Character to uppercase */
+        #define toUpper(c) (isLower((c)) ? ((c) - 0x20) : (c))
 
         /* Definition of common types used in the codebase */
 
-        typedef unsigned int    size;
-        typedef unsigned int    dwrd;
-        typedef unsigned short  word;
-        typedef unsigned char   byte;
+        typedef unsigned long    ULONG;
+        typedef unsigned int     DWORD;
+        typedef unsigned short   WORD;
+        typedef unsigned char    BYTE;
 
         /* Some math (yeah, maths sucks) */
 
@@ -76,6 +98,7 @@
         #define va_end(ap)              __builtin_va_end(ap)
         #define va_copy(d, s)           __builtin_va_copy(d, s)
 
+
     #endif /* _COMMON_TYPEDEFS */
 
     /* Common system functions */
@@ -84,28 +107,19 @@
     double factorial(int n);
     double pow(double base, int exp);
 
-    double sin(double x);
-    double cos(double x);
-    double tan(double x);
-
-    double ceil(double x);
-    double floor(double x);
-
     int atoi(const char* string);
 
-    char* itoa(int integer);
-    char* ftoa(double value);
-    char* htoa(int integer);
+    char *itoa(int integer);
+    char *ftoa(double value);
+    char *htoa(int integer);
 
-    int lengthString(const char *string);
-    void reverseString(char *string);
-    void combineString(char *dest, char *source);
-    void copyString(char *dest, const char *source);
+    int stringLength(const char *string);
 
-    bool backspace(char string[]);
+    void stringReverse(char *string);
+    void stringCombine(char *destination, char *source);
 
-    int toLower(char character);
-    int toUpper(char character);
+    char *stringCopy(char *destination, const char *source);
+    char *stringCopyTo(char *destination, const char *source, unsigned int nchars);
 
     void toLowercase(char *string);
     void toUppercase(char *string);
@@ -114,9 +128,14 @@
 
     void appendChar(char string[], char num);
 
-    int equalsWith(const char *a, const char *b);
-    int matchWith(char *a, char *b);
-    bool startsWith(const char *a, const char *b);
+    int stringCompare(const char *a, const char *b);
+    int stringCompareTo(const char *a, const char *b, unsigned int n);
+
+    int stringMatch(char *a, char *b);
+    bool stringStarts(const char *a, const char *b);
+
+    char *stringFindChar(const char *string, int character);
+    char *stringFindLastChar(const char *string, int character);
 
     /* Non standard functions */
 

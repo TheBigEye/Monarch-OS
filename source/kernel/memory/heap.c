@@ -4,8 +4,6 @@
 #include "../drivers/console.h"
 #include "../bugfault.h"
 
-#define MAX_PAGE_ALIGNED_ALLOCS 32
-
 static uint32_t last_alloc = 0;
 static uint32_t heap_end = 0;
 static uint32_t heap_begin = 0;
@@ -14,53 +12,56 @@ static uint32_t pheap_end = 0;
 static uint8_t *pheap_desc = 0;
 static uint32_t memory_used = 0;
 
-/* never, NEVER!, declare 'extern uint32_t end;' here was kernel_end */
-
 void initializeMemory(uint32_t kernel_end) {
-	last_alloc = kernel_end + 0x1000;
-	heap_begin = last_alloc;
-	pheap_end = 0x400000;
-	pheap_begin = pheap_end - (MAX_PAGE_ALIGNED_ALLOCS * 4096);
-	heap_end = pheap_begin;
-	memorySet((char *) heap_begin, 0, heap_end - heap_begin);
-	pheap_desc = (uint8_t *) memoryAllocateBlock(MAX_PAGE_ALIGNED_ALLOCS);
-	printFormat("Kernel heap starts at %X\n", last_alloc);
+
+    BUG_FATAL(kernel_end > 0, "Invalid 'kernel_end' value!");
+
+    last_alloc = kernel_end + 0x1000;
+    heap_begin = last_alloc;
+    pheap_end = 0x800000;
+    pheap_begin = pheap_end - (MAX_PAGE_ALIGNED_ALLOCS * 4096);
+    heap_end = pheap_begin;
+
+    memorySet((char *) heap_begin, 0, heap_end - heap_begin);
+    pheap_desc = (uint8_t *) memoryAllocateBlock(MAX_PAGE_ALIGNED_ALLOCS);
+
+    ttyPrintFmt("Kernel heap starts at %X\n", last_alloc);
 }
 
-void memoryGetStatus() {
-    printColor("[i] Memory Heap Status:\n", BG_BLACK | FG_LTGREEN);
-	printFormat(" * Memory used: %d bytes\n", memory_used);
-	printFormat(" * Memory free: %d bytes\n\n", heap_end - heap_begin - memory_used);
+void memoryGetStatus(void) {
+    ttyPrintLog(INFO "Memory Heap Status:\n");
+    ttyPrintFmt(" * Memory used: %d bytes\n", memory_used);
+    ttyPrintFmt(" * Memory free: %d bytes\n\n", heap_end - heap_begin - memory_used);
 
-	printFormat(" * Heap size: %d bytes\n", heap_end - heap_begin);
-	printFormat(" * Heap start: %X\n", heap_begin);
-	printFormat(" * Heap end: %X\n\n", heap_end);
+    ttyPrintFmt(" * Memory-Heap size: %d bytes\n", heap_end - heap_begin);
+    ttyPrintFmt(" * Memory-Heap head: %X\n", heap_begin);
+    ttyPrintFmt(" * Memory-Heap tail: %X\n\n", heap_end);
 
-	printFormat(" * PHeap start: %X\n", pheap_begin);
-    printFormat(" * PHeap end: %X\n", pheap_end);
+    ttyPrintFmt(" * Paging-Heap size: %d bytes\n", pheap_end - pheap_begin);
+    ttyPrintFmt(" * Paging-Heap head: %X\n", pheap_begin);
+    ttyPrintFmt(" * Paging-Heap tail: %X\n\n", pheap_end);
 }
 
 
 void memoryFreeBlock(void *mem) {
-    if (mem == NULL) return;
+    BUG_CHECK(mem == NULL, "Attempting to free NULL pointer-block!");
 
-    alloc_t *alloc = (alloc_t *)((uint8_t *) mem - sizeof(alloc_t));
-
-    memory_used -= alloc->size + sizeof(alloc_t);
+    alloc_t *alloc = ((alloc_t *)((uint8_t *) mem - sizeof(alloc_t)));
+    memory_used -= (alloc->size + sizeof(alloc_t));
     alloc->status = 0;
 }
 
 void memoryFreePages(void *mem) {
-    if (mem == NULL) return;
+    BUG_CHECK(mem == NULL, "Attempting to free NULL pointer-page!");
 
-    if ((uint32_t) mem < pheap_begin || (uint32_t) mem > pheap_end) return;
+    BUG_CHECK((((uint32_t) mem) < pheap_begin) || (((uint32_t) mem) > pheap_end), "Memory address out of paging heap range");
 
-	/* Determine which page is it */
-    uint32_t ad = (uint32_t) mem;
+    /* Determine which page is it */
+    uint32_t ad = ((uint32_t) mem);
     ad -= pheap_begin;
     ad /= 4096;
 
-	/* Now, ad has the id of the page */
+    /* Now, ad has the id of the page */
     pheap_desc[ad] = 0;
     return;
 }
@@ -70,10 +71,12 @@ char* memoryAllocatePages(uint32_t size) {
     for (int i = 0; i < MAX_PAGE_ALIGNED_ALLOCS; i++) {
         if (pheap_desc[i]) continue;
         pheap_desc[i] = 1;
-        //printFormat("Page allocated from %X to %X\n", pheap_begin + i*4096, pheap_begin + (i+1)*4096);
-        return (char *)(pheap_begin + i*4096);
+
+        // ttyPrintFmt("Page allocated from %X to %X\n", pheap_begin + i*4096, pheap_begin + (i+1)*4096);
+
+        return ((char *)(pheap_begin + i*4096));
     }
-    //printFormat("memoryAllocatePages: FATAL: failure!\n");
+    // ttyPrintFmt("memoryAllocatePages: FATAL: failure!\n");
     return 0;
 }
 
@@ -81,63 +84,66 @@ char* memoryAllocateBlock(uint32_t size) {
     if (!size) return 0;
 
     /* Loop through blocks and find a block sized the same or bigger */
-    uint8_t *mem = (uint8_t *) heap_begin;
-    while ((uint32_t) mem < last_alloc) {
-        alloc_t *a = (alloc_t *)mem;
+    uint8_t *mem = ((uint8_t *) heap_begin);
+    while (((uint32_t) mem) < last_alloc) {
+        alloc_t *a = ((alloc_t *) mem);
 
         /* If the alloc has no size, we have reaced the end of allocation */
-		//printFormat("mem=%X a={.status=%d, .size=%d}\n", mem, a->status, a->size);
-		if (!a->size) {
-			goto nalloc;
+        //ttyPrintFmt("mem=%X a={.status=%d, .size=%d}\n", mem, a->status, a->size);
+        if (!a->size) {
+            goto nalloc;
         }
 
-		/* If the alloc has a status of 1 (allocated), then add its size
-		 * and the sizeof alloc_t to the memory and continue looking.
-		 */
-		if (a->status) {
-			mem += a->size;
-			mem += sizeof(alloc_t);
-			mem += 4;
-			continue;
-		}
+        /* If the alloc has a status of 1 (allocated), then add its size
+         * and the sizeof alloc_t to the memory and continue looking.
+         */
+        if (a->status) {
+            mem += a->size;
+            mem += sizeof(alloc_t);
+            mem += 4;
+            continue;
+        }
 
-		/* If the is not allocated, and its size is bigger or equal to the
-		 * requested size, then adjust its size, set status and return the location.
-		 */
-		if (a->size >= size) {
-			/* Set to allocated */
-			a->status = 1;
+        /* If the is not allocated, and its size is bigger or equal to the
+         * requested size, then adjust its size, set status and return the location.
+         */
+        if (a->size >= size) {
+            /* Set to allocated */
+            a->status = 1;
 
-			//printFormat("RE:Allocated %d bytes from %X to %X\n", size, mem + sizeof(alloc_t), mem + sizeof(alloc_t) + size);
-			memorySet(mem + sizeof(alloc_t), 0, size);
-			memory_used += size + sizeof(alloc_t);
-			return (char *)(mem + sizeof(alloc_t));
-		}
+            // ttyPrintFmt("RE:Allocated %d bytes from %X to %X\n", size, mem + sizeof(alloc_t), mem + sizeof(alloc_t) + size);
 
-		/* If it isn't allocated, but the size is not good, then
-		 * add its size and the sizeof alloc_t to the pointer and
-		 * continue;
-		 */
-		mem += a->size;
-		mem += sizeof(alloc_t);
-		mem += 4;
-	}
+            memorySet((mem + sizeof(alloc_t)), 0, size);
+            memory_used += (size + sizeof(alloc_t));
+            return ((char *)(mem + sizeof(alloc_t)));
+        }
 
-	nalloc:;
-	if (last_alloc + size + sizeof(alloc_t) >= heap_end) {
-        printFormat("Cannot allocate %d bytes!\n", size);
-		PANIC("Out of memory!\n");
-	}
+        /* If it isn't allocated, but the size is not good, then
+         * add its size and the sizeof alloc_t to the pointer and
+         * continue;
+         */
+        mem += a->size;
+        mem += sizeof(alloc_t);
+        mem += 4;
+    }
 
-	alloc_t *alloc = (alloc_t *)last_alloc;
-	alloc->status = 1;
-	alloc->size = size;
+    nalloc:;
+    if ((last_alloc + size + sizeof(alloc_t)) >= heap_end) {
+        ttyPrintFmt("Cannot allocate %d bytes!\n", size);
+        THROW("Out of memory!\n");
+    }
 
-	last_alloc += size;
-	last_alloc += sizeof(alloc_t);
-	last_alloc += 4;
-	//printFormat("Allocated %d bytes from %x to %x\n", size, (uint32_t)alloc + sizeof(alloc_t), last_alloc);
-	memory_used += size + 4 + sizeof(alloc_t);
-	memorySet((char *)((uint32_t)alloc + sizeof(alloc_t)), 0, size);
-	return (char *)((uint32_t)alloc + sizeof(alloc_t));
+    alloc_t *alloc = ((alloc_t *) last_alloc);
+    alloc->status = 1;
+    alloc->size = size;
+
+    last_alloc += size;
+    last_alloc += sizeof(alloc_t);
+    last_alloc += 4;
+
+    // ttyPrintFmt("[DEBUG DEBUG] Allocated %d bytes from %x to %x\n", size, (uint32_t)alloc + sizeof(alloc_t), last_alloc);
+
+    memory_used += (size + 4 + sizeof(alloc_t));
+    memorySet(((char *)((uint32_t)alloc + sizeof(alloc_t))), 0, size);
+    return (char *)((uint32_t)alloc + sizeof(alloc_t));
 }

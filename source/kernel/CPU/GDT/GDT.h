@@ -24,8 +24,8 @@ struct gdt_ptr {
 
 /* Our GDT, with 3 entries, and finally our special GDT pointer */
 struct gdt_entry gdt[3];
-struct gdt_ptr gp;
+struct gdt_ptr descriptor_pointer;
 
-void gdtDoInstall(void);
+void initializeGDT(void);
 
 #endif /* _CPU_GDT_H */
