@@ -14,11 +14,23 @@
  *       it is very slow if used intensively
  */
 void *memoryCopy(void *destination, const void *source, uint32_t nbytes) {
-    const uint8_t *src = (const uint8_t *) source;
     uint8_t *dst = (uint8_t *) destination;
-    while (nbytes--) {
-        *dst++ = *src++;
+    const uint8_t *src = (const uint8_t *) source;
+
+    if (!dst || !src) {
+        // Handling null pointers
+        return NULL;
     }
+
+    if ((dst > src) && (dst < (src + nbytes))) {
+        // This handles the scenario where destination overlaps the source.
+        dst += (nbytes - 1);
+        src += (nbytes - 1);
+        while (nbytes--) *dst-- = *src--;
+    } else {
+        while (nbytes--) *dst++ = *src++;
+    }
+
     return destination;
 }
 
@@ -96,10 +108,8 @@ void *fastFastMemoryCopy(void *destination, const void *source, uint32_t nbytes)
  *       it is very slow if used intensively
  */
 void *memorySet(void *destination, uint8_t value, uint32_t length) {
-    uint8_t *temp = (uint8_t *) destination;
-    while (length-- > 0) {
-        *temp++ = value;
-    }
+    uint8_t *pointer = (uint8_t *) destination;
+    while (length--) *pointer++ = value;
     return destination;
 }
 
@@ -176,21 +186,17 @@ void *fastFastMemorySet(void *destination, uint8_t value, uint32_t length) {
  */
 void *memoryMove(void *destination, const void *source, uint32_t length) {
     uint8_t *dst = (uint8_t *) destination;
-	uint8_t *src = (uint8_t *) source;
+    uint8_t *src = (uint8_t *) source;
+
     if (dst < src) {
-        while (length--) {
-            *dst++ = *src++;
-        }
+        while (length--) *dst++ = *src++;
     } else {
         uint8_t *ldst = dst + (length - 1);
         uint8_t *lsrc = src + (length - 1);
-        while (length--) {
-            *ldst-- = *lsrc--;
-        }
+        while (length--) *ldst-- = *lsrc--;
     }
     return destination;
 }
-
 
 
 /**
@@ -207,7 +213,8 @@ void *memoryMove(void *destination, const void *source, uint32_t length) {
 int memoryCompare(const void *a, const void *b, uint32_t count) {
     const uint8_t *sa = (const uint8_t *) a;
     const uint8_t *sb = (const uint8_t *) b;
-    while (count-- > 0) {
+
+    while (count--) {
         if (*sa++ != *sb++) {
             return sa[-1] < sb[-1] ? -1 : 1;
         }

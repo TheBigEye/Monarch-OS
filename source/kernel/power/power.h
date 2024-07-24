@@ -3,25 +3,17 @@
 
 #include "../../common/sysutils.h"
 
-/**
- * Halt the CPU with security and stops all.
- *
- * @param time The time to wait in milliseconds before halt.
- */
-void powerHalt(uint32_t time);
+enum POWER_STATUS {
+    POWER_HALT      = 0x00,
+    POWER_REBOOT    = 0x01,
+    POWER_SHUTDOWN  = 0x02
+};
 
 /**
- * Reboots the computer after the specified time.
+ * Controls the power state of the system.
  *
- * @param time The time to wait in milliseconds before rebooting.
+ * @param operation The desired power operation (halt, reboot, shutdown).
  */
-void powerReboot(uint32_t time);
-
-/**
- * Shuts down the computer after the specified time.
- *
- * @param time The time to wait in milliseconds before shutting down.
- */
-void powerShutdown(uint32_t time);
+void powerControl(int operation);
 
 #endif /* KERNEL_POWER_H */

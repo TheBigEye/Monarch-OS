@@ -3,19 +3,25 @@
 
 #include "../common/sysutils.h"
 
+/* The poem text :) */
+extern char bootpoem[];
+
 /* The butterfly ascii logo */
 extern char butterfly[];
+
+/* "It's now safe to turn off your computer" */
+extern char turnoffpc[];
 
 /* Chess wallpaper taken from Windows 3.1 */
 extern uint8_t wallpaper[640 * 480];
 
 /* Leafs wallpaper taken from Windows 3.1 */
-extern uint8_t leafpaper[640 * 480];
+extern uint8_t hillpaper[640 * 480];
 
 /* Under Construction wallpaper taken from Windows Chicago */
 extern uint8_t workpaper[640 * 480];
 
-
+/* Mouse pointer bitmap */
 uint8_t mouse_bitmap[9 * 18] = {
     0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,

@@ -22,14 +22,13 @@ typedef struct {
 void clockGetTime(time_t* time);
 
 /**
+ * Check if is a leap year
+ */
+bool clockIsLeap(uint32_t year);
+
+/**
  * Initialize the Real Time Clock chip and add its handler to the IDT.
  */
 void initializeClock(void);
-
-
-/**
- * Unregister the Real Time Clock and remove its handler from the IDT.
- */
-void terminateClock(void);
 
 #endif /* _CPU_CLOCK_H */

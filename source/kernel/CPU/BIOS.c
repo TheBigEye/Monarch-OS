@@ -1,74 +1,65 @@
 #include "BIOS.h"
-
-#include "CMOS/CMOS.h"
 #include "HAL.h"
 
-#include "../drivers/console.h"
-
-void firmwareGetStatus() {
-    printOutput("[o] ", BG_BLACK | FG_YELLOW, "System Info from BIOS:\n");
-
-    /* Memory Size */
-    // BUGBUG: if i have as RAM an 1GB or more, memoryTotal overflows to 65535
-    // (https://forum.osdev.org/viewtopic.php?t=18336)
-
-    uint16_t memory;
-    uint8_t low, high;
-
-    low = readFromCMOS(0x30);
-    high = readFromCMOS(0x31);
-
-    memory = low | high << 8;
-
-    printOutput("[-] ", BG_BLACK | FG_YELLOW, "RAM memory size: %s KB\n\n", itoa((int) memory));
-
-    /* TODO: List disks (this may be wrong, test this) */
-
-    const char* drivesSlots[4] = {"Primary Master", "Primary Slave", "Secondary Master", "Secondary Slave"};
-    const char* drivesNames[5] = {"None", "Floppy", "Hard Disk", "CD-ROM", "ZIP Drive"};
-
-    uint8_t driveTypes[4];
-
-    for (uint8_t i = 0; i < 4; i++) {
-        writeByteToPort(CMOS_ADDRESS, 0x10 + i);
-        driveTypes[i] = readByteFromPort(CMOS_DATAREG);
-    }
-
-    printOutput("[o] ", BG_BLACK | FG_YELLOW, "Storage drives:\n");
-
-    for (uint8_t i = 0; i < 4; i++) {
-        if (driveTypes[i] != 0) {
-            if (driveTypes[i] <= 4) {
-                printOutput("[-] ", BG_BLACK | FG_YELLOW, "%s: %s\n", drivesSlots[i], drivesNames[driveTypes[i]]);
-            } else if (driveTypes[i] == 80) {
-                printOutput("[-] ", BG_BLACK | FG_YELLOW, "%s: First Hard Drive\n", drivesSlots[i]);
-            } else {
-                printOutput("[-] ", BG_BLACK | FG_YELLOW, "%s: Unknown (%d)\n", drivesSlots[i], driveTypes[i]);
-            }
-        } else {
-            printOutput("[-] ", BG_BLACK | FG_YELLOW, "%s: None\n", drivesSlots[i]);
-        }
-    }
+/**
+ * Convert a Binary Coded Decimal (BCD) to a binary number.
+ *
+ * @param bcd   Binary Coded Decimal value
+ * @return  The corresponding binary number
+ */
+uint8_t getBCD(uint8_t bcd) {
+    /*
+    * Decimal:    0     1     2     3     4     5     6     7     8     9
+    * BCD:      0000  0001  0010  0011  0100  0101  0110  0111  1000  1001
+    */
+    return (uint8_t)(((bcd >> 4) * 10) + (bcd & 0x0F));
 }
 
-void firmwareGetFloppy() {
-    const char *driveType[16] = {
-        "no floppy drive",
-        "360kb 5.25in floppy drive",
-        "1.2mb 5.25in floppy drive",
-        "720kb 3.5in",
-        "1.44mb 3.5in",
-        "2.88mb 3.5in"
-    };
+/**
+ * Convert a binary number to a Binary Coded Decimal (BCD).
+ *
+ * @param bin   Binary numer value
+ * @return  The corresponding BCD number
+ */
+uint8_t getBIN(uint8_t bin) {
+    /*
+    * BCD:      0000  0001  0010  0011  0100  0101  0110  0111  1000  1001
+    * Decimal:    0     1     2     3     4     5     6     7     8     9
+    */
+    return ((bin / 10) << 4) + (bin % 10);
+}
 
-	uint8_t a = 0, b = 0, c = 0;
+/**
+ * This extermly simple, we need to send the address number to 0x70 (Address Port) port.
+ * Here, Address means data you want to read from the chip. After the sending the address
+ * number, the CMOS will keep the data ready to be read at 0x71 (Data Port)
+ */
 
-	writeByteToPort(0x70, 0x10);
-	c = readByteFromPort(0x71);
-	a = c >> 4; // get the high nibble
-	b = c & 0xF; // get the low nibble by ANDing out the high nibble
+uint8_t readFromCMOS(uint8_t address) {
+   uint8_t data;
+   writeByteToPort(CMOS_ADDRESS, address);
+   data = readByteFromPort(CMOS_DATAREG);
+   return data;
+}
 
-    printOutput("[o] ", BG_BLACK | FG_YELLOW, "Floppy drives:\n");
-	printOutput("[-] ", BG_BLACK | FG_YELLOW, " A: %s \n", driveType[a]);
-	printOutput("[-] ", BG_BLACK | FG_YELLOW, " B: %s \n", driveType[b]);
+/**
+ * This is exactly same but we will replace inportb with outportb of the previous code.
+ * In simple words, instead of read the data we will write data. But while we write to
+ * the CMOS Address register 0x70, we may also change the NMI bit as NMI are enabled \
+ * disabled. NMI are signals sent to the processor when a fatal error takes place or
+ * some hardware panic. The 8th bit is the NMI enable\disable bit. And only 7 bits are
+ * used for transmitting the address
+ */
+
+void writeToCMOS(uint8_t address, uint32_t value) {
+    writeByteToPort(CMOS_ADDRESS, address);
+    writeByteToPort(CMOS_DATAREG, 0 << 7 | value);
+}
+
+
+void dumpFromCMOS(uint16_t *values) {
+    for (uint16_t index = 0; index < 128; ++index) {
+        writeByteToPort(CMOS_ADDRESS, index);
+        values[index] = readByteFromPort(CMOS_DATAREG);
+    }
 }

@@ -40,7 +40,7 @@ extern void IRQ_12(void); extern void IRQ_13(void); extern void IRQ_14(void); ex
 #define IRQ15     47 // Secondary ATA Hard Disk
 
 /* Struct which aggregates many registers.
- * It matches exactly the pushes on interrupt.asm. From the bottom:
+ * It matches exactly the pushes on bootmain.asm. From the bottom:
  * - Pushed by the processor automatically
  * - `push byte`s on the isr-specific code: error code, then int number
  * - All the registers by pusha
@@ -53,11 +53,10 @@ typedef struct {
     uint32_t eip, cs, eflags, esp, ss; /* Pushed by the processor automatically */
 } registers_t;
 
-void isrDoInstall(void);
+void initializeISR(void);
 void ISR_handler(registers_t *registers);
 
-void irqDoInstall(void);
-void IRQ_uninstall(void);
+void initializeIRQ(void);
 
 typedef void (*interrupt_t)(registers_t *);
 void registerInterruptHandler(uint8_t irq, interrupt_t handler);

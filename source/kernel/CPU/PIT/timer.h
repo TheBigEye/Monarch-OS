@@ -3,6 +3,28 @@
 
 #include "../../../common/sysutils.h"
 
+#define PIT_TIMER_0_PORT    0x40
+#define PIT_TIMER_1_PORT    0x41
+#define PIT_TIMER_2_PORT    0x42
+#define PIT_COMMAND_PORT    0x43
+
+#define PIT_TIMER_0_SELECT  0x00
+#define PIT_TIMER_1_SELECT  0x40
+#define PIT_TIMER_2_SELECT  0x80
+
+#define PIT_MODE_COUNTDOWN     0x00
+#define PIT_MODE_ONESHOT       0x02
+#define PIT_MODE_RATE          0x04
+#define PIT_MODE_SQUARE_WAVE   0x06
+
+#define PIT_WRITE_WORD         0x30
+
+// The frequency at which the timer should generate interrupts.
+#define PIT_BASE_FRECUENCY    1193180
+
+// The timer divisor, while more high, more faster!!
+#define PIT_TICKS_PER_SECOND  100 // not change this, BROKE ALL!
+
 uint32_t timerGetTicks(void);
 
 /**
@@ -40,23 +62,16 @@ uint32_t timerGetHours(void);
 
 
 /**
- * Initializes the timer with the specified frequency.
- *
- * @param frequency  The frequency at which the timer should generate interrupts.
+ * Initializes the timer.
  */
-void initializeTimer(uint32_t frequency);
-
-/**
- * Terminate the PIT and unregister it handler from the IRQ
-*/
-void terminateTimer(void);
+void initializeTimer(void);
 
 /**
  * Sleep an operation for shot time.
  *
- * @param time  The time to sleep in milliseconds.
+ * @param milliseconds  The time to sleep in milliseconds.
  */
-void timerSleep(uint32_t time);
+void timerSleep(uint32_t milliseconds);
 
 
 #endif /* _CPU_TIMER_H */

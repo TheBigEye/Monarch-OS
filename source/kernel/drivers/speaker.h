@@ -1,5 +1,5 @@
-#ifndef _DRIVER_SOUND_H
-#define _DRIVER_SOUND_H 1
+#ifndef _DRIVER_SPEAKER_H
+#define _DRIVER_SPEAKER_H 1
 
 #include "../../common/sysutils.h"
 
@@ -29,4 +29,4 @@ void startupSound(void);
  */
 void shutdownSound(void);
 
-#endif /* _DRIVER_SOUND_H */
+#endif /* _DRIVER_SPEAKER_H */

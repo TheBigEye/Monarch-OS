@@ -3,9 +3,11 @@
 
 #include "../../common/sysutils.h"
 
+#define MAX_PAGE_ALIGNED_ALLOCS 32
+
 typedef struct {
-	uint8_t status;
-	uint32_t size;
+    uint8_t status;
+    uint32_t size;
 } alloc_t;
 
 void initializeMemory(uint32_t kernel_end);

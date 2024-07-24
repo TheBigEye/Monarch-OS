@@ -6,8 +6,13 @@ phys = 0x00100000;
 SECTIONS {
 
     /*
-	 * Actual code
-	 */
+     * Start of kernel.
+     */
+    kernel_head = .;
+
+    /*
+     * Actual code
+     */
     .text phys : AT(phys) {
         code = .;
         *(.text)
@@ -15,32 +20,37 @@ SECTIONS {
         . = ALIGN(4096);
     }
 
-	/*
-	 * Kernel data
-	 */
+    /*
+     * Kernel data
+     */
     .data : AT(phys + (data - code)) {
         data = .;
         *(.data)
         . = ALIGN(4096);
     }
 
-	/*
-	 * Statically defined, uninitialized values
-	 */
+    /*
+     * Statically defined, uninitialized values
+     */
     .bss : AT(phys + (bss - code)) {
         bss = .;
         *(.bss)
         . = ALIGN(4096);
     }
 
-	/*
-	 * End of kernel.
-	 */
+    /*
+     * End of kernel.
+     */
+    kernel_tail = .;
+
+    /*
+     * End section
+     */
     end = .;
 
-	/*
-	 * Get rid of unnecessary GCC sections.
-	 */
+    /*
+     * Get rid of unnecessary GCC sections.
+     */
     /DISCARD/ : {
         *(.comment)
         *(.note.gnu.build-id)

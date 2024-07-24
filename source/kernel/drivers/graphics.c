@@ -1,9 +1,24 @@
 #include "graphics.h"
-#include "VGA/VGA.h"
+#include "VGA/video.h"
 
 #include "../CPU/HAL.h"
 #include "../memory/heap.h"
 #include "../memory/memory.h"
+
+/**
+ * If you are reading this, it's because you have realized that we are working
+ * with planar memory and not with a linear framebuffer. And yes, it seems I
+ * like to go the complicated but more elegant route. Let's say I was punishing
+ * my brain to try and make it do the dirty work of correctly printing a pixel
+ * on the screen. If you think the code is slow, go ahead, good luck optimizing
+ * it more than I could. Haha :D
+*/
+
+// TODO: Optimize image drawing functions, we can enable all the planes at same time!!
+
+// TODO: Add more functions to handle shapes and figures, such as triangles, hexagons,
+// lines with a specific thickness, etc :)
+
 
 /**
  * Sets the color of a single pixel on the screen.
@@ -13,74 +28,108 @@
  * @param x The x-coordinate of the pixel.
  * @param y The y-coordinate of the pixel.
  */
-void plotPixel(uint8_t color, uint32_t x, uint32_t y) {
+void plotPixel(uint8_t color, uint16_t x, uint16_t y) {
     if (x >= GRAPHMODE_WIDTH || y >= GRAPHMODE_HEIGHT) return;
 
-    // Pointer to the start of the screen memory
+    // Pointer to the start of the screen memory buffer
     uint8_t *SCREEN_MEMORY = (uint8_t *) GRAPHMODE_BUFFER;
 
-    // Calculate the offset into the screen memory for the pixel
-    // The screen width is divided by 8 because each byte represents 8 pixels
+    // Calculate the memory offset based on the pixel coordinates
+    // Each byte represents 8 pixels, so we need to adjust for this
     SCREEN_MEMORY += (y * GRAPHMODE_WIDTH + x) >> 3;
 
-    // Calculate the bitmask within the byte that represents the pixel
-    uint8_t bit = 1 << (7 - (x & 7));
+    // Create a mask to isolate the specific bit for the pixel
+    // 0x80 corresponds to the most significant bit of a byte,
+    // shifting it right by (x % 8) positions to align with the pixel position
+    uint8_t mask = (0x80 >> (x % 8));
 
-    // Loop over each color plane
-    for (uint8_t plane = 0; plane < 4; plane++) {
-        uint8_t mask = 1 << plane;
+    writeByteToPort(SEQUENCER_INDEX, REG_SEQUENCER_MASK);
+	writeByteToPort(GRAPHICS_INDEX, 0x08);
+	writeByteToPort(GRAPHICS_DATA, mask); // We select only specifics bits
+	writeByteToPort(SEQUENCER_DATA, 0x0F); // Enable all planes for drawing
 
-        // Select the memory plane. The VGA hardware uses a technique called
-        // "planar" memory, where each color plane is stored separately
-        // We need to select the correct plane before we can write to it
-        writeByteToPort(GRAPHICS_INDEX, REG_GRAPHICS_MAP_READ);
-        writeByteToPort(GRAPHICS_DATA, plane);
+    // Clear the current pixel bit by masking out the bit
+	*SCREEN_MEMORY &= ~mask;
 
-        // set bitmask
-        writeByteToPort(SEQUENCER_INDEX, REG_SEQUENCER_MASK);
-        writeByteToPort(SEQUENCER_DATA, mask);
+    // Write the color value to the selected pixel bit
+	writeByteToPort(SEQUENCER_DATA, color);
 
-        // If the corresponding bit in the color parameter is set,
-        // set the bit in the pixel, otherwise clear it
-        if (color & mask) {
-            *SCREEN_MEMORY |= bit;
-        } else {
-            *SCREEN_MEMORY &=~ bit;
+    // Set the pixel bit to the new color by OR-ing the mask
+	*SCREEN_MEMORY |= mask;
+}
+
+
+/**
+ * Reads the color of a pixel from the screen memory buffer.
+ *
+ * @param x The x-coordinate of the pixel
+ * @param y The y-coordinate of the pixel
+ * @return The color value of the pixel (0-15), or 0 if the coordinates are out of bounds
+ */
+uint8_t readPixel(uint16_t x, uint16_t y) {
+
+    // We simply return a black pixel in case we exceed the screen area
+    if (x >= GRAPHMODE_WIDTH || y >= GRAPHMODE_HEIGHT) {
+        return 0;
+    }
+
+    // Pointer to the start of the screen memory buffer
+    uint8_t *SCREEN_MEMORY = (uint8_t *) GRAPHMODE_BUFFER;
+
+    // Calculate the memory offset based on the pixel coordinates
+    // Each byte represents 8 pixels, so we need to adjust for this
+    SCREEN_MEMORY += (y * GRAPHMODE_WIDTH + x) >> 3;
+
+    uint8_t color = 0x00;
+
+    // Mask to isolate the bit corresponding to the pixel
+	uint8_t mask = 0x80 >> (x % 8);
+
+	writeByteToPort(GRAPHICS_INDEX, REG_GRAPHICS_MAP_READ);
+
+    // Loop through the four planes
+    for (uint8_t i = 0; i < 4; ++i) {
+        writeByteToPort(GRAPHICS_DATA, i);
+
+        // Check if the bit corresponding to the pixel
+        // is set and update the color value
+        if (*SCREEN_MEMORY & mask) {
+            color |= (1 << i);
         }
     }
+
+	return color;
 }
+
 
 /**
  * Fills the entire screen with a specified color.
  *
- * @param color The color to fill the screen with. This is an 8-bit value,
- *              where each bit represents a different color plane.
+ * @param color The color to fill the screen with.
  */
 void fillScreen(uint8_t color) {
-    // Pointer to the start of the screen memory
-    uint8_t *SCREEN_MEMORY = (uint8_t *) GRAPHMODE_BUFFER;
+    uint32_t SCREEN_SIZE = (uint32_t) GRAPHMODE_SIZE >> 3;
 
-    // The size of the screen memory in bytes
-    uint32_t SCREEN_SIZE = (uint32_t) GRAPHMODE_SIZE >> 2;
+    writeByteToPort(SEQUENCER_INDEX, REG_SEQUENCER_MASK);
+	writeByteToPort(GRAPHICS_INDEX, 0x08);
+	writeByteToPort(GRAPHICS_DATA, 0xFF); // We select all the bits
+	writeByteToPort(SEQUENCER_DATA, 0x0F); // Enable all the planes
 
-    // Loop over each color plane
-    for (uint8_t plane = 0; plane < 4; plane++) {
-        uint8_t mask = 1 << plane;
+    /*
+    * NOTE: This is really fast, but for some reason, calling memset
+    *       twice makes me think this is still not perfect.
+    */
 
-        // Select the current color plane
-        writeByteToPort(GRAPHICS_INDEX, REG_GRAPHICS_MAP_READ);
-        writeByteToPort(GRAPHICS_DATA, plane);
+    // Clear the screen buffer to prepare for filling
+    fastMemorySet(GRAPHMODE_BUFFER, 0x00, SCREEN_SIZE);
 
-        // set bitmask
-        writeByteToPort(SEQUENCER_INDEX, REG_SEQUENCER_MASK);
-        writeByteToPort(SEQUENCER_DATA, mask);
+    // Write the color value to all pixels in the buffer
+    writeByteToPort(SEQUENCER_DATA, color);
 
-        // Fill the entire plane with the color. If the corresponding bit in
-        // the color parameter is set, fill the plane with 0xFF (white),
-        // otherwise fill it with 0x00 (black)
-        fastFastMemorySet(SCREEN_MEMORY, (color & mask) ? 0xFF : 0x00, SCREEN_SIZE);
-    }
+    // Fill the screen buffer with the color
+    fastMemorySet(GRAPHMODE_BUFFER, 0xFF, SCREEN_SIZE);
 }
+
 
 /**
  * @brief Draws a bitmap on the screen plane by plane.
@@ -95,7 +144,7 @@ void fillScreen(uint8_t color) {
  *
  * @deprecated This is slow, we should use the fast double-bufferd version
  */
-void drawBitmap(uint8_t pixels[], uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
+void drawBitmap(uint8_t pixels[], uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
     // Pointer to the start of the screen memory
     uint8_t *SCREEN_MEMORY = (uint8_t *) GRAPHMODE_BUFFER;
 
@@ -138,7 +187,6 @@ void drawBitmap(uint8_t pixels[], uint32_t x, uint32_t y, uint32_t w, uint32_t h
 }
 
 
-
 /**
  * @brief Draws a bitmap on the screen (fast version).
  *
@@ -150,12 +198,14 @@ void drawBitmap(uint8_t pixels[], uint32_t x, uint32_t y, uint32_t w, uint32_t h
  * @param w         Width of the bitmap in pixels.
  * @param h         Height of the bitmap in pixels.
  */
-void drawBitmapFast(uint8_t pixels[], uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
+void drawBitmapFast(uint8_t pixels[], uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
     // Pointer to the start of the screen memory
     uint8_t *SCREEN_MEMORY = (uint8_t *) GRAPHMODE_BUFFER;
 
+    // BUG BUG: This doesnt free-up the allocated memory?
+
     // Create a temporary buffer for the bitmap
-    uint8_t *BITMAP_BUFFER = (uint8_t *) memoryAllocateBlock((w * h) / 8);
+    uint8_t *BITMAP_BUFFER = (uint8_t *) memoryAllocateBlock(((w * h) / 8));
 
     // Calculate the starting offset into the screen memory for the pixel
     SCREEN_MEMORY += (y * GRAPHMODE_WIDTH + x) >> 3;
@@ -210,15 +260,15 @@ void drawBitmapFast(uint8_t pixels[], uint32_t x, uint32_t y, uint32_t w, uint32
 }
 
 
-void drawLine(uint8_t color, uint32_t fx, uint32_t fy, uint32_t sx, uint32_t sy) {
-    int32_t dx = ABS((sx - fx)); // delta X
-    int32_t dy = -ABS((sy - fy)); // delta Y
-    int32_t ix = (fx < sx) ? 1 : -1; // sign of X direction
-    int32_t iy = (fy < sy) ? 1 : -1; // sign of Y direction
+void drawLine(uint8_t color, uint16_t fx, uint16_t fy, uint16_t sx, uint16_t sy) {
+    int16_t dx = ABS((sx - fx)); // delta X
+    int16_t dy = -ABS((sy - fy)); // delta Y
+    int8_t ix = (fx < sx) ? 1 : -1; // sign of X direction
+    int8_t iy = (fy < sy) ? 1 : -1; // sign of Y direction
 
     // errors
-    int32_t fe = dx + dy;
-    int32_t se;
+    int16_t fe = dx + dy;
+    int16_t se;
 
     while (1) {
         plotPixel(color, fx, fy);
@@ -237,18 +287,30 @@ void drawLine(uint8_t color, uint32_t fx, uint32_t fy, uint32_t sx, uint32_t sy)
 }
 
 
-void drawRect(uint8_t color, uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
-    for (uint32_t row = 0; row < h; row++) {
-        for (uint32_t col = 0; col < w; col++) {
-            plotPixel(color, x + col, y + row);
-        }
+void drawEmptyRect(uint8_t color, uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
+    drawLine(color, x, y, x, y + h);
+    drawLine(color, x, y, x + w, y);
+    drawLine(color, x + w, y, x + w, y + h);
+    drawLine(color, x, y + h, x + w, y + h);
+}
+
+
+void drawSolidRect(uint8_t color, uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
+    drawLine(color, x, y, x, y + h);
+    drawLine(color, x, y, x + w, y);
+    drawLine(color, x + w, y, x + w, y + h);
+    drawLine(color, x, y + h, x + w, y + h);
+
+    for (uint16_t i = y; i < y + h; i++){
+        drawLine(color, x, i, x + w, i);
     }
 }
 
-void drawEmptyCircle(uint8_t color, uint32_t cx, uint32_t cy, uint32_t r) {
-    int32_t x = 0;
-    int32_t y = r;
-    int32_t p = 1 - r;
+
+void drawEmptyCircle(uint8_t color, uint16_t cx, uint16_t cy, uint16_t r) {
+    int16_t x = 0;
+    int16_t y = r;
+    int16_t p = 1 - r;
 
     while (x <= y) {
         // Draw symmetric points
@@ -271,6 +333,7 @@ void drawEmptyCircle(uint8_t color, uint32_t cx, uint32_t cy, uint32_t r) {
     }
 }
 
+
 void drawSolidCircle(uint8_t color, uint16_t cx, uint16_t cy, uint16_t r) {
     for (int16_t y = -r; y <= r; y++) {
         for (int16_t x = -r; x <= r; x++) {
@@ -280,7 +343,6 @@ void drawSolidCircle(uint8_t color, uint16_t cx, uint16_t cy, uint16_t r) {
         }
     }
 }
-
 
 
 /**
@@ -293,15 +355,14 @@ void drawSolidCircle(uint8_t color, uint16_t cx, uint16_t cy, uint16_t r) {
  *              where the lower 4 bits represent the foreground color
  *              and the upper 4 bits represent the background color.
  */
-void drawCharacter(unsigned char character, uint32_t x, uint32_t y, uint8_t color) {
-    // Extract the foreground and background colors from the color parameter.
-    uint8_t fgcolor = color & 0x0F;
-    uint8_t bgcolor = (color >> 4) & 0x0F;
-    uint8_t chrsize = 8; // We use 8x8 font
+void drawCharacter(unsigned char character, uint16_t x, uint16_t y, uint8_t color) {
+    uint8_t fgcolor = color & 0x0F;        // Extract foreground color
+    uint8_t bgcolor = (color >> 4) & 0x0F; // Extract background color
+    const uint8_t chrsize = 8;             // Character size (8x8 font)
 
     // Get the glyph for the character from the font. The glyph is an 8x8 bitmap that represents the character.
     // Each byte in the glyph represents one row of 8 pixels in the character.
-    uint8_t *glyph = small_font + (int)character * chrsize;
+    uint8_t *glyph = small_font + character * chrsize;
 
     // Loop over each row in the glyph.
     for (uint8_t cy = 0; cy < chrsize; cy++) {
@@ -324,33 +385,39 @@ void drawCharacter(unsigned char character, uint32_t x, uint32_t y, uint8_t colo
 }
 
 
-void drawString(const char *string, uint32_t x, uint32_t y, uint8_t color) {
-    uint32_t orig_x = x;
-    uint32_t width = GRAPHMODE_WIDTH >> 3;
-    uint32_t height = GRAPHMODE_HEIGHT >> 3;
+void drawString(const char *string, uint16_t x, uint16_t y, uint8_t color) {
+    uint16_t ox = x;
+    uint16_t width = GRAPHMODE_WIDTH << 3;
+    uint16_t height = GRAPHMODE_HEIGHT << 3;
 
-    while (*string) {
-        if (*string == '\n') {
-            y += 8;
-            x = orig_x;
-        } else if (*string == '\t') {
-            x += 8 * 4;
-        } else if (*string == '\r') {
-            x = orig_x;
-        } else {
-            drawCharacter(*string, x, y, color);
-            x += 8;
+    do {
+        switch (*string) {
+            case '\n': y += 8; break;
+            case '\t': x += 32; break;
+            case '\r': x = ox; break;
+            default:
+                drawCharacter(*string, x, y, color);
+                x += 8;
+                break;
         }
-
-        if (x >= width << 3) {
-            x = orig_x;
+        if (x >= width) {
+            x = ox;
             y += 8;
         }
+    } while ((y < height) && *(string++));
+}
 
-        if (y >= height << 3) {
-            break;
+
+void drawCharset(void) {
+    uint16_t x = 0;
+    uint16_t y = 8;
+
+    for (uint8_t i = 32; i != 255; i++) { // Only printable chars
+        drawCharacter((char) i, x, y, 0x10 | 0x0E);
+        if (x >= GRAPHMODE_WIDTH) {
+            x = 0;
+            y = (y >= GRAPHMODE_HEIGHT - 1) ? 0 : (y + 9);
         }
-
-        string++;
+        x += 16;
     }
 }
