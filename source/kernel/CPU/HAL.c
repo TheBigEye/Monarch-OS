@@ -20,9 +20,10 @@ void operationSleep(uint32_t milliseconds) {
 
     // Sleep for the specified number of iterations by executing a busy-wait loop
     for (uint32_t i = 0; i < iterations; i++) {
-        __asm__ __volatile__ ("outb %%al, $0x80" : : "a"(0));
+        ASM VOLATILE ("outb %%al, $0x80" : : "a"(0));
     }
 }
+
 
 /**
  * Read a byte from the specified port (inb)
@@ -41,13 +42,14 @@ inline unsigned char readByteFromPort(uint16_t port) {
      *
      * Inputs and outputs are separated by colons
      */
-    __asm__ __volatile__ ("in %%dx, %%al" : "=a" (result) : "d" (port));
+    ASM VOLATILE ("in %%dx, %%al" : "=a" (result) : "d" (port));
 
     /* Make a little delay */
     OPERATION_WAIT
 
     return result;
 }
+
 
 /**
  * Write a byte to the specified port (outb)
@@ -61,7 +63,7 @@ inline void writeByteToPort(uint16_t port, uint8_t data) {
      * However, we see a comma since there are two variables in the input area
      * and none in the 'return' area
      */
-    __asm__ __volatile__ ("out %%al, %%dx" : : "a" (data), "d" (port));
+    ASM VOLATILE ("out %%al, %%dx" : : "a" (data), "d" (port));
 
     /* Make a little delay */
     OPERATION_WAIT
@@ -77,13 +79,14 @@ inline void writeByteToPort(uint16_t port, uint8_t data) {
 inline unsigned short readWordFromPort(uint16_t port) {
     unsigned short result;
 
-    __asm__ __volatile__ ("in %%dx, %%ax" : "=a" (result) : "d" (port));
+    ASM VOLATILE ("in %%dx, %%ax" : "=a" (result) : "d" (port));
 
     /* Make a little delay */
     OPERATION_WAIT
 
     return result;
 }
+
 
 /**
  * Write a word (2 bytes) to the specified port (outw)
@@ -92,7 +95,7 @@ inline unsigned short readWordFromPort(uint16_t port) {
  * @param data The data to write to the port
  */
 inline void writeWordToPort(uint16_t port, uint16_t data) {
-    __asm__ __volatile__ ("out %%ax, %%dx" : : "a" (data), "d" (port));
+    ASM VOLATILE ("out %%ax, %%dx" : : "a" (data), "d" (port));
 
     /* Make a little delay */
     OPERATION_WAIT
@@ -109,6 +112,7 @@ inline uint8_t readRegisterValue(uint8_t reg) {
     writeByteToPort(0x70, reg);
     return readByteFromPort(0x71);
 }
+
 
 /**
  * Write a value to the specified register

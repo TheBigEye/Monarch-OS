@@ -1,7 +1,7 @@
 #ifndef _KERNEL_MEMORY_H
 #define _KERNEL_MEMORY_H 1
 
-#include "../../common/sysutils.h"
+#include "../../common/common.h"
 
 /**
  * Copy a block of memory from the source to the destination (similar to memcpy).

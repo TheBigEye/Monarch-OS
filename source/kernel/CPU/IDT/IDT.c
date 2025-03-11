@@ -19,5 +19,5 @@ void initializeIDT() {
     interrupt_register.base = (uint32_t) &idt;
     interrupt_register.limit = IDT_ENTRIES * sizeof(idt_gate_t) - 1;
 
-    __asm__ __volatile__ ("lidtl (%0)" : : "r" (&interrupt_register));
+    ASM VOLATILE ("lidtl (%0)" : : "r" (&interrupt_register));
 }

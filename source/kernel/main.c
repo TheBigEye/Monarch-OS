@@ -1,6 +1,7 @@
 #include "main.h"
 
 #include "BFS/filesystem.h"
+#include "BGL/demo.h"
 
 #include "CPU//PIT/timer.h"
 #include "CPU/RTC/clock.h"
@@ -21,6 +22,7 @@
 #include "power/power.h"
 
 #include "utils/arithmetic.h"
+#include "utils/calendar.h"
 
 #include "binaries.h"
 #include "bugfault.h"
@@ -47,7 +49,7 @@ void kernelMain(multiboot_info_t* multiboot_header, uint32_t boot_magic) {
          * put a DEAD-END here
         */
 
-        // FOREVER NOTHING <- dead end
+        FOREVER NOTHING // <- dead end
     }
 
     // Initialize the kernel modules
@@ -57,18 +59,17 @@ void kernelMain(multiboot_info_t* multiboot_header, uint32_t boot_magic) {
     /** NOTE: We need initialize the Heap before the File System */
     mountFileSystem();
 
-    // We show a nice poem for you! :)
-    setScreen(NULL);
-    setCursor(0x3F);
+    // We show a nice welcome screen fisrt ...
+    initializeVGA(video_mode);
+    fillScreen(PX_BLACK);
 
-    /**
-     * If you're wondering why this exists... it's a long story,
-     * anyway, not all operating systems these days show you a
-     * poem on boot, so... why not? :)
-    */
-    ttyPrintLog(bootpoem);
+    bglPlayWork();
 
     timerSleep(1500);
+    fillScreen(PX_BLACK);
+
+    initializeVGA(text_mode);
+
     setScreen(NULL);
     setCursor(0x3F);
 
@@ -76,12 +77,12 @@ void kernelMain(multiboot_info_t* multiboot_header, uint32_t boot_magic) {
     startupSound();
 
     ttyPutText(" Monarch OS - Under development ", 28, 20, (BG_BLACK | FG_DKGRAY));
-    ttyPutText("   (C) 2022-2024 Nahuel Senek   ", 28, 21, (BG_BLACK | FG_DKGRAY));
+    ttyPutText(" (C) 2022-2025 ", 36, 21, (BG_BLACK | FG_DKGRAY));
 
     ttyPrintStr("\n\n");
 
     memoryGetStatus();
-    multibootGetInfo();
+    dumpMultiboot();
 
     // We use the PIT and CPU ticks like the RNG seed
     randomSet(timerGetTicks() + processorGetTicks());
@@ -102,37 +103,41 @@ void consoleMain(char *input) {
      * (awk, grep, fsck, nroff)
     */
 
-    if (stringLength(input) > 0) {
+    if (strlen(input) > 0) {
         ttyPrintStr("\n");
     }
 
-    if (stringCompare(input, "HALT") == 0) {
+    if (strcmp(input, "HALT") == 0) {
         ttyPrintLog(INFO "The CPU has HALTED NOW!");
         powerControl(POWER_HALT);
 
-    } else if (stringCompare(input, "SHUTDOWN") == 0) {
+    } else if (strcmp(input, "SHUTDOWN") == 0) {
         ttyPrintLog(INFO "Shutting down the system ...");
         shutdownSound();
 
         setScreen(NULL);
         setCursor(0x3F);
 
-        ttyPutText(turnoffpc, 0, 28, ((BG_BLACK | FG_BROWN)));
+        initializeVGA(video_mode);
+        fillScreen(PX_BLACK);
+        drawBitmapFast(candle_640, 0, 0, 640, 480);
 
         powerControl(POWER_SHUTDOWN);
 
         /* Just in case */
         FOREVER NOTHING
 
-    } else if (stringCompare(input, "REBOOT") == 0) {
+    } else if (strcmp(input, "REBOOT") == 0) {
         ttyPrintLog(INFO "Rebooting the system ...");
         shutdownSound();
         powerControl(POWER_REBOOT);
 
-    } else if (stringCompare(input, "CLS") == 0 || stringCompare(input, "CLEAR") == 0) {
+    } else if (strcmp(input, "CLS") == 0 || strcmp(input, "CLEAR") == 0) {
         setScreen(NULL);
 
-    } else if (stringCompare(input, "CLOCK") == 0) {
+    } else if (strcmp(input, "CLOCK") == 0) {
+        getCalendar();
+
         const char* days_of_week[7] = {
             "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
         };
@@ -140,27 +145,27 @@ void consoleMain(char *input) {
         time_t current_time;
         clockGetTime(&current_time);
 
-        ttyPrintOut(LINE, "Today is %s\n", days_of_week[current_time.day_of_week - 1]);
-        ttyPrintOut(LINE, "date is %d/%d/%d%d\n", current_time.day_of_month, current_time.month, current_time.century, current_time.year);
+        ttyPrintOut(LINE, "Today is %s\n", days_of_week[current_time.week_day - 1]);
+        ttyPrintOut(LINE, "date is %d/%d/%d%d\n", current_time.month_day, current_time.month, current_time.century, current_time.year);
         ttyPrintOut(LINE, "time is %d:%d:%d\n", current_time.hour, current_time.minute, current_time.second);
-        ttyPrintOut(LINE, "leap year: %s\n", clockIsLeap(current_time.year) ? "true" : "false");
+        ttyPrintOut(LINE, "leap year?: %s\n", clockIsLeap(current_time.year) ? "true" : "false");
 
-    } else if (stringCompare(input, "BUG") == 0) {
+    } else if (strcmp(input, "BUG") == 0) {
         triggerPanic("Controlled Kernel Panic", 0, 0xDEADDEAD, NULL);
 
-    } else if (stringStarts("CALC", input)) {
+    } else if (substrcmp("CALC", input) == 0) {
         ttyPrintOut(LINE, "The result is %f\n", getMath(input, 5));
 
-    } else if (stringStarts("BEEP", input)) {
+    } else if (substrcmp("BEEP", input) == 0) {
         playChord(input, 5);
 
-    } else if (stringCompare("TIMER", input) == 0) {
+    } else if (strcmp("TIMER", input) == 0) {
         ttyPrintOut(LINE, "Counter: %d\n", timerGetTicks());
         ttyPrintOut(LINE, "Elapsed: %d:%d:%d\n", timerGetHours(), timerGetMinutes(), timerGetSeconds());
 
-    } else if (stringCompare("INFO", input) == 0) {
+    } else if (strcmp("INFO", input) == 0) {
         ttyPrintLog(INFO "Project development:\n");
-        ttyPrintFmt(" * Developed by %s\n", "Nahuel Senek (aka TheBigEye)");
+        ttyPrintFmt(" * Developed by %s\n", "Nahuel Senek (TheBigEye)");
         ttyPrintFmt(" * Tested by %s\n", "Sergio Vargas");
         ttyPrintFmt(" * Inspired from Temple OS, by %s\n\n", "Terry Davis");
 
@@ -180,21 +185,19 @@ void consoleMain(char *input) {
         );
         ttyPrintLog("\033[96;40m * And my school friends :D \033[0m \n\r");
 
-    } else if (stringCompare("CHARS", input) == 0) {
+    } else if (strcmp("CHARS", input) == 0) {
         ttyCharset();
 
-    } else if (stringCompare("HEAP", input) == 0) {
+    } else if (strcmp("HEAP", input) == 0) {
         memoryGetStatus();
 
-    } else if (stringCompare("BOOT", input) == 0) {
-        multibootGetInfo();
+    } else if (strcmp("BOOT", input) == 0) {
+        dumpMultiboot();
 
-    } else if (stringCompare("VIDEO", input) == 0) {
+    } else if (strcmp("VIDEO", input) == 0) {
         ttyPrintLog(INFO "Switching to video mode...");
-
         timerSleep(150);
         initializeVGA(video_mode);
-        timerSleep(20);
 
         fillScreen(PX_BLACK); timerSleep(20);
         fillScreen(PX_GREEN); timerSleep(20);
@@ -205,16 +208,9 @@ void consoleMain(char *input) {
         fillScreen(PX_BLUE); timerSleep(20);
 
         drawCharset();
-        timerSleep(512);
-
-        drawString(" - Two of the most famous products of Berkeley are LSD and Unix.\n\r\tI don't think that this is a coincidence ...", 1, 72, 0x10 | 0x0F);
-        timerSleep(256);
-
-        drawString(" - Installing software on Windows is like opening a surprise box:\n\r\tYou never know what else comes bundled with the program you're installing", 1, 96, 0x10 | 0x0F);
-        timerSleep(256);
-
-        drawString(" - MacOS users: convinced that paying a premium price for a computer\n\r\tmeans never having to admit that right-clicking might actually be useful", 1, 120, 0x10 | 0x0F);
-        timerSleep(256);
+        drawString("- Two of the most famous products of Berkeley are LSD and Unix.\n\rI don't think that this is a coincidence ...", 8, 72, 0x10 | 0x0F);
+        drawString("- Installing software on Windows is like opening a surprise box:\n\rYou never know what else comes bundled with the program you're installing", 8, 96, 0x10 | 0x0F);
+        drawString("- MacOS users: convinced that paying a premium price for a computer\n\rmeans never having to admit that right-clicking might actually be useful", 8, 120, 0x10 | 0x0F);
 
         drawSolidRect(PX_LTGREEN, 16, 152, 128, 32); // rectangle
         drawLine(PX_LTGREEN, 16, 216, 144, 216); // horizontal line
@@ -226,48 +222,116 @@ void consoleMain(char *input) {
         // vertical line
         drawLine(PX_LTMAGENTA, 176, 152, 176, 440);
 
-        timerSleep(100);
+    } else if (strcmp(input, "GRAPHICS") == 0) {
+        ttyPrintLog(INFO "Starting graphics demo...");
+        timerSleep(200);
+        initializeVGA(video_mode);
+        fillScreen(PX_BLACK);
 
-    } else if (stringCompare(input, "WALLPAPER") == 0) {
+        bglPlayDemo();
+
+        timerSleep(100);
+        fillScreen(PX_BLACK);
+
+        bglPlayDemoEx();
+
+
+    } else if (strcmp(input, "WALLPAPER") == 0) {
         ttyPrintLog(INFO "Switching to video mode...");
         timerSleep(200);
         initializeVGA(video_mode);
+        fillScreen(PX_BLACK);
+        timerSleep(200);
 
-        fillScreen(PX_BLACK); drawBitmap(wallpaper, 0, 0, 640, 480); timerSleep(512);
-        fillScreen(PX_BLUE); drawBitmap(hillpaper, 0, 0, 640, 480); timerSleep(512);
-        fillScreen(PX_GREEN); drawBitmap(workpaper, 0, 0, 640, 480); timerSleep(512);
+        fillScreen(PX_BLACK);
+        drawBitmapFast(bigeye_480, 80, 0, 480, 480);
+        timerSleep(1024);
 
-        fillScreen(PX_CYAN); drawBitmapFast(wallpaper, 0, 0, 640, 480); timerSleep(512);
-        fillScreen(PX_RED); drawBitmapFast(hillpaper, 0, 0, 640, 480); timerSleep(512);
-        fillScreen(PX_MAGENTA); drawBitmapFast(workpaper, 0, 0, 640, 480); timerSleep(512);
+        fillScreen(PX_BLACK);
+        drawBitmapFast(myfall_480, 80, 0, 480, 480);
+        timerSleep(1024);
 
-    } else if (stringCompare(input, "CPUID") == 0) {
+        fillScreen(PX_BLACK);
+        drawBitmapFast(myfood_480, 80, 0, 480, 480);
+        timerSleep(1024);
+
+        fillScreen(PX_BLACK);
+        drawBitmapFast(mylamb_480, 80, 0, 480, 480);
+        timerSleep(1024);
+
+        fillScreen(PX_BLACK);
+        drawBitmapFast(mylife_480, 80, 0, 480, 480);
+        timerSleep(1024);
+
+        fillScreen(PX_BLACK);
+        drawBitmapFast(mymind_480, 80, 0, 480, 480);
+        timerSleep(1024);
+
+        fillScreen(PX_BLACK);
+        drawBitmapFast(theman_480, 80, 0, 480, 480);
+        timerSleep(1024);
+
+
+        fillScreen(PX_BLACK);
+        drawBitmapFast(candle_640, 0, 0, 640, 480);
+        timerSleep(1024);
+
+        fillScreen(PX_BLACK);
+        drawBitmapFast(choice_640, 0, 0, 640, 480);
+        timerSleep(1024);
+
+        fillScreen(PX_BLACK);
+        drawBitmapFast(clouds_640, 0, 0, 640, 480);
+        timerSleep(1024);
+
+        fillScreen(PX_BLACK);
+        drawBitmapFast(myhill_640, 0, 0, 640, 480);
+        timerSleep(1024);
+
+        fillScreen(PX_BLACK);
+        drawBitmapFast(mypain_640, 0, 0, 640, 480);
+        timerSleep(1024);
+
+        fillScreen(PX_BLACK);
+        drawBitmapFast(mypath_640, 0, 0, 640, 480);
+        timerSleep(1024);
+
+        fillScreen(PX_BLACK);
+        drawBitmapFast(myroad_640, 0, 0, 640, 480);
+        timerSleep(1024);
+
+
+    } else if (strcmp(input, "CPUID") == 0) {
         processorGetStatus();
 
-    } else if (stringCompare(input, "MATH") == 0) {
-        ttyPrintOut("[sin(69) rad ] -> ((double) -0.114784 rad) = ", "%f\n",   SIN(69));
-        ttyPrintOut("[cos(69) rad ] -> ((double)  0.993390 rad) = ", "%f\n",   COS(69));
-        ttyPrintOut("[tan(69) rad ] -> ((double) -0.115548 rad) = ", "%f\n\n", TAN(69));
 
-        ttyPrintOut("[sin(69) deg ] -> ((double)  0.933580 deg) = ", "%f\n",   SIN(69 * (PI / 180.0)));
-        ttyPrintOut("[cos(69) deg ] -> ((double)  0.358367 deg) = ", "%f\n",   COS(69 * (PI / 180.0)));
-        ttyPrintOut("[tan(69) deg ] -> ((double)  2.605089 deg) = ", "%f\n\n", TAN(69 * (PI / 180.0)));
+    } else if (strcmp(input, "MATH") == 0) {
+        ttyPrintOut(LINE, "%-11s -> (-0.114784) = %f\n",  "[sin(69) rad ]", SIN(69));
+        ttyPrintOut(LINE, "%-11s -> ( 0.993390) = %f\n",  "[cos(69) rad ]", COS(69));
+        ttyPrintOut(LINE, "%-11s -> (-0.115548) = %f\n\n", "[tan(69) rad ]", TAN(69));
 
-        ttyPrintOut("[sqr(696)    ] -> ((number)  484416  ) = ", "%d\n",   SQR(696));
-        ttyPrintOut("[sqrt(69697) ] -> ((double)  1584.011) = ", "%f\n\n", sqrt(69697));
+        ttyPrintOut(LINE, "%-11s -> ( 0.933580) = %f\n",   "[sin(69) deg ]", SIN(69 * (PI / 180.0)));
+        ttyPrintOut(LINE, "%-11s -> ( 0.358367) = %f\n",   "[cos(69) deg ]", COS(69 * (PI / 180.0)));
+        ttyPrintOut(LINE, "%-11s -> ( 2.605089) = %f\n\n", "[tan(69) deg ]", TAN(69 * (PI / 180.0)));
 
-        ttyPrintOut("[ceil(1.3)   ] -> ((double)  2.00000) = ", "%f\n",   CEIL(1.3));
-        ttyPrintOut("[floor(-3.14)] -> ((double) -4.00000) = ", "%f\n\n", FLOOR(-3.14));
+        ttyPrintOut(LINE, "%-11s -> ( 484416  ) = %d\n",   "[sqr(696)    ]", SQR(696));
+        ttyPrintOut(LINE, "%-11s -> ( 264.001 ) = %f\n\n", "[sqrt(69697) ]", sqrt(69697));
 
-        ttyPrintOut("[3.1415*2*4*6] -> ((double)  150.792) = ", "%f\n\n",   getMath("3.1415*2*4*6", 0));
+        ttyPrintOut(LINE, "%-11s -> ( 2.00000 ) = %f\n",   "[ceil(1.3)   ]", CEIL(1.3));
+        ttyPrintOut(LINE, "%-11s -> (-4.00000 ) = %f\n\n", "[floor(-3.14)]", FLOOR(-3.14));
+
+        ttyPrintOut(LINE, "%-11s -> ( 150.792 ) = %f\n\n", "[3.1415*2*4*6]", getMath("3.1415*2*4*6", 0));
 
         ttyPrintLog(INFO "Press RETURN to continue ...\n\n");
         waitPressKeyboard(KEY_RETURN);
 
+        timerSleep(2);
+
         ttyPrintLog(INFO "Press any key to continue ...\n\n");
         waitPressKeyboard(NULL);
 
-    } else if (stringCompare(input, "BUGBUG") == 0) {
+
+    } else if (strcmp(input, "BUGBUG") == 0) {
         ttyPrintLog(ERROR "*** OH HOLY SHIT! ***");
         timerSleep(100);
         for (uint8_t i = 0; i < 7; i++) {
@@ -275,18 +339,18 @@ void consoleMain(char *input) {
         }
 
 
-    } else if (stringCompare(input, "RAND") == 0 || stringCompare(input, "URAND") == 0) {
+    } else if (strcmp(input, "RAND") == 0 || strcmp(input, "URAND") == 0) {
         for (uint8_t i = 0; i < 7; i++) {
             ttyPrintFmt(" %s\n",
-            stringCompare(input, "RAND") == 0 ?
-                itoa(randomGet()) :
-                itoa((-1 * (randomGet() + 1)))
+            strcmp(input, "RAND") == 0 ?
+                itoa(randomGet()):              // For RAND: use full unsigned range
+                itoa(randomGet() & 0x7FFFFFFF)  // For URAND: mask to positive range
             );
         }
 
 
-    } else if (stringCompare(input, "HELP") == 0) {
-        ttyPrintLog(INFO "Availible kernel-mode commands:\n");
+    } else if (strcmp(input, "HELP") == 0) {
+        ttyPrintLog(INFO "Availible commands:\n");
         ttyPrintFmt(" * %-15s -> %s\n", "HALT", "Halt the CPU and stop the system");
         ttyPrintFmt(" * %-15s -> %s\n", "SHUTDOWN", "Perform a system shutdown process");
         ttyPrintFmt(" * %-15s -> %s\n", "REBOOT", "Perform a system reboot process");
@@ -304,13 +368,13 @@ void consoleMain(char *input) {
         ttyPrintFmt(" * %-15s -> %s\n", "BUGBUG", "Throw a fatal handled kernel exception");
 
 
-    } else if (stringCompareTo(input, "MKDIR ", 6) == 0) {
+    } else if (strncmp(input, "MKDIR ", 6) == 0) {
         const char *path = input + 6;
-        char *slash = stringFindLastChar(path, '/');
+        char *slash = strrchr(path, '/');
 
         if (slash) {
             char parentPath[MAX_NAME_LEN];
-            stringCopyTo(parentPath, path, slash - path + 1);
+            strncpy(parentPath, path, slash - path + 1);
             parentPath[slash - path] = '\0';
             Directory *parent = bfsFindDirectory(parentPath);
             if (parent) {
@@ -331,13 +395,13 @@ void consoleMain(char *input) {
         }
 
 
-    } else if (stringCompareTo(input, "TOUCH ", 6) == 0) {
+    } else if (strncmp(input, "TOUCH ", 6) == 0) {
         const char *path = input + 6;
-        char *slash = stringFindLastChar(path, '/');
+        char *slash = strrchr(path, '/');
 
         if (slash) {
             char parentPath[MAX_NAME_LEN];
-            stringCopyTo(parentPath, path, slash - path + 1);
+            strncpy(parentPath, path, slash - path + 1);
             parentPath[slash - path] = '\0';
             Directory *parent = bfsFindDirectory(parentPath);
             if (parent) {
@@ -359,14 +423,14 @@ void consoleMain(char *input) {
         }
 
 
-    } else if (stringCompareTo(input, "RM ", 3) == 0) {
+    } else if (strncmp(input, "RM ", 3) == 0) {
         const char *path = input + 3;
-        char *slash = stringFindLastChar(path, '/');
+        char *slash = strrchr(path, '/');
         Directory *directory;
 
         if (slash) {
             char dirPath[MAX_NAME_LEN];
-            stringCopyTo(dirPath, path, (slash - path + 1));
+            strncpy(dirPath, path, (slash - path + 1));
             dirPath[slash - path] = '\0';
             directory = bfsFindDirectory(dirPath);
             path = slash + 1;
@@ -376,7 +440,7 @@ void consoleMain(char *input) {
 
         if (directory) {
             File *file = directory->files;
-            while (file && stringCompare(file->name, path) != 0) {
+            while (file && strcmp(file->name, path) != 0) {
                 file = file->next;
             }
 
@@ -391,7 +455,7 @@ void consoleMain(char *input) {
         }
 
 
-    } else if (stringCompareTo(input, "RMDIR ", 6) == 0) {
+    } else if (strncmp(input, "RMDIR ", 6) == 0) {
         Directory *directory = bfsFindDirectory(input + 6);
 
         if (directory) {
@@ -436,9 +500,9 @@ void consoleMain(char *input) {
         }
 
 
-    } else if (stringCompareTo(input, "WRITE ", 6) == 0) {
+    } else if (strncmp(input, "WRITE ", 6) == 0) {
         const char *filename = input + 6;
-        char *content = stringFindChar(filename, ' ');
+        char *content = strchr(filename, ' ');
 
         if (content) {
             *content = '\0';
@@ -456,7 +520,7 @@ void consoleMain(char *input) {
         }
 
 
-    } else if (stringCompareTo(input, "CAT ", 4) == 0) {
+    } else if (strncmp(input, "CAT ", 4) == 0) {
         File *file = bfsFindFile(input + 4);
         if (file) {
             bfsReadFile(file);
@@ -465,8 +529,8 @@ void consoleMain(char *input) {
         }
 
 
-    } else if (stringCompareTo(input, "LS", 2) == 0) {
-        const char *path = input[2] == '\0' ? NULL : input + 3;
+    } else if (strncmp(input, "LS", 2) == 0) {
+        const char *path = input[2] == '\0' ? NULL : input + 4;
         Directory *directory = path ? bfsFindDirectory(path) : BFS_CURRENT_DIR;
 
         if (!directory) {
@@ -478,7 +542,7 @@ void consoleMain(char *input) {
 
         Directory *subdir = directory->subdirs;
         while (subdir) {
-            ttyPrintOut("\033[93;40m\t[/] \033[0m", "%s/\r\n", subdir->name);
+            ttyPrintOut("\033[93;40m\t[/] \033[0m", "/%s\r\n", subdir->name);
             subdir = subdir->next;
         }
 
@@ -489,10 +553,10 @@ void consoleMain(char *input) {
         }
 
 
-    } else if (stringCompareTo(input, "CD ", 3) == 0) {
+    } else if (strncmp(input, "CD ", 3) == 0) {
         const char *targetPath = input + 3;
 
-        if (stringCompare(targetPath, "..") == 0) {
+        if (strcmp(targetPath, "..") == 0) {
             if (BFS_CURRENT_DIR->parent) {
                 BFS_CURRENT_DIR = BFS_CURRENT_DIR->parent;
             }
@@ -507,26 +571,26 @@ void consoleMain(char *input) {
         }
 
 
-    } else if (stringCompare(input, "TREE") == 0) {
+    } else if (strcmp(input, "TREE") == 0) {
         bfsPrintTree(BFS_PRIMARY_DIR, 0);
 
 
-    } else if (stringCompare(input, "PWD") == 0) {
+    } else if (strcmp(input, "PWD") == 0) {
         ttyPrintOut(INFO, "Current working directory is <%s>\r\n", BFS_CURRENT_DIR->name);
 
 
-    } else if (stringCompareTo(input, "CP ", 3) == 0) {
+    } else if (strncmp(input, "CP ", 3) == 0) {
         const char *sourcePath = input + 3;
-        const char *targetPath = stringFindChar(sourcePath, ' ');
+        const char *targetPath = strchr(sourcePath, ' ');
 
         if (targetPath) {
             char source[MAX_NAME_LEN];
             char target[MAX_NAME_LEN];
 
-            stringCopyTo(source, sourcePath, (targetPath - sourcePath + 1));
+            strncpy(source, sourcePath, (targetPath - sourcePath + 1));
             source[targetPath - sourcePath] = '\0';
             targetPath++;
-            stringCopy(target, targetPath);
+            strcpy(target, targetPath);
 
             File *file = bfsFindFile(source);
             Directory *directory = bfsFindDirectory(target);
@@ -543,9 +607,9 @@ void consoleMain(char *input) {
 
     } else {
         // We dont validate empty buffers :)
-        if (stringLength(input) != 0) {
+        if (strlen(input) != 0) {
             playBeep(600, 32);
-            THROW("Invalid kernel-mode order or command!");
+            THROW("Command not found!");
         }
     }
 }

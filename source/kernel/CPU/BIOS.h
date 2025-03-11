@@ -1,7 +1,7 @@
 #ifndef _BIOS_H
 #define _BIOS_H 1
 
-#include "../../common/sysutils.h"
+#include "../../common/common.h"
 
 #define CMOS_ADDRESS    0x70
 #define CMOS_DATAREG    0x71
@@ -21,6 +21,8 @@ uint8_t getBCD(uint8_t bcd);
  * @return  The corresponding BCD number
  */
 uint8_t getBIN(uint8_t bin);
+
+uint16_t getBDA(void);
 
 uint8_t readFromCMOS(uint8_t address);
 void writeToCMOS(uint8_t address, uint32_t value);

@@ -1,4 +1,5 @@
-#include "sysutils.h"
+#include "common.h"
+
 
 /*
  * Get the square root from an exponent
@@ -32,19 +33,34 @@ int atoi(const char *string) {
     int sign = 1;
     int base = 0;
 
+    // Ignore whitespaces
     while (*string == ' ') string++;
 
+    // Check sign
     if (*string == '-' || *string == '+') {
-        sign = 1 - 2 * (*string++ == '-');
+        if (*string == '-') {
+            sign = -1;
+        }
+        string++;
     }
 
+    // Convert string to integer
     while (*string >= '0' && *string <= '9') {
-        if ((base > INT32_MAX / 10) || (base == INT32_MAX / 10 && *string - '0' > 7)) {
+        int digit = toDigit(*string);
+
+        // Handle overflow
+        if (base > (INT32_MAX - digit) / 10) {
             return (sign == 1) ? INT32_MAX : INT32_MIN;
         }
-        base = 10 * base + (*string++ - '0');
+
+        // Accumulate the integer value
+        base = base * 10 + digit;
+
+        // Move to the next character
+        string++;
     }
 
+    // Return the final integer value
     return base * sign;
 }
 
@@ -121,7 +137,7 @@ char *ftoa(double value) {
     }
 
     if (value >= DOUBLE_MAX || value <= DOUBLE_MIN) {
-        stringCopy(buffer, (value > 0) ? "INFINITE" : "-INFINITE");
+        strcpy(buffer, (value > 0) ? "INFINITE" : "-INFINITE");
         return buffer;
     }
 
@@ -203,7 +219,7 @@ char *htoa(int integer) {
 /**
  * Calculate the length of a string (strlen).
  */
-int stringLength(const char *string) {
+int strlen(const char *string) {
     const char *pointer = string;
     while (*(pointer++));
     return pointer - string - 1;
@@ -212,13 +228,13 @@ int stringLength(const char *string) {
 /**
  * Reverse a string (strrev).
  */
-void stringReverse(char *string) {
+void strrev(char *string) {
     // Check for a null pointer or an empty string
     if (string == NULL || *string == '\0') {
         return;
     }
 
-    int length = stringLength(string);
+    int length = strlen(string);
 
     for (int index = 0; index < length / 2; index++) {
         char temp = string[index];
@@ -230,14 +246,39 @@ void stringReverse(char *string) {
 /**
  * Concatenate two strings (strcat).
  */
-void stringCombine(char *destination, char *source) {
-    char *end = destination + stringLength(destination);
+char *strcat(char *destination, char *source) {
+    char *end = destination + strlen(destination);
 
     while (*source != '\0') {
         *end++ = *source++;
     }
+
     *end = '\0';
+    return destination;
 }
+
+
+/**
+ * Concatenate up to n characters from source string to destination string.
+ *
+ * @param destination Pointer to the destination string buffer.
+ * @param source Pointer to the source string to be concatenated.
+ * @param limit Maximum number of characters to concatenate.
+ * @return Pointer to the destination string.
+ */
+char *strncat(char *destination, const char *source, unsigned int limit) {
+    char *end = destination + strlen(destination);
+    unsigned int i = 0;
+
+    while (i < limit && source[i] != '\0') {
+        end[i] = source[i];
+        i++;
+    }
+
+    end[i] = '\0';
+    return destination;
+}
+
 
 /**
  * Copy a null-terminated string from source to destinatio (strcpy).
@@ -245,7 +286,7 @@ void stringCombine(char *destination, char *source) {
  * @param destination Pointer to the destination string buffer.
  * @param source Pointer to the source string to be copied.
  */
-char *stringCopy(char *destination, const char *source) {
+char *strcpy(char *destination, const char *source) {
     // Copy characters until reaching the null terminator
     while ((*destination++ = *source++));
 
@@ -253,10 +294,10 @@ char *stringCopy(char *destination, const char *source) {
 }
 
 // strncpy
-char *stringCopyTo(char *destination, const char *source, unsigned int nchars) {
+char *strncpy(char *destination, const char *source, unsigned int limit) {
     unsigned int i;
 
-    for (i = 0; (i < (nchars - 1)) && (source[i] != '\0'); i++) {
+    for (i = 0; (i < (limit - 1)) && (source[i] != '\0'); i++) {
         destination[i] = source[i];
     }
 
@@ -272,21 +313,21 @@ char *stringCopyTo(char *destination, const char *source, unsigned int nchars) {
  * @param string The input string.
  * @param num The character to append.
  */
-void appendChar(char string[], char num) {
-    int length = stringLength(string);
+void stradd(char string[], char num) {
+    int length = strlen(string);
     string[length] = num;
     string[length + 1] = '\0';
 }
 
-/** String to uppercase (strlwr) */
-void toLowercase(char *string) {
+/** String to uppercase */
+void strlwr(char *string) {
     do {
         *string = toLower(*string);
     } while (*(string++));
 }
 
-/** String to uppercase (strupr) */
-void toUppercase(char *string) {
+/** String to uppercase */
+void strupr(char *string) {
     do {
         *string = toUpper(*string);
     } while (*(string++));
@@ -300,7 +341,7 @@ void toUppercase(char *string) {
  * @param buffer The buffer where the resulting string will be stored.
  * @param base The base to use for the conversion (e.g., 10 for decimal, 16 for hexadecimal).
  */
-void toString(int integer, char *buffer, int base) {
+void strint(int integer, char *buffer, int base) {
     // Static array for digit conversion in bases up to 16
     static const char digits[17] = "0123456789ABCDEF";
 
@@ -329,15 +370,58 @@ void toString(int integer, char *buffer, int base) {
     }
 }
 
+
 /**
- * Compare two strings lexicographically (strcmp).
+ * Compares two strings for equality.
+ *
+ * @note streq() is a more efficient but less secure alternative to streql().
+ *
+ * @param a The first string.
+ * @param b The second string.
+ * @return true if the strings are equal, false otherwise.
+ */
+bool streql(char *a, char *b) {
+    // If the lengths are different, the strings are not equal
+    if (strlen(a) != strlen(b)) {
+        return false;
+    }
+
+    // Compare each character of the strings
+    for (int i = 0; a[i] != '\0'; i++) {
+        if (a[i] != b[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Compares two strings for equality.
+ *
+ * @param a The first string.
+ * @param b The second string.
+ * @return true if the strings are equal, false otherwise.
+ */
+bool streq(char *a, char *b) {
+    while (*a && *b) {
+        if (*a++ != *b++) {
+            return false;
+        }
+    }
+    return *a == *b;
+}
+
+
+/**
+ * Compare two strings lexicographically.
  *
  * @param a The first string.
  * @param b The second string.
  * @return 0 if the strings are equal, a negative value if the first string is less than the second,
  *         or a positive value if the first string is greater than the second.
  */
-int stringCompare(const char *a, const char *b) {
+int strcmp(const char *a, const char *b) {
     // Protection against NULL pointers (segfault prevention)
     if (!a || !b) return a ? 1 : b ? -1 : 0;
 
@@ -348,13 +432,13 @@ int stringCompare(const char *a, const char *b) {
     return (unsigned char) *a - (unsigned char) *b;
 }
 
-// strncmp
-int stringCompareTo(const char *a, const char *b, unsigned int nchars) {
-    while (nchars && *a && (*a == *b)) {
-        ++a; ++b; --nchars;
+
+int strncmp(const char *a, const char *b, unsigned int limit) {
+    while (limit && *a && (*a == *b)) {
+        ++a; ++b; --limit;
     }
 
-    if (nchars == 0) {
+    if (limit == 0) {
         return 0;
     } else {
         return (*(unsigned char *)a - *(unsigned char *)b);
@@ -363,74 +447,31 @@ int stringCompareTo(const char *a, const char *b, unsigned int nchars) {
 
 
 /**
- * Compare two strings, determining how many characters match before the first non-matching character (match).
- *
- * @param a The first string.
- * @param b The second string.
- * @return The index of the first non-matching character. If the strings are identical, returns -2.
- */
-int stringMatch(char *a, char *b) {
-    // Stores the index of the last matching character.
-    int threshold = 0;
-
-    // Loop to compare the characters of both strings one by one.
-    for (int i = 0; *(a + i) == *(b + i); i++) {
-        // If one of the current characters is the null terminator '\0',
-        // it means we have reached the end of one or both strings.
-        if (*(a + i) == '\0' || *(b + i) == '\0') {
-            // Return the index of the last matching character.
-            return i - 1;
-        }
-        // Update the current index.
-        threshold = i;
-    }
-
-    // If the strings are identical up to the end, an additional comparison is performed.
-    if (stringCompare(a, b) == 0) {
-        // If the strings are identical, return -2.
-        return -2;
-    }
-
-    // If none of the above conditions are met,
-    // we return the index of the last matching character.
-    return threshold;
-}
-
-
-/**
- * Check if a string starts with another string (substrcmp).
+ * Check if a string starts with another string.
  *
  * @param a The string to check.
  * @param b The prefix to compare.
- * @return True if the string starts with the prefix, false otherwise.
+ * @return 0 if the string starts with the prefix, otherwise any other number.
  */
-bool stringStarts(const char *a, const char *b) {
-    int length_a = stringLength(a); int i = 0;
-    int length_b = stringLength(b); int j = 0;
-
-    for (i = 0; i <= (length_b - length_a); i++) { // Slide the pattern 'a' one by one in 'b'
-        for (j = 0; j < length_a; j++) { // Check for pattern match at the current index 'i'
-            if (b[i + j] != a[j]) {
-                break; // If characters don't match, break out of the inner loop
-            }
-        }
-
-        if (j == length_a) { // If the inner loop completed without breaking, it means 'a' is found at index 'i' in 'b'
-            return true; // 'a' is a prefix of 'b', return true
-        }
+int substrcmp(const char *a, const char *b) {
+    while (*a && *b && *a == *b) {
+        a++;
+        b++;
     }
-    return false; // 'a' is not a prefix of 'b', return false
+    // If we reached the end of a, it means all characters of a matched the beginning of b
+    return *a == '\0' ? 0 : (unsigned char)*a - (unsigned char)*b;
 }
 
+
 /**
- * Search the first occurrence of a character in a string (strchr)
+ * Search the first occurrence of a character in a string
  *
  * @param string   The string to search within.
  * @param character The character to find.
  * @return A pointer to the first occurrence of the character in the string,
  *         or NULL if the character is not found.
  */
-char *stringFindChar(const char *string, int character) {
+char *strchr(const char *string, int character) {
     while (*string != '\0') {
         if (*string == character) {
             return ((char *) string);
@@ -440,7 +481,8 @@ char *stringFindChar(const char *string, int character) {
     return NULL;
 }
 
-char *stringFindLastChar(const char *string, int character) {
+
+char *strrchr(const char *string, int character) {
     const char *last = NULL;
     while (*string != '\0') {
         if (*string == character) {
@@ -449,4 +491,84 @@ char *stringFindLastChar(const char *string, int character) {
         string++;
     }
     return ((char *) last);
+}
+
+
+/**
+ * Calculates the length of the initial segment of `string`
+ * that consists of characters from `accept`.
+ *
+ * @param string The input string.
+ * @param accept The set of accepted characters.
+ * @return The length of the initial segment.
+ */
+int strspn(const char *string, const char *accept) {
+    int length = 0;
+
+    // Iterate over each character in the string
+    while (*string && strchr(accept, *string++)) {
+        length++;
+    }
+
+    return length;
+}
+
+
+/**
+ * Calculates the length of the initial segment of `string`
+ * that contains no characters from `reject`.
+ *
+ * @param string The input string.
+ * @param reject The set of rejected characters.
+ * @return The length of the initial segment.
+ */
+int strcspn(const char *string, const char *reject) {
+    int length = 0;
+
+    while(*string) {
+        if(strchr(reject, *string)) {
+            return length;
+        } else {
+            string++, length++;
+        }
+    }
+
+    return length;
+}
+
+
+/**
+ * Tokenizes a string based on the specified delimiter.
+ *
+ * @param string The input string (or NULL for subsequent calls).
+ * @param delimiter The delimiter string.
+ * @return A pointer to the next token or NULL if no more tokens.
+ */
+char *strtok(char *string, const char *delimiter) {
+    static char* position = 0;
+
+    // If a new string is provided, update the position
+    if (string) {
+        position = string;
+
+    // If no string is provided and the position is NULL, return NULL
+    } else if (!position) {
+        return 0;
+    }
+
+    // Move position past any delimiter characters at the start
+    string = position + strspn(position, delimiter);
+
+    // Find the end of the current token
+    position  = string + strcspn(string, delimiter);
+
+    // If no delimiter was found, reset position and return NULL
+    if (position == string) {
+        return position = 0;
+    }
+
+    // Null-terminate the token and update position for the next call
+    position = *position ? (*position = 0, position + 1) : 0;
+
+    return string;
 }

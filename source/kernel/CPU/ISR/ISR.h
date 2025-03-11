@@ -1,7 +1,7 @@
 #ifndef _CPU_ISR_H
 #define _CPU_ISR_H 1
 
-#include "../../../common/sysutils.h"
+#include "../../../common/common.h"
 
 /* ISRs reserved for CPU exceptions - these are function prototypes for all of the exception handlers:
   The first 32 entries in the IDT are reserved, and are designed to service exceptions! */

@@ -46,25 +46,28 @@ void initializeKernel(multiboot_info_t* multiboot_header) {
     /* Initialize heap and paging */
     initializeMemory(&kernel_tail);
     initializePaging();
-
-
 }
 
-void multibootGetInfo(void) {
+
+void dumpMultiboot(void) {
     ttyPrintLog(INFO "Multiboot Headers:\n");
     ttyPrintFmt(" * Mutiboot flags: %X\n", butterfly_info.flags);
     ttyPrintFmt(" * Lower memory: %d KB\n", butterfly_info.mem_lower);
     ttyPrintFmt(" * Upper memory: %d KB\n\n", butterfly_info.mem_upper);
 
+    ttyPrintFmt(" * VGA type: %X\n\n", getVideoType());
+
     ttyPrintFmt(" * Boot device: %X\n", butterfly_info.boot_device);
-    ttyPrintFmt(" * Command line: %s\n\n", (char *) butterfly_info.cmdline);
+    ttyPrintFmt(" * Command line: %s\n", (char *) butterfly_info.cmdline);
+    ttyPrintFmt(" * Modules count: %X \n", butterfly_info.mods_count);
+    ttyPrintFmt(" * Modules address: %X \n\n", butterfly_info.mods_addr);
 
     ttyPrintFmt(" * Memory map length: %d\n", butterfly_info.mmap_length);
-    ttyPrintFmt(" * Memory map Address: %X\n", butterfly_info.mmap_addr);
+    ttyPrintFmt(" * Memory map address: %X\n", butterfly_info.mmap_addr);
     ttyPrintFmt(" * Drives length: %d\n", butterfly_info.drives_length);
-    ttyPrintFmt(" * Drives Address: %X\n\n", butterfly_info.drives_addr);
+    ttyPrintFmt(" * Drives address: %X\n\n", butterfly_info.drives_addr);
 
     ttyPrintFmt(" * Config table: %X\n", butterfly_info.config_table);
-    ttyPrintFmt(" * Bootloader name: %s\n", (char *) butterfly_info.boot_loader_name);
+    ttyPrintFmt(" * Booted from: %s\n", (char *) butterfly_info.boot_loader_name);
     ttyPrintFmt(" * APM table: %X\n\n", butterfly_info.apm_table);
 }

@@ -1,14 +1,14 @@
 #ifndef _CPU_PORTS_H
 #define _CPU_PORTS_H 1
 
-#include "../../common/sysutils.h"
+#include "../../common/common.h"
 
 #define LOWER_WORD(word) ((uint32_t)(word) & 0xFFFF)
 #define UPPER_WORD(word) (((uint32_t)(word) >> 16) & 0xFFFF)
 #define LOWER_BYTE(byte) ((byte) & 0xFF)
 #define UPPER_BYTE(byte) (((byte) >> 8) & 0xFF)
 
-#define OPERATION_WAIT __asm__ __volatile__ ("outb %%al, $0x80" : : "a"(0));
+#define OPERATION_WAIT ASM VOLATILE ("outb %%al, $0x80" : : "a"(0));
 
 /**
  * Sleeps for the specified number of milliseconds.
@@ -17,6 +17,7 @@
  */
 void operationSleep(uint32_t milliseconds);
 
+
 /**
  * Read a byte from the specified port (inb)
  *
@@ -24,6 +25,7 @@ void operationSleep(uint32_t milliseconds);
  * @return The value read from the port
  */
 unsigned char readByteFromPort(uint16_t port);
+
 
 /**
  * Write a byte to the specified port (outb)
@@ -42,6 +44,7 @@ void writeByteToPort(uint16_t port, uint8_t data);
  */
 unsigned short readWordFromPort(uint16_t port);
 
+
 /**
  * Write a word (2 bytes) to the specified port (outw)
  *
@@ -59,6 +62,7 @@ void writeWordToPort(uint16_t port, uint16_t data);
  */
 uint8_t readRegisterValue(uint8_t reg);
 
+
 /**
  * Write a value to the specified register
  *
@@ -66,5 +70,6 @@ uint8_t readRegisterValue(uint8_t reg);
  * @param value The value to write to the register
  */
 void writeRegisterValue(uint8_t reg, uint8_t value);
+
 
 #endif /* _CPU_PORTS_H */

@@ -1,7 +1,7 @@
 #ifndef _KERNEL_PAGING_H
 #define _KERNEL_PAGING_H 1
 
-#include "../../common/sysutils.h"
+#include "../../common/common.h"
 
 #define PAGE_SIZE 4096
 

@@ -1,7 +1,7 @@
 #ifndef _KERNEL_FILESYSTEM_H
 #define _KERNEL_FILESYSTEM_H 1
 
-#include "../../common/sysutils.h"
+#include "../../common/common.h"
 
 #define MAX_NAME_LEN 32
 #define MAX_CONTENT_LEN 1024

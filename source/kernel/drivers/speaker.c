@@ -18,12 +18,13 @@ static void playSound(uint32_t frequency) {
         writeByteToPort(0x61, readByteFromPort(0x61) & ~3);
         return;
     }
-    int scale = 1193182 / frequency;
+    uint32_t scale = 1193182 / frequency;
     writeByteToPort(0x43, 0xb6);
     writeByteToPort(0x42, scale & 0xff);
     writeByteToPort(0x42, scale >> 8);
     writeByteToPort(0x61, readByteFromPort(0x61) | 3);
 }
+
 
 /**
  * Stop the currently playing sound.
@@ -49,6 +50,7 @@ void playBeep(uint32_t frequency, uint32_t duration) {
     stopSound();
 }
 
+
 /**
  * Read a music chord and play their notes.
  *
@@ -56,7 +58,7 @@ void playBeep(uint32_t frequency, uint32_t duration) {
  * @param position The starting position of the chord.
  */
 void playChord(char chord[], int position) {
-    int len = stringLength(chord);  // Length of the chord array
+    int len = strlen(chord);  // Length of the chord array
     int frequency = 1;  // Default frequency value
 
     // Iterate over the chord starting at the given position
@@ -90,6 +92,7 @@ void startupSound(void) {
     playBeep(523, 30);  // C5
     timerSleep(5);
 }
+
 
 /**
  * Play the shutdown sound.

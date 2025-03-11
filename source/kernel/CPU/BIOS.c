@@ -15,6 +15,7 @@ uint8_t getBCD(uint8_t bcd) {
     return (uint8_t)(((bcd >> 4) * 10) + (bcd & 0x0F));
 }
 
+
 /**
  * Convert a binary number to a Binary Coded Decimal (BCD).
  *
@@ -28,6 +29,16 @@ uint8_t getBIN(uint8_t bin) {
     */
     return ((bin / 10) << 4) + (bin % 10);
 }
+
+
+/**
+ * Get a pointer to the Detected Hardware from the Bios Data Area
+ */
+uint16_t getBDA(void) {
+    const uint16_t* bda = (const uint16_t*) 0x410;
+    return *bda;
+}
+
 
 /**
  * This extermly simple, we need to send the address number to 0x70 (Address Port) port.

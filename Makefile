@@ -6,6 +6,9 @@
 
 # Source dir
 SOURCE_DIR = source
+ASSETS_DIR = assets
+BITMAPS_DIR = $(ASSETS_DIR)/bitmaps
+BINARIES_DIR = $(SOURCE_DIR)/binaries
 
 BROWN =\033[0;33m
 CYAN =\033[0;36m
@@ -16,14 +19,13 @@ RESET =\033[0m
 CC = i686-elf-gcc
 LD = i686-elf-ld
 
-CWFLAGS = -Wall -Wextra -Werror -Wfloat-equal -Wundef -Winit-self -Wno-int-conversion -Wno-unused-parameter -Wno-unused-function -Wstrict-prototypes
-LDFLAGS = -m elf_i386 --allow-multiple-definition -nostdlib -s --gc-sections -Map=kernel.map
 
 # GCC compilation flags
 CCFLAGS := $(strip                  \
     -std=c99                        \
     -m32                            \
-    -O2                             \
+    -mfpmath=387                    \
+    -Os                             \
     -g0                             \
     -fno-pie                        \
     -fno-ident                      \
@@ -32,27 +34,54 @@ CCFLAGS := $(strip                  \
     -finline-functions              \
     -fno-builtin                    \
     -ffreestanding                  \
+    -Wl,--file-alignment,16         \
+    -Wl,--section-alignment,4096    \
 )
 
+# GCC warning flags
+CWFLAGS := $(strip                  \
+    -Wall                           \
+    -Wextra                         \
+    -Werror                         \
+    -Wfloat-equal                   \
+    -Wundef                         \
+    -Winit-self                     \
+    -Wno-int-conversion             \
+    -Wno-unused-parameter           \
+    -Wno-unused-function            \
+    -Wstrict-prototypes             \
+)
+
+# Linker flags
+LDFLAGS := $(strip                  \
+    -m elf_i386                     \
+    --allow-multiple-definition     \
+    -nostdlib                       \
+    -s                              \
+    --gc-sections                   \
+    -Map=kernel.map                 \
+)
 
 # Qemu virtual machine config
 QEMU_ARGS := $(strip                \
     -boot menu=off                  \
     -m 32M                          \
     -cpu max                        \
-	-serial stdio                   \
-	-display sdl,gl=on              \
-    -device VGA,vgamem_mb=16        \
+    -serial stdio                   \
+    -display sdl,gl=off             \
+    -device VGA,vgamem_mb=8         \
     -audiodev dsound,id=0           \
     -machine pcspk-audiodev=0       \
     -machine q35                    \
     -rtc base=localtime,clock=host  \
 )
 
+
 # C Source files
 SOURCES = $(wildcard                       \
 	$(SOURCE_DIR)/common/*.c               \
 	$(SOURCE_DIR)/kernel/BFS/*.c           \
+	$(SOURCE_DIR)/kernel/BGL/*.c           \
 	$(SOURCE_DIR)/kernel/CPU/FPU/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/GDT/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/IDT/*.c       \
@@ -73,6 +102,7 @@ SOURCES = $(wildcard                       \
 HEADERS = $(wildcard                       \
 	$(SOURCE_DIR)/common/*.h               \
 	$(SOURCE_DIR)/kernel/BFS/*.h           \
+	$(SOURCE_DIR)/kernel/BGL/*.h           \
 	$(SOURCE_DIR)/kernel/CPU/FPU/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/GDT/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/IDT/*.h       \
@@ -89,12 +119,63 @@ HEADERS = $(wildcard                       \
 	$(SOURCE_DIR)/kernel/*.h               \
 )
 
+
+# Boot ASM files (high priority!)
+BOOT_ASM = $(wildcard                      \
+    $(SOURCE_DIR)/boot/*.asm               \
+)
+
+# General ASM files
+UTIL_ASM = $(wildcard                      \
+    $(SOURCE_DIR)/common/ASM/*.asm         \
+)
+
+
 # Object files
-OBJECTS = ${SOURCES:.c=.o $(SOURCE_DIR)/boot/binaries.o $(SOURCE_DIR)/boot/bootmain.o}
+OBJECTS = $(BOOT_ASM:.asm=.o)              \
+		  $(UTIL_ASM:.asm=.o)              \
+          $(SOURCES:.c=.o)                 \
+
+
+# Check if we need to regenerate binaries
+# Check if BINARIES_DIR exists and contains .bin files
+# Returns 1 if we need to regenerate bitmaps, 0 otherwise
+NEED_BITMAPS := $(shell                                             \
+	if [ ! -d "$(BINARIES_DIR)" ] ||                                \
+	   [ -z "$$(ls -A $(BINARIES_DIR)/*.bin 2>/dev/null)" ]; then   \
+		echo "1";                                                   \
+	else                                                            \
+		echo "0";                                                   \
+	fi                                                              \
+)
+
+# Check Python availability
+CHECK_PYTHON := $(shell command -v python 2>/dev/null)
 
 
 ### First rule is the one executed when no parameters are fed to the Makefile
-all: kernel.elf run
+all: bitmaps kernel.elf run
+
+
+# We need python for bitmaps!
+check-python:
+	@if [ "$(CHECK_PYTHON)" = "" ]; then                            \
+		echo -e "${BROWN}[!]${RESET} We need Python 3 please...";   \
+		exit 1;                                                     \
+	fi
+
+
+# Convert bitmaps into binary files :)
+bitmaps: check-python
+	@if [ "$(NEED_BITMAPS)" = "1" ]; then                           \
+		echo -e "${GREEN}[-]${RESET} Processing image assets...";   \
+		mkdir -p $(BINARIES_DIR);                                   \
+		python $(ASSETS_DIR)/imgbin.py $(BITMAPS_DIR) -v;           \
+		mv $(BITMAPS_DIR)/*.bin $(BINARIES_DIR)/;                   \
+		echo -e "${GREEN}[-]${RESET} Image processing complete";    \
+	else                                                            \
+		echo -e "${GREEN}[-]${RESET} Image assets are up to date";  \
+	fi
 
 
 # Build the kernel binary
@@ -103,19 +184,19 @@ kernel.elf: ${OBJECTS}
 	@${LD} -T $(SOURCE_DIR)/linker.ld ${LDFLAGS} ${OBJECTS} -o $@
 
 
-# We maake the ISO image
+
+# We make the ISO image
 OS.iso: kernel.elf
 	@echo -e "${GREEN}[-]${RESET} Generating system ISO image at '${BROWN}./$@${RESET}' ..."
 	@mkdir -p ./grub/temp/boot/grub
 	@cp $< ./grub/temp/boot/kernel.elf
 	@cp ./grub/menu.lst ./grub/temp/boot/grub/menu.lst
 	@cp ./grub/stage2 ./grub/temp/boot/grub/stage2
-	@xorriso -as mkisofs -V Butterfly -R -b boot/grub/stage2 -no-emul-boot -quiet -boot-load-size 4 -boot-info-table -o $@ grub/temp/
+	@xorriso -as mkisofs -no-pad -V Butterfly -R -b boot/grub/stage2 -no-emul-boot -quiet -boot-load-size 4 -boot-info-table -o $@ grub/temp/
 	@$(RM) -rf ./grub/temp
 
 
 # Run the OS image in QEMU
-# If you want test the file system, create a img virtual disk, add it with -hda, and enable the FS on main.c
 run: OS.iso
 	@echo -e "${GREEN}[-]${RESET} Starting QEMU virtual machine for '${BROWN}./$^${RESET}' ..."
 	@qemu-system-i386 -cdrom $< $(QEMU_ARGS)
@@ -152,6 +233,7 @@ echo: OS.iso
 # Clean the project folder
 clean:
 	@echo -e "${GREEN}[-]${RESET} Cleaning objects and output files ..."
-	@$(RM) *.bin *.o *.dis *.elf *.iso *.map
+	@$(RM) *.o *.dis *.elf *.iso *.map
 	@$(RM) -rf ./grub/temp
+	@$(RM) -rf $(BINARIES_DIR)/*.bin
 	@find $(SOURCE_DIR) -name '*.o' -type f -delete

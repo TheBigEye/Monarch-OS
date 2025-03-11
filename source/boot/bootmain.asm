@@ -33,6 +33,12 @@ multiboot:
     dd MULTIBOOT_HEADER_FLAGS
     dd MULTIBOOT_CHECKSUM
 
+    ; Note: While we could enable 800x600 graphics mode here,
+    ; current graphics code needs improvement first. Currently,
+    ; we only support basic VGA modes without VESA features.
+    ; This limits mode switching between text and 640x480,
+    ; as switching back to 800x600 VESA mode is not yet implemented.
+
     ; Framebuffer, mode 787!
     ; dd 0, 0, 0, 0, 0
     ; dd 0 ; 0 = set graphics mode

@@ -1,11 +1,11 @@
 #include "clock.h"
 
-#include "../../drivers/console.h"
-#include "../../memory/memory.h"
-
 #include "../ISR/ISR.h"
 #include "../BIOS.h"
 #include "../HAL.h"
+
+#include "../../drivers/COM/serial.h"
+#include "../../memory/memory.h"
 
 /*
 * RTC - Real Time Clock, keeps track of current time and date even when the
@@ -20,6 +20,7 @@ static time_t currentClockTime;
 /* Flag indicating whether the RTC data type is BCD (Binary Coded Decimal) */
 static int32_t binaryCodedData;
 
+
 /*
   The function reads the current time from the Real Time Clock
   to the time_t parameter.
@@ -33,6 +34,7 @@ void clockGetTime(time_t *time) {
     memoryCopy((uint8_t *) time, (uint8_t *) &currentClockTime, sizeof(time_t));
 }
 
+
 bool clockIsLeap(uint32_t year) {
     /*
       every fourth year is a leap year except for century years that are
@@ -41,6 +43,7 @@ bool clockIsLeap(uint32_t year) {
     */
     return (!(year % 4) && ((year % 100) || !(year % 400)));
 }
+
 
 /**
  * Handler for the Real Time Clock interrupt.
@@ -54,8 +57,8 @@ static void clockCallback(registers_t *regs) {
             currentClockTime.second = getBCD(readRegisterValue(0x00));
             currentClockTime.minute = getBCD(readRegisterValue(0x02));
             currentClockTime.hour   = getBCD(readRegisterValue(0x04));
-            currentClockTime.day_of_week  = getBCD(readRegisterValue(0x06));
-            currentClockTime.day_of_month = getBCD(readRegisterValue(0x07));
+            currentClockTime.week_day  = getBCD(readRegisterValue(0x06));
+            currentClockTime.month_day = getBCD(readRegisterValue(0x07));
             currentClockTime.month  = getBCD(readRegisterValue(0x08));
             currentClockTime.year   = getBCD(readRegisterValue(0x09));
             currentClockTime.century = getBCD(readRegisterValue(0x32)); // yeah, this is real son
@@ -63,32 +66,40 @@ static void clockCallback(registers_t *regs) {
             currentClockTime.second = readRegisterValue(0x00);
             currentClockTime.minute = readRegisterValue(0x02);
             currentClockTime.hour   = readRegisterValue(0x04);
-            currentClockTime.day_of_week  = readRegisterValue(0x06);
-            currentClockTime.day_of_month = readRegisterValue(0x07);
+            currentClockTime.week_day  = readRegisterValue(0x06);
+            currentClockTime.month_day = readRegisterValue(0x07);
             currentClockTime.month  = readRegisterValue(0x08);
             currentClockTime.year   = readRegisterValue(0x09);
             currentClockTime.century = readRegisterValue(0x32);
         }
     }
+
+    writeByteToPort(0x70, 0x0C);	// select register C
+    readByteFromPort(0x71);		// just throw away contents
+
     UNUSED(regs);
 }
+
 
 /**
  * Initialize the Real Time Clock chip and add its handler to the IDT.
  */
 void initializeClock() {
+    // BUG BUG: RTC initialization stucks the boot process on 86 Box
+    // return;
+
     uint8_t status;
 
     status = readRegisterValue(0x0B);
-    status |= 0x02;             // 24 hour clock
-    status |= 0x10;             // update ended interrupts
-    status &= (uint8_t)~0x20;   // no alarm interrupts
-    status &= (uint8_t)~0x40;   // no periodic interrupt
-    binaryCodedData = !(status & 0x04);     // check if data type is BCD
+    status |= 0x02;                      // 24 hour clock
+    status |= 0x10;                      // update ended interrupts
+    status &= (uint8_t)~0x20;            // no alarm interrupts
+    status &= (uint8_t)~0x40;            // no periodic interrupt
+    binaryCodedData = !(status & 0x04);  // check if data type is BCD
 
     writeRegisterValue(0x0B, status);
     readRegisterValue(0x0C);
 
-    ttyPrintOut(INIT, "Initializing RTC handler at IRQ8 ...\n");
+    comPrintStr("[i] Initializing RTC handler at IRQ8 ...\n");
     registerInterruptHandler(IRQ8, clockCallback);
 }

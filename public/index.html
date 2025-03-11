@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Character encoding and viewport configuration -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Monarch OS</title>
+
+    <!-- Preload critical resources for better performance -->
+    <link rel="preload" href="./v86/libv86.js" as="script">
+    <link rel="preload" href="./v86/v86.wasm" as="fetch" crossorigin>
+
+    <link rel="stylesheet" href="./styles.css">
+
+    <!-- Deferred loading of v86 emulator script -->
+    <script src="./v86/libv86.js" defer></script>
+</head>
+
+<body>
+    <!-- Main container for emulator interface -->
+    <div class="container">
+
+        <!-- Container for emulator screen output -->
+        <div id="screen_container">
+            <div id="screen"></div>                    <!-- Main screen display element -->
+            <canvas style="display: none"></canvas>    <!-- Hidden canvas for rendering -->
+        </div>
+
+        <!-- Serial output display area -->
+        <textarea readonly id="serial_container"></textarea>
+    </div>
+
+    <script>
+        // Initialize emulator when page loads
+        window.addEventListener('load', function() {
+
+            // Create new V86 emulator instance with configuration
+            const emulator = window.emulator = new V86({
+                wasm_path: "./v86/v86.wasm",   // Path to WebAssembly file
+                memory_size: 32 * 1024 * 1024,  // Set memory allocation (32MB)
+                vga_memory_size: 8 * 1024 * 1024,  // Set video memory size (8MB)
+
+                // Connect display outputs
+                screen_container: document.getElementById("screen_container"),
+                serial_container: document.getElementById("serial_container"),
+
+                // Set boot order (CD-ROM first)
+                boot_order: '0x123',
+
+                // Load BIOS
+                bios: {
+                    url: "./bios/seabios.bin"
+                },
+
+                // Load VGA BIOS
+                vga_bios: {
+                    url: "./bios/vgabios.bin"
+                },
+
+                // Load CD-ROM image
+                cdrom: {
+                    url: "../OS.iso",
+                    async: true,
+                },
+
+                // Start emulation automatically
+                autostart: true
+            });
+        });
+    </script>
+</body>
+</html>

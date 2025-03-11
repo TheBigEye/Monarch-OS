@@ -1,14 +1,14 @@
 #ifndef _CPU_CLOCK_H
 #define _CPU_CLOCK_H 1
 
-#include "../../../common/sysutils.h"
+#include "../../../common/common.h"
 
 typedef struct {
     uint8_t second;
     uint8_t minute;
     uint8_t hour;
-    uint8_t day_of_week;
-    uint8_t day_of_month;
+    uint8_t week_day;
+    uint8_t month_day;
     uint8_t month;
     uint8_t year;
     uint8_t century;

@@ -1,7 +1,7 @@
 #ifndef _CPU_H
 #define _CPU_H 1
 
-#include "../../common/sysutils.h"
+#include "../../common/common.h"
 
 void processorGetStatus(void);
 uint32_t processorGetTicks(void);

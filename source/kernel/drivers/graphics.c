@@ -5,6 +5,8 @@
 #include "../memory/heap.h"
 #include "../memory/memory.h"
 
+
+
 /**
  * If you are reading this, it's because you have realized that we are working
  * with planar memory and not with a linear framebuffer. And yes, it seems I
@@ -21,18 +23,17 @@
 
 
 /**
- * Sets the color of a single pixel on the screen.
+ * Sets the color of a single pixel on the screen
  *
- * @param color The color of the pixel. This is an 8-bit value,
- *              where each bit represents a different color plane.
- * @param x The x-coordinate of the pixel.
- * @param y The y-coordinate of the pixel.
+ * @param color The color of the pixel
+ * @param x The x-coordinate of the pixel
+ * @param y The y-coordinate of the pixel
  */
-void plotPixel(uint8_t color, uint16_t x, uint16_t y) {
+inline void plotPixel(uint8_t color, uint16_t x, uint16_t y) {
     if (x >= GRAPHMODE_WIDTH || y >= GRAPHMODE_HEIGHT) return;
 
     // Pointer to the start of the screen memory buffer
-    uint8_t *SCREEN_MEMORY = (uint8_t *) GRAPHMODE_BUFFER;
+    uint8_t *SCREEN_MEMORY = GRAPHMODE_BUFFER;
 
     // Calculate the memory offset based on the pixel coordinates
     // Each byte represents 8 pixels, so we need to adjust for this
@@ -60,11 +61,12 @@ void plotPixel(uint8_t color, uint16_t x, uint16_t y) {
 
 
 /**
- * Reads the color of a pixel from the screen memory buffer.
+ * Reads the color of a pixel from the screen memory buffer
  *
  * @param x The x-coordinate of the pixel
  * @param y The y-coordinate of the pixel
- * @return The color value of the pixel (0-15), or 0 if the coordinates are out of bounds
+ * @return The color value of the pixel (0-15), or 0 if the
+ *         coordinates are out of bounds
  */
 uint8_t readPixel(uint16_t x, uint16_t y) {
 
@@ -74,7 +76,7 @@ uint8_t readPixel(uint16_t x, uint16_t y) {
     }
 
     // Pointer to the start of the screen memory buffer
-    uint8_t *SCREEN_MEMORY = (uint8_t *) GRAPHMODE_BUFFER;
+    uint8_t *SCREEN_MEMORY = GRAPHMODE_BUFFER;
 
     // Calculate the memory offset based on the pixel coordinates
     // Each byte represents 8 pixels, so we need to adjust for this
@@ -103,12 +105,12 @@ uint8_t readPixel(uint16_t x, uint16_t y) {
 
 
 /**
- * Fills the entire screen with a specified color.
+ * Fills the entire screen with a specified color
  *
- * @param color The color to fill the screen with.
+ * @param color The color to fill the screen with
  */
 void fillScreen(uint8_t color) {
-    uint32_t SCREEN_SIZE = (uint32_t) GRAPHMODE_SIZE >> 3;
+    uint32_t SCREEN_SIZE = GRAPHMODE_SIZE >> 3;
 
     writeByteToPort(SEQUENCER_INDEX, REG_SEQUENCER_MASK);
 	writeByteToPort(GRAPHICS_INDEX, 0x08);
@@ -121,66 +123,89 @@ void fillScreen(uint8_t color) {
     */
 
     // Clear the screen buffer to prepare for filling
-    fastMemorySet(GRAPHMODE_BUFFER, 0x00, SCREEN_SIZE);
+    fastFastMemorySet(GRAPHMODE_BUFFER, 0x00, SCREEN_SIZE);
 
     // Write the color value to all pixels in the buffer
     writeByteToPort(SEQUENCER_DATA, color);
 
     // Fill the screen buffer with the color
-    fastMemorySet(GRAPHMODE_BUFFER, 0xFF, SCREEN_SIZE);
+    fastFastMemorySet(GRAPHMODE_BUFFER, 0xFF, SCREEN_SIZE);
 }
 
 
 /**
- * @brief Draws a bitmap on the screen plane by plane.
+ * @brief Draws a bitmap on the screen plane by plane
  *
- * @note Supports up to 4 color planes, allowing 16-color graphics (4 bits per pixel).
- *
- * @param pixels    Pointer to the bitmap pixel data.
- * @param x         X coordinate of the top left corner of the bitmap.
- * @param y         Y coordinate of the top left corner of the bitmap.
- * @param w         Width of the bitmap in pixels.
- * @param h         Height of the bitmap in pixels.
+ * @param pixels    Pointer to the bitmap pixel data
+ * @param x         X coordinate of the top left corner of the bitmap
+ * @param y         Y coordinate of the top left corner of the bitmap
+ * @param w         Width of the bitmap in pixels
+ * @param h         Height of the bitmap in pixels
  *
  * @deprecated This is slow, we should use the fast double-bufferd version
  */
-void drawBitmap(uint8_t pixels[], uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
+void drawBitmap(uint8_t *pixels, uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
     // Pointer to the start of the screen memory
-    uint8_t *SCREEN_MEMORY = (uint8_t *) GRAPHMODE_BUFFER;
+    uint8_t *SCREEN_MEMORY = GRAPHMODE_BUFFER;
 
     // Calculate the starting offset into the screen memory for the pixel
     SCREEN_MEMORY += (y * GRAPHMODE_WIDTH + x) >> 3;
 
-    // Loop over each color plane
-    for (uint8_t plane = 0; plane < 4; plane++) {
-        uint8_t mask = 1 << plane;
+    // In a packed 4bpp image, each row uses (w + 1) / 2 bytes.
+    uint32_t row_bytes = (w + 1) >> 1;
 
-        // Select the current color plane
+    // Loop over each color plane (from 0 to 3)
+    for (uint8_t plane = 0; plane < 4; plane++) {
+        // Select the current plane
         writeByteToPort(GRAPHICS_INDEX, REG_GRAPHICS_MAP_READ);
         writeByteToPort(GRAPHICS_DATA, plane);
 
-        // set bitmask
+        // Set write plane
         writeByteToPort(SEQUENCER_INDEX, REG_SEQUENCER_MASK);
-        writeByteToPort(SEQUENCER_DATA, mask);
+        writeByteToPort(SEQUENCER_DATA, 1 << plane);
 
-        // Loop over each row
+        // Loop over each row of the bitmap
         for (uint32_t row = 0; row < h; row++) {
-            // Calculate the starting offset into the pixels array for the current row
-            uint32_t row_offset = row * w;
+            // Compute the offset into the packed bitmap for this row
+            uint32_t row_offset = row * row_bytes;
+            // Calculate pointer to the corresponding screen row
+            uint8_t *screen_row = SCREEN_MEMORY + ((row * GRAPHMODE_WIDTH) >> 3);
+            uint8_t current_byte = 0;
+            uint8_t bit_count = 0;
 
-            // Calculate the starting offset into the screen memory for the current row
-            uint8_t *screen_row = SCREEN_MEMORY + ((row + y) * GRAPHMODE_WIDTH + x) / 8;
-
-            // Copy row of pixels from the pixels array to the screen memory
+            // Process each pixel in the row
             for (uint32_t col = 0; col < w; col++) {
-                uint8_t color = pixels[row_offset + col];
-                uint8_t bit = 1 << (7 - ((col + x) & 7));
-
-                if (color & mask) {
-                    *(screen_row + (col >> 3)) |= bit;
+                // Each byte holds two pixels.
+                uint32_t byte_index = row_offset + (col >> 1);
+                uint8_t packed = pixels[byte_index];
+                uint8_t color;
+                if ((col & 1) == 0) {
+                    // For even columns, extract the high nibble.
+                    color = packed >> 4;
                 } else {
-                    *(screen_row + (col >> 3)) &= ~bit;
+                    // For odd columns, extract the low nibble.
+                    color = packed & 0x0F;
                 }
+
+                // Extract the bit for the current plane from the color
+                uint8_t bit = (color >> plane) & 0x01;
+
+                // Pack bits into a byte for the planar memory
+                current_byte = (current_byte << 1) | bit;
+                bit_count++;
+
+                // When we have a full byte (8 bits), write it to screen memory.
+                if (bit_count == 8) {
+                    screen_row[col >> 3] = current_byte;
+                    current_byte = 0;
+                    bit_count = 0;
+                }
+            }
+
+            // Write any remaining bits (if the row width is not a multiple of 8)
+            if (bit_count > 0) {
+                current_byte <<= (8 - bit_count);
+                screen_row[w >> 3] = current_byte;
             }
         }
     }
@@ -188,74 +213,92 @@ void drawBitmap(uint8_t pixels[], uint16_t x, uint16_t y, uint16_t w, uint16_t h
 
 
 /**
- * @brief Draws a bitmap on the screen (fast version).
+ * @brief Draws a bitmap on the screen (fast version)
  *
- * @note Uses double-buffering to copy the bitmap completely in each plane.
+ * @note Uses double-buffering to copy the bitmap completely in each plane, it means that also uses memory allocation!
  *
- * @param pixels    Pointer to the bitmap pixel data.
- * @param x         X coordinate of the top left corner of the bitmap.
- * @param y         Y coordinate of the top left corner of the bitmap.
- * @param w         Width of the bitmap in pixels.
- * @param h         Height of the bitmap in pixels.
+ * @param pixels    Pointer to the bitmap pixel data
+ * @param x         X coordinate of the top left corner of the bitmap
+ * @param y         Y coordinate of the top left corner of the bitmap
+ * @param w         Width of the bitmap in pixels
+ * @param h         Height of the bitmap in pixels
  */
-void drawBitmapFast(uint8_t pixels[], uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
-    // Pointer to the start of the screen memory
-    uint8_t *SCREEN_MEMORY = (uint8_t *) GRAPHMODE_BUFFER;
+void drawBitmapFast(uint8_t *pixels, uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
+    // Pointer to the start of the screen memory.
+    uint8_t *SCREEN_MEMORY = GRAPHMODE_BUFFER;
 
-    // BUG BUG: This doesnt free-up the allocated memory?
-
-    // Create a temporary buffer for the bitmap
+    // Allocate a temporary buffer to store the bitmap in planar format (1 bit per pixel per plane).
+    // The size is (w * h) / 8 bytes.
     uint8_t *BITMAP_BUFFER = (uint8_t *) memoryAllocateBlock(((w * h) / 8));
 
-    // Calculate the starting offset into the screen memory for the pixel
+    // Calculate the starting offset in screen memory for the drawing position.
     SCREEN_MEMORY += (y * GRAPHMODE_WIDTH + x) >> 3;
 
-    // Loop over each color plane
+    // For the input packed format, each row occupies (w + 1) / 2 bytes (2 pixels per byte).
+    uint32_t row_bytes = (w + 1) >> 1;
+
+    // Loop over each color plane.
     for (uint8_t plane = 0; plane < 4; plane++) {
         uint8_t mask = 1 << plane;
 
-        // Select the current color plane
+        // Select the current color plane for reading.
         writeByteToPort(GRAPHICS_INDEX, REG_GRAPHICS_MAP_READ);
         writeByteToPort(GRAPHICS_DATA, plane);
 
-        // Set bitmask for the current plane
+        // Set the write mask for the current plane.
         writeByteToPort(SEQUENCER_INDEX, REG_SEQUENCER_MASK);
         writeByteToPort(SEQUENCER_DATA, mask);
 
-        // Copy row of pixels from the pixels array to the temporary buffer
+        // Process each row of the bitmap.
         for (uint32_t row = 0; row < h; row++) {
-            // Calculate the starting offset into the pixels array for the current row
-            uint32_t row_offset = row * w;
+            // Calculate the starting offset into the packed pixels array for this row.
+            uint32_t row_offset = row * row_bytes;
 
-            // Calculate the starting offset into the temporary buffer for the current row
-            uint8_t *screen_row = BITMAP_BUFFER + row_offset / 8;
+            // Calculate the starting pointer in the temporary buffer for this row.
+            // The temporary buffer stores 1 bit per pixel, so each row takes (w + 7) / 8 bytes.
+            uint8_t *screen_row = BITMAP_BUFFER + (row * w) / 8;
 
-            // Copy pixels from the pixels array to the temporary buffer
+            // (Optional) Clear the row in the temporary buffer.
+            fastFastMemorySet(screen_row, 0, (w + 7) >> 3);
+
+            // Process each pixel in the row.
             for (uint32_t column = 0; column < w; column++) {
-                uint8_t color = pixels[row_offset + column];
+                // For the packed 4bpp image, each byte holds two pixels.
+                uint32_t byte_index = row_offset + (column >> 1);
+                uint8_t packed = pixels[byte_index];
+                uint8_t color;
+                if ((column & 1) == 0) {
+                    // Even column: extract the high nibble.
+                    color = packed >> 4;
+                } else {
+                    // Odd column: extract the low nibble.
+                    color = packed & 0x0F;
+                }
+
+                // Determine the bit to set/clear in the temporary buffer.
                 uint8_t bit = 1 << (7 - (column & 7));
 
-                // Check if the pixel should be set in the current color plane
+                // Set or clear the bit based on the current plane's bit in the color.
                 if (color & mask) {
-                    *(screen_row + (column >> 3)) |= bit;  // Set bit in buffer
+                    *(screen_row + (column >> 3)) |= bit;  // Set bit in buffer.
                 } else {
-                    *(screen_row + (column >> 3)) &= ~bit; // Clear bit in buffer
+                    *(screen_row + (column >> 3)) &= ~bit;   // Clear bit in buffer.
                 }
             }
         }
 
-        // Calculate the starting offset into the screen memory for the first row of the bitmap
-        uint8_t *screen_offset = SCREEN_MEMORY + ((y * GRAPHMODE_WIDTH + x) >> 3);
+        // Calculate the starting offset in screen memory for the bitmap.
+        uint8_t *screen_offset = SCREEN_MEMORY; // Already adjusted for x and y.
 
-        // Copy the entire temporary buffer to the corresponding location in screen memory
+        // Copy the entire temporary buffer to the corresponding location in screen memory.
         for (uint32_t row = 0; row < h; row++) {
             uint8_t *destination = screen_offset + (row * GRAPHMODE_WIDTH) / 8;
             uint8_t *source = BITMAP_BUFFER + (row * w) / 8;
-            fastMemoryCopy(destination, source, w >> 3);
+            fastFastMemoryCopy(destination, source, w >> 3);
         }
     }
 
-    // Free the memory from the buffer
+    // Free the temporary buffer.
     memoryFreeBlock(BITMAP_BUFFER);
 }
 
@@ -274,7 +317,8 @@ void drawLine(uint8_t color, uint16_t fx, uint16_t fy, uint16_t sx, uint16_t sy)
         plotPixel(color, fx, fy);
         if (fx == sx && fy == sy) break;
 
-        se = fe * 2;
+        // se = fe * 2;
+        se = fe + fe;
         if (se >= dy) {
             fe += dy;
             fx += ix;
@@ -358,19 +402,15 @@ void drawSolidCircle(uint8_t color, uint16_t cx, uint16_t cy, uint16_t r) {
 void drawCharacter(unsigned char character, uint16_t x, uint16_t y, uint8_t color) {
     uint8_t fgcolor = color & 0x0F;        // Extract foreground color
     uint8_t bgcolor = (color >> 4) & 0x0F; // Extract background color
-    const uint8_t chrsize = 8;             // Character size (8x8 font)
 
     // Get the glyph for the character from the font. The glyph is an 8x8 bitmap that represents the character.
     // Each byte in the glyph represents one row of 8 pixels in the character.
-    uint8_t *glyph = small_font + character * chrsize;
+    uint8_t *glyph = small_font + character * 8;
 
     // Loop over each row in the glyph.
-    for (uint8_t cy = 0; cy < chrsize; cy++) {
-        // Get the current row from the glyph.
-        uint8_t row = glyph[cy];
-
+    for (uint8_t cy = 0; cy < 8; cy++) {
         // Loop over each column in the row.
-        for (uint8_t cx = 0; cx < chrsize; cx++) {
+        for (uint8_t cx = 0; cx < 8; cx++) {
             // Create a mask for the current pixel. The mask is a byte where only one bit is set.
             // The position of the set bit corresponds to the position of the pixel in the row.
             // For example, if cx is 0, the mask will be 10000000 in binary. If cx is 7, the mask will be 00000001.
@@ -379,7 +419,7 @@ void drawCharacter(unsigned char character, uint16_t x, uint16_t y, uint8_t colo
             // Draw the pixel at the corresponding position.
             // If the corresponding bit in the row is set (i.e., the bitwise AND of the row and the mask is not zero),
             // then the pixel is drawn with the foreground color. Otherwise, it is drawn with the background color.
-            plotPixel((row & mask) ? fgcolor : bgcolor, x + cx, y + cy);
+            plotPixel((glyph[cy] & mask) ? fgcolor : bgcolor, x + cx, y + cy);
         }
     }
 }

@@ -7,15 +7,16 @@
 #include "VGA/video.h"
 #include "graphics.h"
 #include "console.h"
+#include "COM/serial.h"
 #include "speaker.h"
 
 /* From external modules we import ... */
 extern void consoleMain(char *input);  /* The commands interpreter, in main.c */
 
-#define BUFFER_SIZE 512
+#define KBD_SIZE 512
 #define TAB_SIZE 4      // TODO: this maybe could be a future user-side setting :)
 
-static char buffer[BUFFER_SIZE];
+static char buffer[KBD_SIZE] = {0};
 static bool capslock_enabled = false;
 static bool keyboard_enabled = false;
 
@@ -140,7 +141,7 @@ static void setKeyboardLeds(bool caps, bool num, bool scroll) {
  * @return True if a character was removed, false otherwise.
  */
 static bool backspace(char *string) {
-    int length = stringLength(string);
+    int length = strlen(string);
     if (length > 0) {
         string[length - 1] = '\0';
         return true;
@@ -152,10 +153,10 @@ static bool backspace(char *string) {
  * Handle the tab key by inserting spaces ...
  */
 static void tabulation(void) {
-    int length = stringLength(buffer);
-    if ((length + TAB_SIZE) < BUFFER_SIZE) {
+    int length = strlen(buffer);
+    if ((length + TAB_SIZE) < KBD_SIZE) {
         for (int i = 0; i < TAB_SIZE; i++) {
-            appendChar(buffer, ' ');
+            stradd(buffer, ' ');
             ttyPutChar(' ', -1, -1, (BG_BLACK | FG_WHITE));
         }
     }
@@ -221,10 +222,10 @@ static void keyboardCallback(registers_t *regs) {
     // Write the character
     } else {
         // Check if there is enough space in the buffer to append the letter
-        if ((stringLength(buffer) + 1) < BUFFER_SIZE) {
+        if ((strlen(buffer) + 1) < KBD_SIZE) {
 
             if (getCharacter() == ' ' || getCharacter() == '\0') {
-                appendChar(buffer, character);
+                stradd(buffer, character);
 
                 // Finally we print the char into the screen
                 ttyPutText(output, -1, -1, (BG_BLACK | FG_LTGRAY));
@@ -279,6 +280,6 @@ void waitPressKeyboard(uint8_t keycode) {
  * Initializes the keyboard by registering the keyboard callback function.
  */
 void initializeKeyboard(void) {
-    ttyPrintOut(INIT, "Initializing keyboard handler at IRQ1\n");
+    comPrintFmt("[i] Initializing keyboard handler at IRQ1\n");
     registerInterruptHandler(IRQ1, keyboardCallback);
 }

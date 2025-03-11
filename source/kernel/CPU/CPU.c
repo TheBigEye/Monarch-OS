@@ -47,6 +47,7 @@ static const struct processor_info features[29] = {
     {(0x80000000), "PBE"}  /* EDX_PBE        | Pending Break Enable                          */
 };
 
+
 static const struct processor_info instructions[29] = {
     /* {BIT, INSTRUCTION}   |  DEFINITION     | DESCRIPTION                                  */
     /*----------------------|-----------------|--------------------------------------------- */
@@ -82,7 +83,7 @@ static const struct processor_info instructions[29] = {
 };
 
 static inline void cpuid(uint32_t reg, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
-    __asm__ __volatile__ ("cpuid"
+    ASM VOLATILE ("cpuid"
         : "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
         : "0" (reg)
     );
@@ -115,7 +116,7 @@ static void checkAndPrintInfo(const struct processor_info *table, uint32_t infoB
         }
 
         // Calculate padding spaces for alignment
-        int padding = (columnWidth - stringLength(name)) - 4;
+        int padding = (columnWidth - strlen(name)) - 4;
 
         // Print padding spaces
         for (int j = 0; j < padding; ++j) {
@@ -182,6 +183,6 @@ void processorGetStatus(void) {
 
 uint32_t processorGetTicks(void) {
     uint32_t ticks;
-    __asm__ __volatile__ ("rdtsc" : "=a" (ticks));
+    ASM VOLATILE ("rdtsc" : "=a" (ticks));
     return ticks;
 }

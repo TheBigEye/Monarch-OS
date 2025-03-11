@@ -1,7 +1,7 @@
 #ifndef DRIVER_GRAPHICS_H_
 #define DRIVER_GRAPHICS_H_ 1
 
-#include "../../common/sysutils.h"
+#include "../../common/common.h"
 
 /**
 * Theoretically there are 16 colors, but it seems that
@@ -24,6 +24,8 @@
 #define PX_LTMAGENTA        0xDD // Light magenta pixel color
 #define PX_YELLOW           0xEE // Yellow pixel color
 #define PX_WHITE            0xFF // White pixel color
+
+
 
 
 /**
@@ -68,7 +70,7 @@ void fillScreen(uint8_t color);
  *
  * @deprecated This is slow, we should use the fast double-bufferd version
  */
-void drawBitmap(uint8_t pixels[], uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+void drawBitmap(uint8_t *pixels, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 
 
 /**
@@ -82,7 +84,7 @@ void drawBitmap(uint8_t pixels[], uint16_t x, uint16_t y, uint16_t w, uint16_t h
  * @param w         Width of the bitmap in pixels.
  * @param h         Height of the bitmap in pixels.
  */
-void drawBitmapFast(uint8_t pixels[], uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+void drawBitmapFast(uint8_t *pixels, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 
 
 void drawLine(uint8_t color, uint16_t fx, uint16_t fy, uint16_t sx, uint16_t sy);

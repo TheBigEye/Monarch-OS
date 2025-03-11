@@ -1,4 +1,8 @@
+[BITS 32]
+
 ; IMPORTANT!: When we modify some included binary files, we have to recompile all again
+
+;;; WHY NOT OBJCOPY? LOL
 
 %macro INCLUDE_BIN 2
     %define symbol %1
@@ -21,16 +25,25 @@ INCLUDE_BIN bootpoem, "source/binaries/strings/bootpoem.txt"
 ; include the ascii art
 INCLUDE_BIN butterfly, "source/binaries/strings/butterfly.txt"
 
-; include the "It's now safe to turn off your computer"
-INCLUDE_BIN turnoffpc, "source/binaries/strings/turnoffpc.txt"
 
-; include the chess wallapaper :)
-INCLUDE_BIN wallpaper, "source/binaries/wallpaper.bin"
+; include wallapapers :)
+INCLUDE_BIN bigeye_480, "source/binaries/480_bigeye.bin"
+INCLUDE_BIN myfall_480, "source/binaries/480_myfall.bin"
+INCLUDE_BIN myfood_480, "source/binaries/480_myfood.bin"
+INCLUDE_BIN mylamb_480, "source/binaries/480_mylamb.bin"
+INCLUDE_BIN mylife_480, "source/binaries/480_mylife.bin"
+INCLUDE_BIN mymind_480, "source/binaries/480_mymind.bin"
+INCLUDE_BIN theman_480, "source/binaries/480_theman.bin"
 
-; include the leafs wallpaper ._.
-INCLUDE_BIN hillpaper, "source/binaries/hillpaper.bin"
+INCLUDE_BIN candle_640, "source/binaries/640_candle.bin"
+INCLUDE_BIN choice_640, "source/binaries/640_choice.bin"
+INCLUDE_BIN clouds_640, "source/binaries/640_clouds.bin"
+INCLUDE_BIN myhill_640, "source/binaries/640_myhill.bin"
+INCLUDE_BIN mypain_640, "source/binaries/640_mypain.bin"
+INCLUDE_BIN mypath_640, "source/binaries/640_mypath.bin"
+INCLUDE_BIN myroad_640, "source/binaries/640_myroad.bin"
+INCLUDE_BIN mywork_640, "source/binaries/640_mywork.bin"
+INCLUDE_BIN wchess_640, "source/binaries/640_wchess.bin"
 
-; include the Windows Chicago wallpaper :D
-INCLUDE_BIN workpaper, "source/binaries/workpaper.bin"
 
 ; include more files to be used, an example can be found in binaries.h

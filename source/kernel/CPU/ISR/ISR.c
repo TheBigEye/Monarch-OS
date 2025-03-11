@@ -1,7 +1,7 @@
 #include "ISR.h"
 
-#include "../../drivers/console.h"
 #include "../../drivers/keyboard.h"
+#include "../../drivers/COM/serial.h"
 
 #include "../../bugfault.h"
 
@@ -114,7 +114,7 @@ void ISR_handler(registers_t *registers) {
 
 /* Implement a custom IRQ handler for the given IRQ */
 void registerInterruptHandler(uint8_t irq, interrupt_t handler) {
-    ttyPrintOut(INIT, "Registering IRQ %d to handler %p\n\n", irq, handler);
+    comPrintFmt("[i] Registering IRQ %d to handler %p\n\n", irq, handler);
     interrupt_handlers[irq] = handler;
 
     OPERATION_WAIT
@@ -143,7 +143,7 @@ void IRQ_handler(registers_t *registers) {
 
 void initializeIRQ() {
     /* Enable interruptions */
-    __asm__ __volatile__ ("sti");
+    ASM VOLATILE ("sti");
 
     initializeTimer();      /* IRQ0: timer PIT */
     initializeKeyboard();    /* IRQ1: keyboard */

@@ -1,7 +1,10 @@
 #ifndef _SYS_BINARIES_H
 #define _SYS_BINARIES_H 1
 
-#include "../common/sysutils.h"
+#define BMP_SIZE(x, y) (((x) * (y)) / 2)
+
+#include "../common/common.h"
+
 
 /* The poem text :) */
 extern char bootpoem[];
@@ -9,17 +12,28 @@ extern char bootpoem[];
 /* The butterfly ascii logo */
 extern char butterfly[];
 
-/* "It's now safe to turn off your computer" */
-extern char turnoffpc[];
+/// Wallpapers 480px
 
-/* Chess wallpaper taken from Windows 3.1 */
-extern uint8_t wallpaper[640 * 480];
+extern uint8_t bigeye_480[BMP_SIZE(480, 480)];
+extern uint8_t myfall_480[BMP_SIZE(480, 480)];
+extern uint8_t myfood_480[BMP_SIZE(480, 480)];
+extern uint8_t mylamb_480[BMP_SIZE(480, 480)];
+extern uint8_t mylife_480[BMP_SIZE(480, 480)];
+extern uint8_t mymind_480[BMP_SIZE(480, 480)];
+extern uint8_t theman_480[BMP_SIZE(480, 480)];
 
-/* Leafs wallpaper taken from Windows 3.1 */
-extern uint8_t hillpaper[640 * 480];
+/// Wallpapers 640px
 
-/* Under Construction wallpaper taken from Windows Chicago */
-extern uint8_t workpaper[640 * 480];
+extern uint8_t candle_640[BMP_SIZE(640, 480)];
+extern uint8_t choice_640[BMP_SIZE(640, 480)];
+extern uint8_t clouds_640[BMP_SIZE(640, 480)];
+extern uint8_t myhill_640[BMP_SIZE(640, 480)];
+extern uint8_t mypain_640[BMP_SIZE(640, 480)];
+extern uint8_t mypath_640[BMP_SIZE(640, 480)];
+extern uint8_t myroad_640[BMP_SIZE(640, 480)];
+extern uint8_t mywork_640[BMP_SIZE(640, 480)];
+extern uint8_t wchess_640[BMP_SIZE(640, 480)];
+
 
 /* Mouse pointer bitmap */
 uint8_t mouse_bitmap[9 * 18] = {

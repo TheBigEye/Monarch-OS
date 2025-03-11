@@ -4,6 +4,7 @@
 #include "../CPU/HAL.h"
 #include "../memory/memory.h"
 
+
 /* TODO: OPTIMIZE THE SIZE FOR THIS FILE! */
 
 /* Private functions */
@@ -37,7 +38,8 @@ static inline int getCursorOffset(void) {
     offset += readByteFromPort(CATHODERAY_DATA);
 
     /* Return the cursor offset in bytes */
-    return offset * 2;
+    //return offset * 2;
+    return offset + offset;
 }
 
 
@@ -362,16 +364,16 @@ static void parseVariadicFormat(const char *format, va_list args) {
 
                     if (length == 'l') { // Long length:
                         long value = va_arg(args, long); // Fetch long integer argument
-                        toString(value, buffer, 10); // Convert to decimal string
+                        strint(value, buffer, 10); // Convert to decimal string
                     } else if (length == 'h') { // Short length
-                        short value = va_arg(args, int); // Fetch short integer argument
-                        toString(value, buffer, 10); // Convert to decimal string
+                        short value = (short) va_arg(args, int); // Fetch short integer argument
+                        strint(value, buffer, 10); // Convert to decimal string
                     } else {
                         int value = va_arg(args, int); // Fetch integer argument
-                        toString(value, buffer, 10); // Convert to decimal string
+                        strint(value, buffer, 10); // Convert to decimal string
                     }
 
-                    int length = stringLength(buffer); // Calculate length of the string
+                    int length = strlen(buffer); // Calculate length of the string
 
                     // Handle precision (padding with zeros)
                     if (precisionSpecified && precision > length) {
@@ -405,13 +407,13 @@ static void parseVariadicFormat(const char *format, va_list args) {
                 case 'x': case 'X': { // Hexadecimal format specifier
                     unsigned int value = va_arg(args, unsigned int); // Fetch unsigned integer argument
                     char buffer[16]; // Buffer for integer to hexadecimal string conversion
-                    toString(value, buffer, 16); // Convert to hexadecimal string
+                    strint(value, buffer, 16); // Convert to hexadecimal string
 
                     // Convert to lowercase or uppercase based on specifier ('x' or 'X')
                     if (*format == 'x') {
-                        toLowercase(buffer); // Convert to lowercase
+                        strlwr(buffer); // Convert to lowercase
                     } else {
-                        toUppercase(buffer); // Convert to uppercase
+                        strupr(buffer); // Convert to uppercase
                     }
 
                     ttyPutText("0x", -1, -1, (BG_BLACK | FG_DKGRAY)); // Output prefix "0x"
@@ -423,8 +425,8 @@ static void parseVariadicFormat(const char *format, va_list args) {
                     void *value = va_arg(args, void *); // Fetch void pointer argument
                     uintptr_t addr = (uintptr_t)value; // Cast pointer to uintptr_t
                     char buffer[16]; // Buffer for pointer to hexadecimal string conversion
-                    toString(addr, buffer, 16); // Convert pointer to hexadecimal string
-                    toLowercase(buffer); // Convert to lowercase
+                    strint(addr, buffer, 16); // Convert pointer to hexadecimal string
+                    strlwr(buffer); // Convert to lowercase
                     ttyPutText("0x", -1, -1, (BG_BLACK | FG_DKGRAY)); // Output prefix "0x"
                     ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output hexadecimal value
                     break;
@@ -433,14 +435,14 @@ static void parseVariadicFormat(const char *format, va_list args) {
                 case 'o': { // Octal format specifier
                     unsigned int value = va_arg(args, unsigned int); // Fetch unsigned integer argument
                     char buffer[16]; // Buffer for integer to octal string conversion
-                    toString(value, buffer, 8); // Convert to octal string
+                    strint(value, buffer, 8); // Convert to octal string
                     ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output octal value
                     break;
                 }
 
                 case 's': { // String format specifier
                     char *value = va_arg(args, char *); // Fetch string argument
-                    int length = stringLength(value); // Calculate length of the string
+                    int length = strlen(value); // Calculate length of the string
 
                     // Truncate string if precision is specified and shorter than actual length
                     if (precisionSpecified && precision < length) {

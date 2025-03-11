@@ -1,7 +1,7 @@
 #ifndef DRIVER_CONSOLE_H_
 #define DRIVER_CONSOLE_H_ 1
 
-#include "../../common/sysutils.h"
+#include "../../common/common.h"
 
 
 /* Foreground colors */

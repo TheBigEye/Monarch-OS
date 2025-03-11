@@ -1,7 +1,7 @@
 default=0
 timeout=30
 
-color yellow/brown black/light-gray
+color light-cyan/cyan black/light-gray
 
 title Monarch OS [Butterfly x86]
     root (cd)

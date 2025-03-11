@@ -1,7 +1,7 @@
 #ifndef _CPU_GDT_H
 #define _CPU_GDT_H 1
 
-#include "../../../common/sysutils.h"
+#include "../../../common/common.h"
 
 /* This is in bootmain.asm. We use this to properly reload
 *  the new segment registers */

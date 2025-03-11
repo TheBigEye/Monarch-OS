@@ -1,7 +1,9 @@
 #include "video.h"
 
+#include "../../CPU/BIOS.h"
 #include "../../CPU/HAL.h"
 #include "../../memory/memory.h"
+
 
 static uint32_t getSegment(void) {
     uint32_t segment;
@@ -151,8 +153,8 @@ static void writeFont(uint8_t *buffer, uint8_t fontHeight) {
 
 void initializeVGA(uint8_t *registers) {
     /* We need clear the buffers always! */
-    fastMemorySet((uint16_t *) GRAPHMODE_BUFFER, 0, GRAPHMODE_SIZE);
-    fastMemorySet((uint16_t *) TEXTMODE_BUFFER, 0, TEXTMODE_SIZE);
+    fastFastMemorySet((uint16_t *) GRAPHMODE_BUFFER, 0, GRAPHMODE_SIZE);
+    fastFastMemorySet((uint16_t *) TEXTMODE_BUFFER, 0, TEXTMODE_SIZE);
 
     /* write MISCELLANEOUS register */
     writeByteToPort(MISCELLANEOUS_WRITE, *registers);
@@ -210,4 +212,9 @@ void initializeVGA(uint8_t *registers) {
     if (!registers[62]) {
         writeFont(small_font, 8);
     }
+}
+
+
+enum video_type getVideoType(void) {
+    return (enum video_type) (getBDA() & 0x30);
 }

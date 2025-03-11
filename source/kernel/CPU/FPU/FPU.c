@@ -4,12 +4,12 @@
 #include "../BIOS.h"
 #include "../HAL.h"
 
-#include "../../../common/sysutils.h"
-#include "../../drivers/console.h"
+#include "../../drivers/COM/serial.h"
 #include "../../memory/memory.h"
 
+
 static inline void setControlWord(const uint16_t cw) {
-    __asm__ __volatile__ ("fldcw %0" ::"m"(cw));
+    ASM VOLATILE ("fldcw %0" ::"m"(cw));
 }
 
 /**
@@ -19,10 +19,10 @@ static inline void setControlWord(const uint16_t cw) {
  */
 static void coprocessorCallback(registers_t *regs) {
     uint32_t cr4;
-    __asm__ __volatile__ ("mov %%cr4, %0" :"=r"(cr4));
+    ASM VOLATILE ("mov %%cr4, %0" :"=r"(cr4));
     // set 9th bit to 1 in cr4
     cr4 |= 0x200;
-    __asm__ __volatile__ ("mov %0, %%cr4" ::"r"(cr4));
+    ASM VOLATILE ("mov %0, %%cr4" ::"r"(cr4));
     setControlWord(0x37F); // fpu init
     setControlWord(0x37E); // invalid operand exceptions
     setControlWord(0x37A); // divide by zero
@@ -32,6 +32,6 @@ static void coprocessorCallback(registers_t *regs) {
 
 
 void initializeCoprocessor(void) {
-    ttyPrintOut(INIT, "Initializing FPU handler at IRQ13 ...\n");
+    comPrintStr("[i] Initializing FPU handler at IRQ13 ...\n");
     registerInterruptHandler(IRQ13, coprocessorCallback);
 }

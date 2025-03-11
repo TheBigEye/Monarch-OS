@@ -1,5 +1,5 @@
-#ifndef _SYS_UTILS_H
-#define _SYS_UTILS_H 1
+#ifndef _LIB_COMMON_H
+#define _LIB_COMMON_H 1
 
     // Coss-compiler heaaders
     #include <stdbool.h>
@@ -41,10 +41,28 @@
         #define isInf __builtin_isinf
         #define isNan __builtin_isnan
 
-        #define MIN(a, b) ((a) < (b) ? (a) : (b)) /* @brief The minimum of two values */
-        #define MAX(a, b) ((a) > (b) ? (a) : (b)) /* @brief The maximum of two values */
+        // #define MIN(a, b) ((a) < (b) ? (a) : (b)) /* @brief The minimum of two values */
+        // #define MAX(a, b) ((a) > (b) ? (a) : (b)) /* @brief The maximum of two values */
         #define ABS(n) ((n) > 0 ? (n) : -(n)) /* @brief The absolute value of a number */
         #define SQR(n) ((n) * (n)) /* @brief The square value of a number */
+
+
+        /* @brief The minimum of two values */
+        #define MIN(a, b)            \
+        ({                           \
+            __typeof__ (a) _a = (a); \
+            __typeof__ (b) _b = (b); \
+            _a < _b ? _a : _b;       \
+        })
+
+        /* @brief The maximum of two values */
+        #define MAX(a, b)            \
+        ({                           \
+            __typeof__ (a) _a = (a); \
+            __typeof__ (b) _b = (b); \
+            _a > _b ? _a : _b;       \
+        })
+
 
         #define SIN(x)   __builtin_sin((x))
         #define COS(x)   __builtin_cos((x))
@@ -57,6 +75,7 @@
         #define NOTHING ;
 
         #define PACKED __attribute__ ((__packed__))
+        #define PADDED __attribute__ ((aligned(4)))
 
         #define DOUBLE_MAX 1E37
         #define DOUBLE_MIN -1E37
@@ -75,6 +94,9 @@
         /** Character to uppercase */
         #define toUpper(c) (isLower((c)) ? ((c) - 0x20) : (c))
 
+        /** Character to number */
+        #define toDigit(c) ((unsigned int) ((c) - '0'))
+
         /* Definition of common types used in the codebase */
 
         typedef unsigned long    ULONG;
@@ -84,10 +106,11 @@
 
         /* Some math (yeah, maths sucks) */
 
-        typedef struct { uint32_t x; uint32_t y; } Point;
-        typedef struct { uint32_t w; uint32_t h; } Size;
-        typedef struct { float x; float y; float z; } Vector;
-        typedef struct { int numerator; int denominator; } Fraction;
+        typedef struct { int16_t x, y; } Point;
+        typedef struct { uint16_t w, h; } Size;
+        typedef struct { int16_t x, y; uint16_t w, h; } Rect;
+        typedef struct { float x, y, z; } Vector;
+        typedef struct { int numerator, denominator; } Fraction;
 
         /* Builtin C definitions */
 
@@ -98,8 +121,37 @@
         #define va_end(ap)              __builtin_va_end(ap)
         #define va_copy(d, s)           __builtin_va_copy(d, s)
 
+        #define ASM       __asm__
+        #define VOLATILE  __volatile__
+
 
     #endif /* _COMMON_TYPEDEFS */
+
+
+    /* Assembly implementations */
+
+    extern int asm_strlen(const char *string);
+    extern int asm_strcmp(const char *a, const char *b);
+
+    extern char *asm_strrev(char *string);
+
+    extern char asm_chrlwr(char chr);
+    extern char asm_chrupr(char chr);
+
+    extern char *asm_strlwr(char *string);
+    extern char *asm_strupr(char *string);
+
+    extern char *asm_strcat(char *destination, char *source);
+    extern char *asm_strncat(char *destination, const char *source, unsigned int limit);
+    extern char *asm_strcpy(char *destination, const char *source);
+    extern char *asm_strncpy(char *destination, const char *source, unsigned int limit);
+
+    extern uint8_t asm_insb(uint16_t port);
+    extern uint16_t asm_insw(uint16_t port);
+    extern void asm_outb(uint16_t port, uint8_t data);
+    extern void asm_outw(uint16_t port, uint16_t data);
+    extern void asm_getcpu(uint32_t reg, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
+
 
     /* Common system functions */
 
@@ -113,30 +165,31 @@
     char *ftoa(double value);
     char *htoa(int integer);
 
-    int stringLength(const char *string);
+    int strlen(const char *string);
+    void strrev(char *string);
 
-    void stringReverse(char *string);
-    void stringCombine(char *destination, char *source);
+    char *strcat(char *destination, char *source);
+    char *strncat(char *destination, const char *source, unsigned int limit);
+    char *strcpy(char *destination, const char *source);
+    char *strncpy(char *destination, const char *source, unsigned int limit);
 
-    char *stringCopy(char *destination, const char *source);
-    char *stringCopyTo(char *destination, const char *source, unsigned int nchars);
+    void strlwr(char *string);
+    void strupr(char *string);
 
-    void toLowercase(char *string);
-    void toUppercase(char *string);
+    void strint(int integer, char *buffer, int base);
+    void stradd(char string[], char num);
 
-    void toString(int integer, char *buffer, int base);
+    bool streql(char *a, char *b);
+    int strcmp(const char *a, const char *b);
+    int strncmp(const char *a, const char *b, unsigned int limit);
+    int substrcmp(const char *a, const char *b);
 
-    void appendChar(char string[], char num);
+    char *strchr(const char *string, int character);
+    char *strrchr(const char *string, int character);
 
-    int stringCompare(const char *a, const char *b);
-    int stringCompareTo(const char *a, const char *b, unsigned int n);
+    int strspn(const char *string, const char *accept);
+    int strcspn(const char *string, const char *reject);
+    char *strtok(char *string, const char *delimiter);
 
-    int stringMatch(char *a, char *b);
-    bool stringStarts(const char *a, const char *b);
 
-    char *stringFindChar(const char *string, int character);
-    char *stringFindLastChar(const char *string, int character);
-
-    /* Non standard functions */
-
-#endif /* ! _SYS_UTILS_H */
+#endif /* ! _LIB_COMMON_H */

@@ -1,7 +1,7 @@
 #ifndef _DRIVER_KEYBOARD_H
 #define _DRIVER_KEYBOARD_H 1
 
-#include "../../common/sysutils.h"
+#include "../../common/common.h"
 
 #define KBD_PORT 0x60
 #define KBD_CTRL 0x64

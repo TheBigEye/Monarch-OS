@@ -1,7 +1,7 @@
 #ifndef _KERNEL_POWER_H
 #define _KERNEL_POWER_H 1
 
-#include "../../common/sysutils.h"
+#include "../../common/common.h"
 
 enum POWER_STATUS {
     POWER_HALT      = 0x00,

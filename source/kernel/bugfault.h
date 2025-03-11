@@ -37,9 +37,9 @@
  */
 #define BUG_FATAL(condition, message)                                     \
     if (!(condition)) {                                                   \
-        __asm__ __volatile__ ("cli");                                     \
+        ASM VOLATILE ("cli");                                             \
         triggerAssert(__FILE__, __func__, __LINE__, #condition, message); \
-        __asm__ __volatile__ ("hlt");                                     \
+        ASM VOLATILE ("hlt");                                             \
     }
 
 /**

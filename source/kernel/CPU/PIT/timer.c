@@ -3,8 +3,8 @@
 #include "../ISR/ISR.h"
 #include "../HAL.h"
 
-#include "../../../common/sysutils.h"
-#include "../../drivers/console.h"
+#include "../../../common/common.h"
+#include "../../drivers/COM/serial.h"
 
 
 /*
@@ -19,6 +19,7 @@ uint32_t timerGetTicks(void) {
     return ticksSinceBoot;
 }
 
+
 /**
  * Get the elapsed seconds based on the PIT tick count.
  *
@@ -31,6 +32,7 @@ uint32_t timerGetTicks(void) {
 uint32_t timerGetSeconds() {
     return (ticksSinceBoot / 100) % 60;
 }
+
 
 /**
  * Get the elapsed minutes based on the PIT tick count.
@@ -45,6 +47,7 @@ uint32_t timerGetMinutes() {
     return (ticksSinceBoot / (100 * 60)) % 60;
 }
 
+
 /**
  * Get the elapsed hours based on the PIT tick count.
  *
@@ -58,6 +61,7 @@ uint32_t timerGetHours() {
     return ticksSinceBoot / (100 * 60 * 60);
 }
 
+
 /**
  * Timer interrupt callback function.
  *
@@ -65,9 +69,10 @@ uint32_t timerGetHours() {
  */
 static void timerCallback(registers_t *regs) {
     /* This is bad idea ... but is ok */
-    ticksSinceBoot++;
+    ticksSinceBoot +=1;
     UNUSED(regs);
 }
+
 
 /**
  * Initializes the timer
@@ -75,6 +80,7 @@ static void timerCallback(registers_t *regs) {
 void initializeTimer() {
     ticksSinceBoot = 0;
 
+    /* 0011 0110*/
     writeByteToPort(
         PIT_COMMAND_PORT,
         (PIT_TIMER_0_SELECT | PIT_WRITE_WORD | PIT_MODE_SQUARE_WAVE) // 0x36
@@ -87,11 +93,12 @@ void initializeTimer() {
     writeByteToPort(PIT_TIMER_0_PORT, LOWER_BYTE(timer_reload)); // Low
     writeByteToPort(PIT_TIMER_0_PORT, UPPER_BYTE(timer_reload)); // high
 
-    ttyPrintOut(INIT, "Initializing PIT handler at IRQ0 ...\n");
+    comPrintStr("[i] Initializing PIT handler at IRQ0 ...\n");
 
     // Install the timerCallback function
     registerInterruptHandler(IRQ0, timerCallback);
 }
+
 
 /**
  * Sleep an operation for shot time.
@@ -103,6 +110,6 @@ void timerSleep(uint32_t milliseconds) {
 
     while (ticksSinceBoot < target) {
         /* Doesnt remove this line, or all could FAIL */
-        __asm__ __volatile__ ("sti//hlt//cli");
+        ASM VOLATILE ("sti//hlt//cli");
     }
 }

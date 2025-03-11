@@ -1,7 +1,7 @@
 #ifndef _KERNEL_HEAP_H
 #define _KERNEL_HEAP_H 1
 
-#include "../../common/sysutils.h"
+#include "../../common/common.h"
 
 #define MAX_PAGE_ALIGNED_ALLOCS 32
 

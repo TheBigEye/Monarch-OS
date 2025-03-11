@@ -1,7 +1,7 @@
 #ifndef _CPU_TIMER_H
 #define _CPU_TIMER_H 1
 
-#include "../../../common/sysutils.h"
+#include "../../../common/common.h"
 
 #define PIT_TIMER_0_PORT    0x40
 #define PIT_TIMER_1_PORT    0x41

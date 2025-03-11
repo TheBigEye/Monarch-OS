@@ -28,7 +28,7 @@ Directory *BFS_CURRENT_DIR;
 void mountFileSystem(void) {
     BFS_PRIMARY_DIR = (Directory *) memoryAllocateBlock(sizeof(Directory));
     BFS_PRIMARY_DIR->name = (char *) memoryAllocateBlock(MAX_NAME_LEN);
-    stringCopy(BFS_PRIMARY_DIR->name, "/");
+    strcpy(BFS_PRIMARY_DIR->name, "/");
 
     BFS_PRIMARY_DIR->parent = NULL;
     BFS_PRIMARY_DIR->subdirs = NULL;
@@ -38,20 +38,22 @@ void mountFileSystem(void) {
     BFS_CURRENT_DIR = BFS_PRIMARY_DIR;
 }
 
+
 bool bfsCheckName(const char *name) {
-    if (*name == '\0' || stringCompare(name, " ") == 0) {
+    if ((*name == '\0') || (strcmp(name, " ") == 0)) {
         return false; // If the name is empty or is only an space
     }
 
-    const char *invalidChars = "\\/:;*?\"<>|";
+    const char *invalidChars = "\\/:;*?\"<>|-";
     while (*name) {
-        if (stringFindChar(invalidChars, *name)) {
+        if (strchr(invalidChars, *name)) {
             return false; // Invalid char found
         }
         name++;
     }
     return true;
 }
+
 
 /* If you think this is complete spaghetti, I recommend you see the vprintFormat() code, LOL */
 static void bfsCreateTree(Directory *directory, uint8_t level, bool *branch_flags) {
@@ -134,11 +136,12 @@ static void bfsCreateTree(Directory *directory, uint8_t level, bool *branch_flag
     }
 }
 
+
 File *bfsCreateFile(Directory *parent, const char *name) {
     File *file = (File *) memoryAllocateBlock(sizeof(File));
 
     file->name = (char *) memoryAllocateBlock(MAX_NAME_LEN);
-    stringCopy(file->name, name);
+    strcpy(file->name, name);
 
     file->size = 0; // Empty file, lol
 
@@ -148,11 +151,12 @@ File *bfsCreateFile(Directory *parent, const char *name) {
     return file;
 }
 
+
 Directory *bfsCreateDirectory(Directory *parent, const char *name) {
     Directory *directory = (Directory *) memoryAllocateBlock(sizeof(Directory));
 
     directory->name = (char *) memoryAllocateBlock(MAX_NAME_LEN);
-    stringCopy(directory->name, name);
+    strcpy(directory->name, name);
 
     directory->parent = parent;
     directory->subdirs = NULL;
@@ -165,6 +169,7 @@ Directory *bfsCreateDirectory(Directory *parent, const char *name) {
     return directory;
 }
 
+
 Directory *bfsFindDirectory(const char *path) {
     Directory *directory = BFS_PRIMARY_DIR;
     if (path[0] == '/') {
@@ -173,18 +178,18 @@ Directory *bfsFindDirectory(const char *path) {
 
     char temp[MAX_NAME_LEN];
     while (*path) {
-        const char *slash = stringFindChar(path, '/');
+        const char *slash = strchr(path, '/');
         if (slash) {
-            stringCopyTo(temp, path, slash - path + 1);
+            strncpy(temp, path, slash - path + 1);
             temp[slash - path] = '\0';
             path = slash + 1;
         } else {
-            stringCopy(temp, path);
-            path += stringLength(path);
+            strcpy(temp, path);
+            path += strlen(path);
         }
 
         Directory *subdir = directory->subdirs;
-        while (subdir && stringCompare(subdir->name, temp) != 0) {
+        while ((subdir) && (strcmp(subdir->name, temp) != 0)) {
             subdir = subdir->next;
         }
 
@@ -197,13 +202,14 @@ Directory *bfsFindDirectory(const char *path) {
     return directory;
 }
 
+
 File *bfsFindFile(const char *path) {
-    char *slash = stringFindLastChar(path, '/');
+    char *slash = strrchr(path, '/');
     Directory *directory;
 
     if (slash) {
         char dirPath[MAX_NAME_LEN];
-        stringCopyTo(dirPath, path, slash - path + 1);
+        strncpy(dirPath, path, slash - path + 1);
         dirPath[slash - path] = '\0';
         directory = bfsFindDirectory(dirPath);
         path = slash + 1;
@@ -216,24 +222,26 @@ File *bfsFindFile(const char *path) {
     }
 
     File *file = directory->files;
-    while (file && stringCompare(file->name, path) != 0) {
+    while ((file) && (strcmp(file->name, path) != 0)) {
         file = file->next;
     }
 
     return file;
 }
 
+
 void bfsCopyFile(File *file, Directory *destination, const char *newName) {
     if (!file || !destination) return;
 
     File *newFile = bfsCreateFile(destination, newName ? newName : file->name);
-    stringCopyTo(newFile->content, file->content, MAX_CONTENT_LEN);
+    strncpy(newFile->content, file->content, MAX_CONTENT_LEN);
     newFile->size = file->size;
 }
 
+
 void bfsRemoveFile(Directory *parent, const char *name) {
     File **current = &parent->files;
-    while (*current && stringCompare((*current)->name, name) != 0) {
+    while ((*current) && (strcmp((*current)->name, name) != 0)) {
         current = &(*current)->next;
     }
 
@@ -268,14 +276,17 @@ void bfsRemoveDirectory(Directory *directory) {
     memoryFreeBlock(directory); // Free memory from struct
 }
 
+
 void bfsWriteFile(File *file, const char *content) {
-    stringCopyTo(file->content, content, MAX_CONTENT_LEN);
-    file->size = stringLength(content);
+    strncpy(file->content, content, MAX_CONTENT_LEN);
+    file->size = strlen(content);
 }
+
 
 void bfsReadFile(File *file) {
     ttyPrintFmt("# Content of %s: %s\n", file->name, file->content);
 }
+
 
 void bfsPrintTree(Directory *directory, uint8_t level) {
     // We assume that the maximum depth level for dirs is 64 ...

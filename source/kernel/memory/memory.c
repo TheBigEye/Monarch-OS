@@ -1,7 +1,5 @@
 #include "memory.h"
 
-#include "../bugfault.h"
-
 /**
  * Copy a block of memory from the source to the destination (similar to memcpy).
  *
@@ -44,7 +42,7 @@ void *memoryCopy(void *destination, const void *source, uint32_t nbytes) {
  */
 void *fastMemoryCopy(void *destination, const void *source, uint32_t nbytes) {
     int d0, d1, d2;
-    __asm__ __volatile__ (
+    ASM VOLATILE (
         "rep\n\t"
         "movsb"
         : "=&c" (d0), "=&D" (d1), "=&S" (d2)
@@ -64,7 +62,7 @@ void *fastMemoryCopy(void *destination, const void *source, uint32_t nbytes) {
  */
 void *fastWideMemoryCopy(void *destination, const void *source, uint32_t nbytes) {
     int d0, d1, d2;
-    __asm__ __volatile__ (
+    ASM VOLATILE (
         "rep\n\t"
         "movsw"
         : "=&c" (d0), "=&D" (d1), "=&S" (d2)
@@ -80,7 +78,7 @@ void *fastWideMemoryCopy(void *destination, const void *source, uint32_t nbytes)
  */
 void *fastFastMemoryCopy(void *destination, const void *source, uint32_t nbytes) {
     int d0, d1, d2;
-    __asm__ __volatile__ (
+    ASM VOLATILE (
         "movl %%ecx, %%edx\n\t" // Save nbytes in edx for later
         "shrl $2, %%ecx\n\t"    // Divide nbytes by 4 to copy dwords
         "rep movsl\n\t"         // Copy dwords
@@ -123,7 +121,7 @@ void *memorySet(void *destination, uint8_t value, uint32_t length) {
  */
 void *fastMemorySet(void *destination, uint8_t value, uint32_t length) {
     int d0, d1;
-    __asm__ __volatile__ (
+    ASM VOLATILE (
         "rep\n\t"
         "stosb"
         : "=&c" (d0), "=&D" (d1)
@@ -143,7 +141,7 @@ void *fastMemorySet(void *destination, uint8_t value, uint32_t length) {
  */
 void *fastWideMemorySet(void *destination, uint16_t value, uint32_t length) {
     int d0, d1;
-    __asm__ __volatile__ (
+    ASM VOLATILE (
         "rep\n\t"
         "stosw"
         : "=&c" (d0), "=&D" (d1)
@@ -160,7 +158,7 @@ void *fastWideMemorySet(void *destination, uint16_t value, uint32_t length) {
 void *fastFastMemorySet(void *destination, uint8_t value, uint32_t length) {
     int d0, d1, d2;
     uint32_t val4 = value | (value << 8) | (value << 16) | (value << 24); // Prepare the 4-byte value
-    __asm__ __volatile__ (
+    ASM VOLATILE (
         "movl %%ecx, %%edx\n\t" // Save length in edx for later
         "shrl $2, %%ecx\n\t"    // Divide length by 4 to set dwords
         "rep stosl\n\t"         // Set dwords

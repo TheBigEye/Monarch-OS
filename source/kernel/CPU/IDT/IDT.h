@@ -1,7 +1,7 @@
 #ifndef _CPU_IDT_H
 #define _CPU_IDT_H 1
 
-#include "../../../common/sysutils.h"
+#include "../../../common/common.h"
 
 /* Segment selectors */
 #define KERNEL_CS 0x08
