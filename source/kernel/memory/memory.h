@@ -24,7 +24,7 @@ void *memoryCopy(void *destination, const void *source, uint32_t nbytes);
  * @param nbytes        Number of bytes to copy
  * @return              Pointer to the destination memory block
  */
-void *fastMemoryCopy(void *destination, const void *source, uint32_t nbytes);
+void *fastMemoryCopy(void * restrict destination, const void * restrict source, uint32_t nbytes);
 
 /**
  * @brief Fast assembly version of memcpy for 16-bit words (memcpyw).
@@ -34,13 +34,13 @@ void *fastMemoryCopy(void *destination, const void *source, uint32_t nbytes);
  * @param nbytes        Number of bytes to copy
  * @return              Pointer to the destination memory block
  */
-void *fastWideMemoryCopy(void *destination, const void *source, uint32_t nbytes);
+void *fastWideMemoryCopy(void * restrict destination, const void * restrict source, uint32_t nbytes);
 
 /**
  * @brief Super fast assembly version of memcpy!
  * @warning This may broke something if the destination or source are not aligned
  */
-void *fastFastMemoryCopy(void *destination, const void *source, uint32_t nbytes);
+void *fastFastMemoryCopy(void * restrict destination, const void * restrict source, uint32_t nbytes);
 
 
 

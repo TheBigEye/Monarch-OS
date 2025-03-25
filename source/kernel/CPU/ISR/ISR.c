@@ -1,7 +1,6 @@
 #include "ISR.h"
 
 #include "../../drivers/keyboard.h"
-#include "../../drivers/COM/serial.h"
 
 #include "../../bugfault.h"
 
@@ -10,6 +9,8 @@
 #include "../PIT/timer.h"
 #include "../RTC/clock.h"
 #include "../HAL.h"
+
+#include "../../modules/terminal.h"
 
 
 /*
@@ -114,9 +115,9 @@ void ISR_handler(registers_t *registers) {
 
 /* Implement a custom IRQ handler for the given IRQ */
 void registerInterruptHandler(uint8_t irq, interrupt_t handler) {
-    comPrintFmt("[i] Registering IRQ %d to handler %p\n\n", irq, handler);
-    interrupt_handlers[irq] = handler;
+    fprintf(serial, "[i] Registering IRQ %d to handler %p\n\n", irq, handler);
 
+    interrupt_handlers[irq] = handler;
     OPERATION_WAIT
 }
 

@@ -1,7 +1,8 @@
 #ifndef _KERNEL_BUGFAULT_H
 #define _KERNEL_BUGFAULT_H 1
 
-#include <stdint.h>
+#include "../common/common.h"
+
 #include "CPU/ISR/ISR.h"
 
 /**
@@ -12,7 +13,7 @@
 #define THROW(message) triggerError(message, __FILE__, __LINE__);
 
 /**
- * @brief Weak assertion (if true)
+ * @brief Weak assertion
  *
  * @note If the condition is true, then an error is invoked and returns
  *       (This should be used within functions that are called)
@@ -27,7 +28,7 @@
     }
 
 /**
- * @brief Fatal assertion (if false)
+ * @brief Fatal assertion
  *
  * @note If the condition is not met (false), then an error is invoked
  *       terminating the program (this does not return)
@@ -36,11 +37,12 @@
  * @param message   Optional message to describe the assertion.
  */
 #define BUG_FATAL(condition, message)                                     \
-    if (!(condition)) {                                                   \
+    if ((condition)) {                                                   \
         ASM VOLATILE ("cli");                                             \
         triggerAssert(__FILE__, __func__, __LINE__, #condition, message); \
         ASM VOLATILE ("hlt");                                             \
     }
+
 
 /**
  * @brief Triggers a KERNEL PANIC!
@@ -56,6 +58,7 @@
  */
 void triggerPanic(const char *reason, uint32_t interrupt, uint32_t segment, registers_t *registers);
 
+
 /**
  * @brief Trigger a short kernel exception.
  *
@@ -64,6 +67,7 @@ void triggerPanic(const char *reason, uint32_t interrupt, uint32_t segment, regi
  * @param line The line number where the exception occurred.
  */
 void triggerError(const char *message, const char *file, uint32_t line);
+
 
 /**
  * @brief Trigger a kernel assertion failure.
@@ -75,5 +79,6 @@ void triggerError(const char *message, const char *file, uint32_t line);
  * @param message Description of what happened.
  */
 void triggerAssert(const char *file, const char *func, uint32_t line, const char *condition, const char *message);
+
 
 #endif /* _KERNEL_BUGFAULT_H */

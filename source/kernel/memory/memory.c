@@ -40,8 +40,8 @@ void *memoryCopy(void *destination, const void *source, uint32_t nbytes) {
  * @param nbytes        Number of bytes to copy
  * @return              Pointer to the destination memory block
  */
-void *fastMemoryCopy(void *destination, const void *source, uint32_t nbytes) {
-    int d0, d1, d2;
+void *fastMemoryCopy(void * restrict destination, const void * restrict source, uint32_t nbytes) {
+    register int d0, d1, d2;
     ASM VOLATILE (
         "rep\n\t"
         "movsb"
@@ -60,8 +60,8 @@ void *fastMemoryCopy(void *destination, const void *source, uint32_t nbytes) {
  * @param nbytes        Number of bytes to copy
  * @return              Pointer to the destination memory block
  */
-void *fastWideMemoryCopy(void *destination, const void *source, uint32_t nbytes) {
-    int d0, d1, d2;
+void *fastWideMemoryCopy(void * restrict destination, const void * restrict source, uint32_t nbytes) {
+    register int d0, d1, d2;
     ASM VOLATILE (
         "rep\n\t"
         "movsw"
@@ -76,8 +76,8 @@ void *fastWideMemoryCopy(void *destination, const void *source, uint32_t nbytes)
  * @brief Super fast assembly version of memcpy!
  * @warning This may broke something if the destination or source are not aligned
  */
-void *fastFastMemoryCopy(void *destination, const void *source, uint32_t nbytes) {
-    int d0, d1, d2;
+void *fastFastMemoryCopy(void * restrict destination, const void * restrict source, uint32_t nbytes) {
+    register int d0, d1, d2;
     ASM VOLATILE (
         "movl %%ecx, %%edx\n\t" // Save nbytes in edx for later
         "shrl $2, %%ecx\n\t"    // Divide nbytes by 4 to copy dwords
@@ -120,7 +120,7 @@ void *memorySet(void *destination, uint8_t value, uint32_t length) {
  * @return              Pointer to the destination memory block
  */
 void *fastMemorySet(void *destination, uint8_t value, uint32_t length) {
-    int d0, d1;
+    register int d0, d1;
     ASM VOLATILE (
         "rep\n\t"
         "stosb"
@@ -140,7 +140,7 @@ void *fastMemorySet(void *destination, uint8_t value, uint32_t length) {
  * @return              Pointer to the destination memory block
  */
 void *fastWideMemorySet(void *destination, uint16_t value, uint32_t length) {
-    int d0, d1;
+    register int d0, d1;
     ASM VOLATILE (
         "rep\n\t"
         "stosw"
@@ -156,7 +156,7 @@ void *fastWideMemorySet(void *destination, uint16_t value, uint32_t length) {
  * @warning Use this with caution, may break something ...
  */
 void *fastFastMemorySet(void *destination, uint8_t value, uint32_t length) {
-    int d0, d1, d2;
+    register int d0, d1, d2;
     uint32_t val4 = value | (value << 8) | (value << 16) | (value << 24); // Prepare the 4-byte value
     ASM VOLATILE (
         "movl %%ecx, %%edx\n\t" // Save length in edx for later

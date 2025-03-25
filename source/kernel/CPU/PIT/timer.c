@@ -3,8 +3,7 @@
 #include "../ISR/ISR.h"
 #include "../HAL.h"
 
-#include "../../../common/common.h"
-#include "../../drivers/COM/serial.h"
+#include "../../modules/terminal.h"
 
 
 /*
@@ -93,7 +92,7 @@ void initializeTimer() {
     writeByteToPort(PIT_TIMER_0_PORT, LOWER_BYTE(timer_reload)); // Low
     writeByteToPort(PIT_TIMER_0_PORT, UPPER_BYTE(timer_reload)); // high
 
-    comPrintStr("[i] Initializing PIT handler at IRQ0 ...\n");
+    fprintf(serial, "[i] Initializing PIT handler at IRQ0 ...\n");
 
     // Install the timerCallback function
     registerInterruptHandler(IRQ0, timerCallback);

@@ -1,13 +1,13 @@
 #include "bugfault.h"
 
-#include "../common/common.h"
-
 #include "CPU/ISR/ISR.h"
 #include "CPU/PIT/timer.h"
 #include "CPU/HAL.h"
-#include "drivers/console.h"
+
+#include "drivers/TTY/console.h"
+#include "modules/terminal.h"
 #include "drivers/speaker.h"
-#include "power/power.h"
+#include "drivers/power.h"
 
 #include "binaries.h"
 
@@ -57,7 +57,7 @@ void triggerPanic(const char *reason, uint32_t interrupt, uint32_t segment, regi
     setScreen(NULL);
     setCursor(0x3F);
 
-    ttyPutText(butterfly, 0, 1, (BG_BLACK | FG_LTRED));
+    ttyPutText(butterfly_logo, 0, 1, (BG_BLACK | FG_LTRED));
 
     ttyPutText(                            " Monarch OS "                                 ,  38, 20, (BG_LTGRAY | FG_BLACK));
     ttyPutText("A 32-bit device driver has corrupted critical system memory, resulting in",   8, 23, (BG_BLACK | FG_WHITE));
@@ -92,6 +92,8 @@ void triggerPanic(const char *reason, uint32_t interrupt, uint32_t segment, regi
         printStackTrace(registers->ebp, 39, 50);
     }
 
+    unregisterInterruptHandler(IRQ1);
+
     /* Explanation:
      * - EAX, EBX, ECX, EDX: General-purpose registers used in arithmetic operations and data storage.
      * - ESP (Stack Pointer): Points to the top of the current stack. Useful for stack tracing.
@@ -121,7 +123,7 @@ void triggerPanic(const char *reason, uint32_t interrupt, uint32_t segment, regi
  * @param line The line number where the exception occurred.
  */
 void triggerError(const char *message, const char *file, uint32_t line) {
-    ttyPrintOut("\033[33;40m[EXCEPTION RAISED]", "[%s] -> [@%s:%d]\n\r", message, file, line);
+    printl("\033[33;40m[EXCEPTION RAISED]", "[%s] -> [@%s:%d]\n\r", message, file, line);
 }
 
 
@@ -135,7 +137,7 @@ void triggerError(const char *message, const char *file, uint32_t line) {
  * @param message Description of what happened.
  */
 void triggerAssert(const char *file, const char *func, uint32_t line, const char *condition, const char *message) {
-    ttyPrintOut("\033[91;40m[ASSERTION FAILED]", "in section {%s : %s} at line {%d}\n\r", file, func, line);
-    ttyPrintLog("\033[91;40m | \n\r");
-    ttyPrintOut("\033[91;40m +--[AT CONDITION]", "(%s) -> [%s]\n\r", condition, message);
+    printl("\033[91;40m[ASSERTION FAILED]", "in section {%s : %s} at line {%d}\n\r", file, func, line);
+    printl("\033[91;40m |", "\n\r");
+    printl("\033[91;40m +--[AT CONDITION]", "(%s) -> [%s]\n\r", condition, message);
 }

@@ -3,6 +3,7 @@
 
 #include "../../common/common.h"
 
+void getDateTime(void);
 void getCalendar(void);
 
 #endif /* _UTIL_SHELLUTILS_H */

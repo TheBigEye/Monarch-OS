@@ -7,6 +7,7 @@
 # Source dir
 SOURCE_DIR = source
 ASSETS_DIR = assets
+SCRIPTS_DIR = scripts
 BITMAPS_DIR = $(ASSETS_DIR)/bitmaps
 BINARIES_DIR = $(SOURCE_DIR)/binaries
 
@@ -22,10 +23,10 @@ LD = i686-elf-ld
 
 # GCC compilation flags
 CCFLAGS := $(strip                  \
-    -std=c99                        \
+    -std=gnu99                      \
     -m32                            \
     -mfpmath=387                    \
-    -Os                             \
+    -O2                             \
     -g0                             \
     -fno-pie                        \
     -fno-ident                      \
@@ -64,15 +65,16 @@ LDFLAGS := $(strip                  \
 
 # Qemu virtual machine config
 QEMU_ARGS := $(strip                \
-    -boot menu=off                  \
+    -boot d                         \
     -m 32M                          \
     -cpu max                        \
+    -k en-us                        \
     -serial stdio                   \
     -display sdl,gl=off             \
     -device VGA,vgamem_mb=8         \
     -audiodev dsound,id=0           \
     -machine pcspk-audiodev=0       \
-    -machine q35                    \
+    -machine pc                     \
     -rtc base=localtime,clock=host  \
 )
 
@@ -89,12 +91,13 @@ SOURCES = $(wildcard                       \
 	$(SOURCE_DIR)/kernel/CPU/PIT/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/RTC/*.c       \
 	$(SOURCE_DIR)/kernel/CPU/*.c           \
+	$(SOURCE_DIR)/kernel/drivers/ATA/*.c   \
 	$(SOURCE_DIR)/kernel/drivers/COM/*.c   \
+	$(SOURCE_DIR)/kernel/drivers/TTY/*.c   \
 	$(SOURCE_DIR)/kernel/drivers/VGA/*.c   \
 	$(SOURCE_DIR)/kernel/drivers/*.c       \
 	$(SOURCE_DIR)/kernel/memory/*.c        \
-	$(SOURCE_DIR)/kernel/power/*.c         \
-	$(SOURCE_DIR)/kernel/utils/*.c         \
+	$(SOURCE_DIR)/kernel/modules/*.c       \
 	$(SOURCE_DIR)/kernel/*.c               \
 )
 
@@ -110,12 +113,13 @@ HEADERS = $(wildcard                       \
 	$(SOURCE_DIR)/kernel/CPU/PIT/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/RTC/*.h       \
 	$(SOURCE_DIR)/kernel/CPU/*.h           \
+	$(SOURCE_DIR)/kernel/drivers/ATA/*.h   \
 	$(SOURCE_DIR)/kernel/drivers/COM/*.h   \
+	$(SOURCE_DIR)/kernel/drivers/TTY/*.h   \
 	$(SOURCE_DIR)/kernel/drivers/VGA/*.h   \
 	$(SOURCE_DIR)/kernel/drivers/*.h       \
 	$(SOURCE_DIR)/kernel/memory/*.h        \
-	$(SOURCE_DIR)/kernel/power/*.h         \
-	$(SOURCE_DIR)/kernel/utils/*.h         \
+	$(SOURCE_DIR)/kernel/modules/*.h       \
 	$(SOURCE_DIR)/kernel/*.h               \
 )
 
@@ -125,15 +129,8 @@ BOOT_ASM = $(wildcard                      \
     $(SOURCE_DIR)/boot/*.asm               \
 )
 
-# General ASM files
-UTIL_ASM = $(wildcard                      \
-    $(SOURCE_DIR)/common/ASM/*.asm         \
-)
-
-
 # Object files
 OBJECTS = $(BOOT_ASM:.asm=.o)              \
-		  $(UTIL_ASM:.asm=.o)              \
           $(SOURCES:.c=.o)                 \
 
 
@@ -170,7 +167,7 @@ bitmaps: check-python
 	@if [ "$(NEED_BITMAPS)" = "1" ]; then                           \
 		echo -e "${GREEN}[-]${RESET} Processing image assets...";   \
 		mkdir -p $(BINARIES_DIR);                                   \
-		python $(ASSETS_DIR)/imgbin.py $(BITMAPS_DIR) -v;           \
+		python $(SCRIPTS_DIR)/imgbin.py "$(BITMAPS_DIR)" -v;     \
 		mv $(BITMAPS_DIR)/*.bin $(BINARIES_DIR)/;                   \
 		echo -e "${GREEN}[-]${RESET} Image processing complete";    \
 	else                                                            \
@@ -200,6 +197,12 @@ OS.iso: kernel.elf
 run: OS.iso
 	@echo -e "${GREEN}[-]${RESET} Starting QEMU virtual machine for '${BROWN}./$^${RESET}' ..."
 	@qemu-system-i386 -cdrom $< $(QEMU_ARGS)
+
+
+# Run the OS image in QEMU
+ata: OS.iso
+	@echo -e "${GREEN}[-]${RESET} Starting QEMU virtual machine for '${BROWN}./$^${RESET}' ..."
+	@qemu-system-i386 -cdrom $< $(QEMU_ARGS) -drive file=disk.img,index=0,if=ide,format=raw
 
 
 # Display the contents of the OS image

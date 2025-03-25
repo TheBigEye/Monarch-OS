@@ -19,11 +19,8 @@
         %1_size: dq %1_size - %1          ; define the size of the file
 %endmacro
 
-; include the kernel poem text
-INCLUDE_BIN bootpoem, "source/binaries/strings/bootpoem.txt"
-
 ; include the ascii art
-INCLUDE_BIN butterfly, "source/binaries/strings/butterfly.txt"
+INCLUDE_BIN butterfly_logo, "source/binaries/butterfly.txt"
 
 
 ; include wallapapers :)

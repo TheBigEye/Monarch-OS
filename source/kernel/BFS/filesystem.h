@@ -9,7 +9,7 @@
 typedef struct File {
     uint32_t size;
     char *name;
-    char content[MAX_CONTENT_LEN];
+    char *content;
     struct File *next;
 } File;
 

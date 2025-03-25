@@ -4,7 +4,7 @@
 #include "../BIOS.h"
 #include "../HAL.h"
 
-#include "../../drivers/COM/serial.h"
+#include "../../modules/terminal.h"
 #include "../../memory/memory.h"
 
 
@@ -32,6 +32,6 @@ static void coprocessorCallback(registers_t *regs) {
 
 
 void initializeCoprocessor(void) {
-    comPrintStr("[i] Initializing FPU handler at IRQ13 ...\n");
+    fprintf(serial, "[i] Initializing FPU handler at IRQ13 ...\n");
     registerInterruptHandler(IRQ13, coprocessorCallback);
 }

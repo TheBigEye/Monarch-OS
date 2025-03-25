@@ -4,10 +4,9 @@
 #include "../memory/memory.h"
 #include "../memory/heap.h"
 
-
-
 // BGL - Bitmap Graphics API
 // I like SDL so ... let's make a simple version of it
+// Imagine make videogames using this ... LOL
 
 // Helper function to clip rectangles
 static bool clipRects(Rect* src, Rect* dst, Rect* clip) {
@@ -246,3 +245,6 @@ void bglSetClipRect(Surface* surface, Rect* rect) {
         surface->clip_rect = *rect;
     }
 }
+
+
+

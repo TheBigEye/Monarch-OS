@@ -54,8 +54,8 @@ stublet:
 	push eax ; Header mutiboot magic
 	push ebx ; Header pointer to info structure
 
-    extern kernelMain
-    call kernelMain
+    extern butterfly
+    call butterfly
     jmp $
 
 
@@ -484,5 +484,5 @@ IRQ_15:
 ; downwards, so we declare the size of the data before declaring
 ; the identifier '_sys_stack'
 SECTION .bss
-    resb 8192               ; This reserves 8KBytes of stack memory here
+    resb 16384               ; This reserves 8KBytes of stack memory here
 _sys_stack:

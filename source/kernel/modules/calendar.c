@@ -1,7 +1,7 @@
 #include "calendar.h"
+#include "terminal.h"
 
 #include "../CPU/RTC/clock.h"
-#include "../drivers/console.h"
 
 static const char* months[12] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -12,9 +12,25 @@ static const uint8_t days_in_month[12] = {
     31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
-static const char* days[7] = {
+static const char* days_shorter[7] = {
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
+
+static const char* days_larger[7] = {
+    "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+};
+
+
+void getDateTime(void) {
+    time_t current_time;
+    clockGetTime(&current_time);
+
+    printf(" * Week: %s\n", days_larger[current_time.week_day - 1]);
+    printf(" * Date: %d/%d/%d%d\n", current_time.month_day, current_time.month, current_time.century, current_time.year);
+    printf(" * Time: %d:%d:%d\n", current_time.hour, current_time.minute, current_time.second);
+    printf(" * Leap: %s\n", clockIsLeap(current_time.year) ? "true" : "false");
+}
+
 
 void getCalendar(void) {
     time_t current_time;
@@ -35,31 +51,31 @@ void getCalendar(void) {
     // Calculate the starting day of the week for the month
     uint8_t start_day = (week_day - (month_day % 7) + 7) % 7;
 
-    ttyPrintFmt("%12s  %d\n", months[month - 1], (century * 100) + year);
+    printf("%12s  %d\n", months[month - 1], (century * 100) + year);
     for (uint8_t i = 0; i < 7; i++) {
-        ttyPrintFmt("%s ", days[i]);
+        printf("%s ", days_shorter[i]);
     }
-    ttyPrintFmt("\n");
+    printf("\n");
 
     for (uint8_t i = 0; i < start_day; i++) {
-        ttyPrintFmt("    ");
+        printf("    ");
     }
 
     for (uint8_t i = 1; i <= days_this_month; i++) {
         if (i == month_day) {
-            ttyPrintFmt("[%d]", i);
+            printf("[%d]", i);
         } else {
-            ttyPrintFmt(" %d ", i);
+            printf(" %d ", i);
         }
 
         // Add extra space for single-digit days to maintain alignment
         if (i < 10) {
-            ttyPrintFmt(" ");
+            printf(" ");
         }
 
         if ((i + start_day) % 7 == 0) {
-            ttyPrintFmt("\n");
+            printf("\n");
         }
     }
-    ttyPrintFmt("\n\n\r");
+    printf("\n\n\r");
 }

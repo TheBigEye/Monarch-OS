@@ -9,9 +9,18 @@
 void bglPlayWork(void) {
     // We create the main surface, we use existing bitmap pixels
     Surface* wallpaper = bglCreateSurfaceFrom(myhill_640, 640, 480);
+    bglFlipSurface(wallpaper, false, true); // We flip the wallpaper surface
 
     // We create another surface ...
     Surface* overlay = bglCreateSurfaceFrom(mywork_640, 640, 480);
+    if (!overlay) {
+        bglDestroySurface(wallpaper); // Clean up if we fail
+        return;
+    }
+
+    // bglResizeSurface(overlay, 640 / 2, 480 / 2);
+
+    // We need to set the color key for the overlay surface
     bglSetColorKey(overlay, PX_BLUE); // Blue color is transparency now ...
     bglSetBlendMode(overlay, BGL_BLEND_ALPHA); // Full alpha blending
 

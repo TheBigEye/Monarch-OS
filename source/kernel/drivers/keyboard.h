@@ -3,9 +3,9 @@
 
 #include "../../common/common.h"
 
+
 #define KBD_PORT 0x60
 #define KBD_CTRL 0x64
-
 
 #define KEY_BACKSPACE       0x0E
 #define KEY_CAPSLOCK        0x3A
@@ -39,15 +39,22 @@
 #define KEY_F09             0x43
 #define KEY_F10             0x44
 
-#define PROMPT  "\033[32;40m\n[@]\033[0m"
 
-void configureKeyboard(void);
+extern volatile uint8_t scancode;
 
-void waitPressKeyboard(uint8_t keycode);
+extern volatile bool keyboard_enabled;
+extern volatile bool capslock_enabled;
+
+extern const uint8_t key_layout[128][2];
+
 
 /**
  * Initializes the keyboard by registering the keyboard callback function.
  */
 void initializeKeyboard(void);
+
+
+void disableKeyboard(void);
+
 
 #endif /* _DRIVER_KEYBOARD_H */

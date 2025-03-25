@@ -104,6 +104,8 @@
         typedef unsigned short   WORD;
         typedef unsigned char    BYTE;
 
+        typedef unsigned int    size_t;
+
         /* Some math (yeah, maths sucks) */
 
         typedef struct { int16_t x, y; } Point;
@@ -127,32 +129,6 @@
 
     #endif /* _COMMON_TYPEDEFS */
 
-
-    /* Assembly implementations */
-
-    extern int asm_strlen(const char *string);
-    extern int asm_strcmp(const char *a, const char *b);
-
-    extern char *asm_strrev(char *string);
-
-    extern char asm_chrlwr(char chr);
-    extern char asm_chrupr(char chr);
-
-    extern char *asm_strlwr(char *string);
-    extern char *asm_strupr(char *string);
-
-    extern char *asm_strcat(char *destination, char *source);
-    extern char *asm_strncat(char *destination, const char *source, unsigned int limit);
-    extern char *asm_strcpy(char *destination, const char *source);
-    extern char *asm_strncpy(char *destination, const char *source, unsigned int limit);
-
-    extern uint8_t asm_insb(uint16_t port);
-    extern uint16_t asm_insw(uint16_t port);
-    extern void asm_outb(uint16_t port, uint8_t data);
-    extern void asm_outw(uint16_t port, uint16_t data);
-    extern void asm_getcpu(uint32_t reg, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
-
-
     /* Common system functions */
 
     double sqrt(int n);
@@ -168,7 +144,7 @@
     int strlen(const char *string);
     void strrev(char *string);
 
-    char *strcat(char *destination, char *source);
+    char *strcat(char *destination, const char *source);
     char *strncat(char *destination, const char *source, unsigned int limit);
     char *strcpy(char *destination, const char *source);
     char *strncpy(char *destination, const char *source, unsigned int limit);
@@ -177,7 +153,6 @@
     void strupr(char *string);
 
     void strint(int integer, char *buffer, int base);
-    void stradd(char string[], char num);
 
     bool streql(char *a, char *b);
     int strcmp(const char *a, const char *b);
@@ -191,5 +166,7 @@
     int strcspn(const char *string, const char *reject);
     char *strtok(char *string, const char *delimiter);
 
+    void strtrim(char *s);
+    int strfind(const char *s, char c);
 
 #endif /* ! _LIB_COMMON_H */

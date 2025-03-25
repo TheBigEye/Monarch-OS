@@ -18,15 +18,21 @@ DirtyRectList* bglCreateDirtyRectList(uint16_t max_rects);
 void bglDestroyDirtyRectList(DirtyRectList* list);
 void bglAddDirtyRect(DirtyRectList* list, Rect* rect);
 void bglClearDirtyRects(DirtyRectList* list);
+
 void bglUpdateRects(Surface* dst, Surface* src, DirtyRectList* list);
+void bglUpdateRect(Surface* dst, Surface* src, Rect* rect);
 
 // Drawing Functions
-void bglDrawPixel(Surface* surface, uint16_t x, uint16_t y, uint8_t color);
+void bglSetPixel(Surface* surface, uint16_t x, uint16_t y, uint8_t color);
+uint8_t bglGetPixel(Surface* surface, uint16_t x, uint16_t y);
 
-void bglFlipSurfaceVertical(Surface* surface, Rect* rect);
-void bglFlipSurfaceHorizontal(Surface* surface, Rect* rect);
 void bglCopySurfaceRegion(Surface* src, Rect* srcrect, Surface* dst, Rect* dstrect);
+
+// Surface transformation functions
 void bglScrollSurface(Surface* surface, Rect* rect, int16_t dx, int16_t dy);
+void bglResizeSurface(Surface* surface, uint16_t new_width, uint16_t new_height);
+void bglResizeSprite(Surface* sprite, uint16_t new_width, uint16_t new_height);
+void bglFlipSurface(Surface* surface, bool vertical, bool horizontal);
 
 /// Surface Region Management
 void bglFillCircle(Surface* surface, uint16_t x, uint16_t y, uint16_t radius, uint8_t color);

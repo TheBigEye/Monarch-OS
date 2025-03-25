@@ -41,8 +41,8 @@ inline void plotPixel(uint8_t color, uint16_t x, uint16_t y) {
 
     // Create a mask to isolate the specific bit for the pixel
     // 0x80 corresponds to the most significant bit of a byte,
-    // shifting it right by (x % 8) positions to align with the pixel position
-    uint8_t mask = (0x80 >> (x % 8));
+    // shifting it right by (x & 0x7) or (x % 8) positions to align with the pixel position
+    uint8_t mask = (0x80 >> (x & 0x7));
 
     writeByteToPort(SEQUENCER_INDEX, REG_SEQUENCER_MASK);
 	writeByteToPort(GRAPHICS_INDEX, 0x08);
@@ -85,7 +85,7 @@ uint8_t readPixel(uint16_t x, uint16_t y) {
     uint8_t color = 0x00;
 
     // Mask to isolate the bit corresponding to the pixel
-	uint8_t mask = 0x80 >> (x % 8);
+	uint8_t mask = 0x80 >> (x & 0x7);
 
 	writeByteToPort(GRAPHICS_INDEX, REG_GRAPHICS_MAP_READ);
 
@@ -142,7 +142,8 @@ void fillScreen(uint8_t color) {
  * @param w         Width of the bitmap in pixels
  * @param h         Height of the bitmap in pixels
  *
- * @deprecated This is slow, we should use the fast double-bufferd version
+ * @deprecated This is slow, we should use the fast double-bufferd version.
+ *             Only use this if you dont want allocate memory for an buffer
  */
 void drawBitmap(uint8_t *pixels, uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
     // Pointer to the start of the screen memory
@@ -179,6 +180,7 @@ void drawBitmap(uint8_t *pixels, uint16_t x, uint16_t y, uint16_t w, uint16_t h)
                 uint32_t byte_index = row_offset + (col >> 1);
                 uint8_t packed = pixels[byte_index];
                 uint8_t color;
+
                 if ((col & 1) == 0) {
                     // For even columns, extract the high nibble.
                     color = packed >> 4;
@@ -267,12 +269,14 @@ void drawBitmapFast(uint8_t *pixels, uint16_t x, uint16_t y, uint16_t w, uint16_
                 uint32_t byte_index = row_offset + (column >> 1);
                 uint8_t packed = pixels[byte_index];
                 uint8_t color;
-                if ((column & 1) == 0) {
-                    // Even column: extract the high nibble.
-                    color = packed >> 4;
-                } else {
+
+                // (column & 1) == 0?
+                if (column & 1) {
                     // Odd column: extract the low nibble.
                     color = packed & 0x0F;
+                } else {
+                    // Even column: extract the high nibble.
+                    color = packed >> 4;
                 }
 
                 // Determine the bit to set/clear in the temporary buffer.
@@ -403,24 +407,27 @@ void drawCharacter(unsigned char character, uint16_t x, uint16_t y, uint8_t colo
     uint8_t fgcolor = color & 0x0F;        // Extract foreground color
     uint8_t bgcolor = (color >> 4) & 0x0F; // Extract background color
 
-    // Get the glyph for the character from the font. The glyph is an 8x8 bitmap that represents the character.
-    // Each byte in the glyph represents one row of 8 pixels in the character.
+    // Get the glyph for the character from the font. The glyph is an 8x8 bitmap that represents the character
+    // Each byte in the glyph represents one row of 8 pixels in the character
     uint8_t *glyph = small_font + character * 8;
 
-    // Loop over each row in the glyph.
-    for (uint8_t cy = 0; cy < 8; cy++) {
-        // Loop over each column in the row.
-        for (uint8_t cx = 0; cx < 8; cx++) {
-            // Create a mask for the current pixel. The mask is a byte where only one bit is set.
-            // The position of the set bit corresponds to the position of the pixel in the row.
-            // For example, if cx is 0, the mask will be 10000000 in binary. If cx is 7, the mask will be 00000001.
-            uint8_t mask = 1 << (7 - cx);
+    // The 8x8 font bitmap have 64 pixels per character, sooo ...
+    for (uint8_t i = 0; i < 64; i++) {
 
-            // Draw the pixel at the corresponding position.
-            // If the corresponding bit in the row is set (i.e., the bitwise AND of the row and the mask is not zero),
-            // then the pixel is drawn with the foreground color. Otherwise, it is drawn with the background color.
-            plotPixel((glyph[cy] & mask) ? fgcolor : bgcolor, x + cx, y + cy);
-        }
+        // The hardcoded 64 could be a bad idea, but the performance is first LOL
+
+        uint8_t cx = i & 7;       // i % 8.
+        uint8_t cy = i >> 3;      // i / 8.
+
+        // Create a mask for the current pixel, the mask is a byte where only one bit is set
+        // The position of the set bit corresponds to the position of the pixel in the row
+        // For example, if cx is 0, the mask will be 10000000 in binary, if cx is 7, the mask will be 00000001
+        uint8_t mask = 1 << (7 - cx);
+
+        // Draw the pixel at the corresponding position
+        // If the corresponding bit in the row is set (i.e., the bitwise AND of the row and the mask is not zero),
+        // then the pixel is drawn with the foreground color. Otherwise, it is drawn with the background color
+        plotPixel((glyph[cy] & mask) ? fgcolor : bgcolor, x + cx, y + cy);
     }
 }
 

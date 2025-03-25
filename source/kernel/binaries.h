@@ -5,12 +5,8 @@
 
 #include "../common/common.h"
 
-
-/* The poem text :) */
-extern char bootpoem[];
-
 /* The butterfly ascii logo */
-extern char butterfly[];
+extern char butterfly_logo[];
 
 /// Wallpapers 480px
 

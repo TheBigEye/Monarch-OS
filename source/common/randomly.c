@@ -6,6 +6,7 @@ static uint32_t rotl(const uint32_t x, int k) {
     return (x << k) | (x >> (32 - k));
 }
 
+
 uint32_t randomGet() {
     const uint32_t result = rotl(state[1] * 5, 7) * 9;
     const uint32_t t = state[1] << 9;
@@ -20,6 +21,7 @@ uint32_t randomGet() {
 
     return result;
 }
+
 
 void randomSet(int seed) {
     state[0] = seed;

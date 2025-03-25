@@ -1,5 +1,6 @@
 #include "CPU.h"
-#include "../drivers/console.h"
+
+#include "../modules/terminal.h"
 
 #define EDX_SYSCALL                     (1 << 11)   // SYSCALL/SYSRET
 #define EDX_XD                          (1 << 20)   // Execute Disable Bit
@@ -7,10 +8,12 @@
 #define EDX_RDTSCP                      (1 << 27)   // RDTSCP and IA32_TSC_AUX
 #define EDX_64_BIT                      (1 << 29)   // 64-bit Architecture
 
+
 struct processor_info {
     uint32_t bit;
     const char* name;
 };
+
 
 static const struct processor_info features[29] = {
     /* {BIT, FEATURE NAME} |  DEFINITION     | DESCRIPTION                                   */
@@ -82,6 +85,7 @@ static const struct processor_info instructions[29] = {
     {(1 << 30), "RDRAND"}   /* ECX_RDRAND     | RDRAND Instruction                           */
 };
 
+
 static inline void cpuid(uint32_t reg, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
     ASM VOLATILE ("cpuid"
         : "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
@@ -89,9 +93,10 @@ static inline void cpuid(uint32_t reg, uint32_t *eax, uint32_t *ebx, uint32_t *e
     );
 }
 
+
 // Function to check and print features or instructions
 static void checkAndPrintInfo(const struct processor_info *table, uint32_t infoBits, const char* label) {
-    ttyPrintOut(LINE, "%s", label);
+    printl(LINE, "%s", label);
 
     const int columnWidth = 30;
 
@@ -102,30 +107,27 @@ static void checkAndPrintInfo(const struct processor_info *table, uint32_t infoB
 
         // Print padding spaces
         for (int j = 0; j < 4; ++j) {
-            ttyPrintStr(" ");
+            printf(" ");
         }
 
         // Check if the feature or instruction is supported
         bool supported = (infoBits & info->bit) != 0;
 
         // Print feature or instruction name
-        if (supported) {
-            ttyPutText(name, -1, -1, (BG_BLACK | FG_LTGREEN));
-        } else {
-            ttyPutText(name, -1, -1, (BG_BLACK | FG_LTRED));
-        }
+        printl(supported ? "\033[92;40m*" : "\033[91;40m!", "%s", name);
 
         // Calculate padding spaces for alignment
-        int padding = (columnWidth - strlen(name)) - 4;
+        int padding = (columnWidth - (strlen(name) + 1)) - 4;
 
         // Print padding spaces
         for (int j = 0; j < padding; ++j) {
-            ttyPrintStr(" ");
+            printf(" ");
         }
     }
 
-    ttyPrintStr("\n\n");
+    printf("\n\n");
 }
+
 
 void processorGetStatus(void) {
     // Register storage
@@ -138,7 +140,7 @@ void processorGetStatus(void) {
     cpuid(0, &largestStandardFunc, (uint32_t *)(vendor + 0), (uint32_t *)(vendor + 8), (uint32_t *)(vendor + 4));
     vendor[12] = '\0';
 
-    ttyPrintOut(LINE, "CPU Vendor: %s\n", vendor);
+    printl(LINE, "CPU Vendor: %s\n", vendor);
 
     // Function 0x01 - Feature Information
 
@@ -159,7 +161,7 @@ void processorGetStatus(void) {
         cpuid(0x80000001, &eax, &ebx, &ecx, &edx);
 
         if (edx & EDX_64_BIT) {
-            ttyPrintLog(INFO "Its an 64-bit proccessor!\n\n");
+            printl(INFO, "Its an 64-bit proccessor!\n\n");
         }
     }
 
@@ -177,9 +179,10 @@ void processorGetStatus(void) {
             ++p;
         }
 
-        ttyPrintOut(LINE, "CPU Name: %s\n", p);
+        printl(LINE, "CPU Name: %s\n", p);
     }
 }
+
 
 uint32_t processorGetTicks(void) {
     uint32_t ticks;

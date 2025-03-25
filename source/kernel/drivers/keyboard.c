@@ -4,21 +4,13 @@
 #include "../CPU/ISR/ISR.h"
 #include "../CPU/HAL.h"
 
-#include "VGA/video.h"
-#include "graphics.h"
-#include "console.h"
-#include "COM/serial.h"
-#include "speaker.h"
+#include "../modules/terminal.h"
 
-/* From external modules we import ... */
-extern void consoleMain(char *input);  /* The commands interpreter, in main.c */
+volatile uint8_t scancode = 0x00;
 
-#define KBD_SIZE 512
-#define TAB_SIZE 4      // TODO: this maybe could be a future user-side setting :)
+volatile bool capslock_enabled = false;
+volatile bool keyboard_enabled = false;
 
-static char buffer[KBD_SIZE] = {0};
-static bool capslock_enabled = false;
-static bool keyboard_enabled = false;
 
 /* US Keyboard layout */
 
@@ -26,7 +18,7 @@ static bool keyboard_enabled = false;
    an overflow if we try use the extended ascii symbols hight to 127
 */
 
-const unsigned char layout[128][2] = {
+const uint8_t key_layout[128][2] = {
     /* {U ,  L}  | CAPS OFF          | CAPS ON           | SC   */
     { 0 ,  0 }, /* Unknown           | Unknown           | 0x00 */
 
@@ -129,38 +121,7 @@ const unsigned char layout[128][2] = {
 
 /* TODO: Implement getchr() and basic input routines from C */
 
-/** @note If you are on a Virtual Machine, probablily this doesn't works, LOL */
-static void setKeyboardLeds(bool caps, bool num, bool scroll) {
-    uint8_t data = (caps << 2) | (num << 1) | scroll;
-    writeByteToPort(0x64, 0xED);
-    writeByteToPort(0x60, data);
-}
 
-/**
- * Remove the last character from a string (backspace).
- * @return True if a character was removed, false otherwise.
- */
-static bool backspace(char *string) {
-    int length = strlen(string);
-    if (length > 0) {
-        string[length - 1] = '\0';
-        return true;
-    }
-    return false;
-}
-
-/**
- * Handle the tab key by inserting spaces ...
- */
-static void tabulation(void) {
-    int length = strlen(buffer);
-    if ((length + TAB_SIZE) < KBD_SIZE) {
-        for (int i = 0; i < TAB_SIZE; i++) {
-            stradd(buffer, ' ');
-            ttyPutChar(' ', -1, -1, (BG_BLACK | FG_WHITE));
-        }
-    }
-}
 
 /**
  * Callback function for keyboard interrupt.
@@ -172,114 +133,37 @@ static void keyboardCallback(registers_t *regs) {
         return;
     }
 
-    // Wait for keyboard
-    while(readByteFromPort(0x64) & 0x02);
+    uint8_t sc = readByteFromPort(0x60);
 
-    /* The PIC leaves us the scancode in port 0x60 */
-    uint8_t scancode = readByteFromPort(0x60);
-
-    /* Check if the key was mapped in the layout */
-    if (scancode >= ARRAY_LEN(layout)) {
-        return;
-    }
-
-    // If caps enabled, we use the second column, else, the fisrt column in the layout
-    char character = layout[(int) scancode][capslock_enabled];
-
-    char output[4] = {character, '\0'};
-
-    if (scancode == KEY_BACKSPACE) {
-        if (backspace(buffer)) {
-            ttyPutText(output, -1, -1, (BG_BLACK | FG_WHITE));
-        }
-
-    } else if (scancode == KEY_TAB) {
-        tabulation();
-
-    // F1 - Clear the screen, like an Commodore
-    } else if (scancode == KEY_F01) {
-        initializeVGA(text_mode);
-        setScreen(NULL);
-        configureKeyboard();
-
-    // F2 - Change to text mode
-    } else if (scancode == KEY_F02) {
-        setScreen(NULL);
-        initializeVGA(video_mode);
-        fillScreen(0x00);
-
-    // ENTER - Send the command
-    } else if (scancode == KEY_ENTER || scancode == KEY_RETURN) {
-        consoleMain(buffer);
-        configureKeyboard();
-
-    // Toggle caps lock
-    } else if (scancode == KEY_CAPSLOCK) {
-        capslock_enabled = !capslock_enabled;
-        playBeep(capslock_enabled ? 220 : 440, 16);
-        setKeyboardLeds(capslock_enabled, false, false);
-
-    // Write the character
+    // If key released (bit 7 set)
+    if (sc & 0x80) {
+        // No action needed on key release
     } else {
-        // Check if there is enough space in the buffer to append the letter
-        if ((strlen(buffer) + 1) < KBD_SIZE) {
-
-            if (getCharacter() == ' ' || getCharacter() == '\0') {
-                stradd(buffer, character);
-
-                // Finally we print the char into the screen
-                ttyPutText(output, -1, -1, (BG_BLACK | FG_LTGRAY));
-            }
+        // Key pressed
+        if (sc == 0x3A) {
+            capslock_enabled = !capslock_enabled; // Toggle caps lock state
         }
+        scancode = sc;
     }
 
     UNUSED(regs);
 }
 
-/* Resets the prompt */
-void configureKeyboard(void) {
-    keyboard_enabled = false;
-    buffer[0] = '\0';
-    setCursor(0x00);
-    ttyPrintOut(PROMPT, "%c ", (char)255);
-    moveCursor(-1, 0);
-    keyboard_enabled = true;
-}
-
-void waitPressKeyboard(uint8_t keycode) {
-    // Disable keyboard handling
-    keyboard_enabled = false;
-
-    // Clear the keyboard buffer
-    while (readByteFromPort(0x64) & 1) {
-        readByteFromPort(0x60);
-    }
-
-    uint8_t key_pressed = 0;
-
-    do {
-        // Wait for data to be available on port 0x60
-        while (!(readByteFromPort(0x64) & 0x01));
-
-        // Read the scan code from port 0x60
-        key_pressed = readByteFromPort(0x60);
-
-        // Check if the pressed key matches the expected keycode or if any key was pressed when keycode is 0
-    } while ((keycode && key_pressed != keycode) || (!keycode && !key_pressed));
-
-    // Clear the keyboard buffer again
-    while (readByteFromPort(0x64) & 1) {
-        readByteFromPort(0x60);
-    }
-
-    // Re-enable keyboard handling
-    keyboard_enabled = true;
-}
 
 /**
  * Initializes the keyboard by registering the keyboard callback function.
  */
 void initializeKeyboard(void) {
-    comPrintFmt("[i] Initializing keyboard handler at IRQ1\n");
+    keyboard_enabled = true;
+
+    fprintf(serial, "[i] Initializing keyboard handler at IRQ1\n");
     registerInterruptHandler(IRQ1, keyboardCallback);
+}
+
+
+void disableKeyboard(void) {
+    keyboard_enabled = false;
+
+    fprintf(serial, "[i] Cleaning keyboard handler at IRQ1\n");
+    unregisterInterruptHandler(IRQ1);
 }

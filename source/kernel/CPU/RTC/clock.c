@@ -4,7 +4,7 @@
 #include "../BIOS.h"
 #include "../HAL.h"
 
-#include "../../drivers/COM/serial.h"
+#include "../../modules/terminal.h"
 #include "../../memory/memory.h"
 
 /*
@@ -100,6 +100,6 @@ void initializeClock() {
     writeRegisterValue(0x0B, status);
     readRegisterValue(0x0C);
 
-    comPrintStr("[i] Initializing RTC handler at IRQ8 ...\n");
+    fprintf(serial, "[i] Initializing RTC handler at IRQ8 ...\n");
     registerInterruptHandler(IRQ8, clockCallback);
 }

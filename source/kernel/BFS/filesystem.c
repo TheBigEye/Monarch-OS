@@ -2,6 +2,7 @@
 
 #include "../memory/heap.h"
 #include "../memory/memory.h"
+#include "../modules/terminal.h"
 
 /*
  * My 'Temp File System' implementation (BFS - Butterfly File System).
@@ -11,11 +12,6 @@
  * initrd was kinda meh and FAT16 and ext2 were... well, let's just say they were a bit too
  * much drama for this project. So here we are, making our own file system, because why not?
 */
-
-/* from console.c we import ... */
-
-extern void ttyPrintStr(const char *string);
-extern void ttyPrintFmt(const char *format, ...);
 
 
 /** The File system's root directory */
@@ -61,31 +57,31 @@ static void bfsCreateTree(Directory *directory, uint8_t level, bool *branch_flag
     for (uint8_t i = 0; i < (level - 1); ++i) {
         if (branch_flags[i]) {
             // Print vertical line if there is a branch at this level
-            ttyPrintStr("|    ");
+            printf("|    ");
         } else {
             // Print spaces if there is no branch
-            ttyPrintStr("     ");
+            printf("     ");
         }
     }
 
     // Print the directory name with a vertical line or '+' based on the level
     if (level > 0) {
-        ttyPrintStr("|\n"); // Print vertical line before directory name
+        printf("|\n"); // Print vertical line before directory name
         for (uint8_t i = 0; i < (level - 1); ++i) {
             if (branch_flags[i]) {
                 // Print vertical line if there is a branch
-                ttyPrintStr("|    ");
+                printf("|    ");
             } else {
                 // Print spaces if there is no branch
-                ttyPrintStr("     ");
+                printf("     ");
             }
         }
 
         // Print directory name with tree indicator
-        ttyPrintFmt("+---[%s]\n", directory->name);
+        printf("+---[%s]\n", directory->name);
     } else {
         // Print root directory name without vertical line
-        ttyPrintFmt("+---[%s]\n", directory->name);
+        printf("+---[%s]\n", directory->name);
     }
 
     /// Print all files in the current directory
@@ -94,27 +90,27 @@ static void bfsCreateTree(Directory *directory, uint8_t level, bool *branch_flag
         // Print leading characters for each file based on the level
         for (uint8_t i = 0; i < level; ++i) {
             if (branch_flags[i]) {
-                ttyPrintStr("|    "); // Print vertical line if there is a branch
+                printf("|    "); // Print vertical line if there is a branch
             } else {
-                ttyPrintStr("     "); // Print spaces if there is no branch
+                printf("     "); // Print spaces if there is no branch
             }
         }
 
         // Print vertical line before file name
-        ttyPrintStr("|\n");
+        printf("|\n");
 
         for (uint8_t i = 0; i < level; ++i) {
             if (branch_flags[i]) {
                 // Print vertical line if there is a branch
-                ttyPrintStr("|    ");
+                printf("|    ");
             } else {
                 // Print spaces if there is no branch
-                ttyPrintStr("     ");
+                printf("     ");
             }
         }
 
         // Print the file name
-        ttyPrintFmt("+--->%s\n", file->name, file->size);
+        printf("+--->%s\n", file->name, file->size);
         file = file->next;  // Move to the next file in the list
     }
 
@@ -170,36 +166,88 @@ Directory *bfsCreateDirectory(Directory *parent, const char *name) {
 }
 
 
+Directory *bfsFindDirectoryRel(Directory *start, const char *name) {
+    Directory *dir = start->subdirs;
+    while (dir) {
+        if (strcmp(dir->name, name) == 0) {
+            return dir;
+        }
+        dir = dir->next;
+    }
+    return NULL;
+}
+
 Directory *bfsFindDirectory(const char *path) {
-    Directory *directory = BFS_PRIMARY_DIR;
-    if (path[0] == '/') {
-        path++; // Skip the first '/'
+    // Handle empty path
+    if (!path || !*path) {
+        return BFS_CURRENT_DIR;
     }
 
-    char temp[MAX_NAME_LEN];
-    while (*path) {
-        const char *slash = strchr(path, '/');
-        if (slash) {
-            strncpy(temp, path, slash - path + 1);
-            temp[slash - path] = '\0';
-            path = slash + 1;
-        } else {
-            strcpy(temp, path);
-            path += strlen(path);
+    // If path starts with '/', start from root
+    Directory *current = (path[0] == '/') ? BFS_PRIMARY_DIR : BFS_CURRENT_DIR;
+    const char *next = path;
+
+    // Skip leading slash if present
+    if (*next == '/') {
+        next++;
+    }
+
+    // Handle root directory
+    if (!*next) {
+        return BFS_PRIMARY_DIR;
+    }
+
+    char part[MAX_NAME_LEN] = {0};
+    uint32_t pos = 0;
+
+    // Parse each component of the path
+    while (*next) {
+        // Reset part buffer
+        pos = 0;
+        memorySet(part, 0, MAX_NAME_LEN);
+
+        // Skip any leading slashes
+        while (*next == '/') next++;
+        if (!*next) break;
+
+        // Copy characters until next slash or end
+        while (*next && *next != '/') {
+            if (pos < MAX_NAME_LEN - 1) {
+                part[pos++] = *next;
+            }
+            next++;
+        }
+        part[pos] = '\0';
+
+        // Handle special directory names
+        if (strcmp(part, ".") == 0) {
+            continue;
+        } else if (strcmp(part, "..") == 0) {
+            if (current->parent) {
+                current = current->parent;
+            }
+            continue;
         }
 
-        Directory *subdir = directory->subdirs;
-        while ((subdir) && (strcmp(subdir->name, temp) != 0)) {
+        // Look for the directory in current's subdirectories
+        Directory *found = NULL;
+        Directory *subdir = current->subdirs;
+
+        while (subdir) {
+            if (strcmp(subdir->name, part) == 0) {
+                found = subdir;
+                break;
+            }
             subdir = subdir->next;
         }
 
-        if (!subdir) {
-            return NULL; // Directory not found
+        if (!found) {
+            return NULL;
         }
-
-        directory = subdir;
+        current = found;
     }
-    return directory;
+
+    return current;
 }
 
 
@@ -253,6 +301,7 @@ void bfsRemoveFile(Directory *parent, const char *name) {
     }
 }
 
+
 void bfsRemoveDirectory(Directory *directory) {
     if (!directory) return;
 
@@ -284,7 +333,7 @@ void bfsWriteFile(File *file, const char *content) {
 
 
 void bfsReadFile(File *file) {
-    ttyPrintFmt("# Content of %s: %s\n", file->name, file->content);
+    printf("# Content of %s: %s\n", file->name, file->content);
 }
 
 

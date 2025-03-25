@@ -13,6 +13,7 @@ double sqrt(int n) {
     return x;
 }
 
+
 double factorial(int n) {
     double fact = 1;
     while (n > 1) fact *= n--;
@@ -34,7 +35,7 @@ int atoi(const char *string) {
     int base = 0;
 
     // Ignore whitespaces
-    while (*string == ' ') string++;
+    while (*string == ' ' || *string == '\t' || *string == '\n') string++;
 
     // Check sign
     if (*string == '-' || *string == '+') {
@@ -216,14 +217,16 @@ char *htoa(int integer) {
     return buffer; // Return the converted hexadecimal string
 }
 
+
 /**
- * Calculate the length of a string (strlen).
+ * Calculate the length of a string
  */
 int strlen(const char *string) {
     const char *pointer = string;
     while (*(pointer++));
     return pointer - string - 1;
 }
+
 
 /**
  * Reverse a string (strrev).
@@ -243,17 +246,14 @@ void strrev(char *string) {
     }
 }
 
+
 /**
  * Concatenate two strings (strcat).
  */
-char *strcat(char *destination, char *source) {
-    char *end = destination + strlen(destination);
-
-    while (*source != '\0') {
-        *end++ = *source++;
-    }
-
-    *end = '\0';
+char *strcat(char *destination, const char *source) {
+    char *pointer = destination;
+    while (*pointer) pointer++;        // We go util the null terminator
+    while ((*pointer++ = *source++));  // Copy the source, and the '\0'
     return destination;
 }
 
@@ -293,6 +293,7 @@ char *strcpy(char *destination, const char *source) {
     return destination;
 }
 
+
 // strncpy
 char *strncpy(char *destination, const char *source, unsigned int limit) {
     unsigned int i;
@@ -307,24 +308,13 @@ char *strncpy(char *destination, const char *source, unsigned int limit) {
 }
 
 
-/**
- * Append a character to a string (append).
- *
- * @param string The input string.
- * @param num The character to append.
- */
-void stradd(char string[], char num) {
-    int length = strlen(string);
-    string[length] = num;
-    string[length + 1] = '\0';
-}
-
 /** String to uppercase */
 void strlwr(char *string) {
     do {
         *string = toLower(*string);
     } while (*(string++));
 }
+
 
 /** String to uppercase */
 void strupr(char *string) {
@@ -395,6 +385,7 @@ bool streql(char *a, char *b) {
 
     return true;
 }
+
 
 /**
  * Compares two strings for equality.
@@ -571,4 +562,54 @@ char *strtok(char *string, const char *delimiter) {
     position = *position ? (*position = 0, position + 1) : 0;
 
     return string;
+}
+
+
+/**
+ * @brief Removes leading and trailing whitespace characters from a string.
+ * Whitespace characters include spaces, tabs, and newlines.
+ *
+ * @param string The string to trim
+ */
+void strtrim(char *string) {
+    if (!string || !*string) {
+        return;
+    }
+
+    uint32_t head = 0; // Pointer to the start of the string
+    uint32_t tail = strlen(string) - 1; // Pointer to the end of the string
+
+    // First we find the first non-whitespace character
+    while (string[head] == ' ' || string[head] == '\t' || string[head] == '\n') {
+        head++;
+    }
+
+    // Then we find the last non-whitespace character
+    while (string[tail] == ' ' || string[tail] == '\t' || string[tail] == '\n') {
+        tail--;
+    }
+
+    // If the string is empty or all whitespace, set it to an empty string
+    if (head > tail) {
+        string[0] = '\0';
+        return;
+    }
+
+    // Move the non-whitespace characters to the beginning of the string
+    for (uint32_t i = 0; i <= tail - head; i++) {
+        string[i] = string[i + head];
+    }
+
+    // Null-terminate the string
+    string[tail - head + 1] = '\0';
+}
+
+
+int strfind(const char *s, char c) {
+    for (uint32_t i = 0; s[i] != '\0'; i++) {
+        if (s[i] == c) {
+            return i;
+        }
+    }
+    return -1;
 }

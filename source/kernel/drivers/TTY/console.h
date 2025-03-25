@@ -1,8 +1,7 @@
 #ifndef DRIVER_CONSOLE_H_
 #define DRIVER_CONSOLE_H_ 1
 
-#include "../../common/common.h"
-
+#include "../../../common/common.h"
 
 /* Foreground colors */
 #define FG_BLACK            0x00 // Black foreground attribute
@@ -41,13 +40,8 @@
 #define BG_BKYELLOW         0xE0 // Blinking yellow background attribute
 #define BG_BKWHITE          0xF0 // Blinking white background attribute
 
-
-/* I should put these somewhere else, but for now it's fine */
-#define ERROR   "\033[91;40m[!] "
-#define INFO    "\033[92;40m[i] "
-#define LINE    "\033[93;40m[o] \033[0m"
-#define WARN    "\033[33;40m[!] \033[0m"
-#define INIT    "\033[92;40m[...] \033[0m"
+#define TTY_CURSOR_SHOW   0x00
+#define TTY_CURSOR_HIDE   0x3F
 
 
 /**
@@ -121,46 +115,7 @@ void ttyPrintStr(const char *string);
 void ttyPrintLog(const char *string);
 
 
-/**
- * ### Prints formatted output to the screen (printf)
- *
- * - #### Arguments:
- *     `format`: The format string containing format specifiers.
- *     `...`   : Additional arguments corresponding to the format specifiers.
- *
- * - #### Supported format specifiers:
- *     `%d` or `%i` for integers.
- *     `%f` for floats.
- *     `%x` for hexadecimal (lowercase) and `%X` for hexadecimal (uppercase).
- *     `%o` for octal.
- *     `%s` for strings.
- *     `%c` for characters.
- *
- * - #### Flags:
- *     `-` : Left-justify within the given field width.
- *     `0` : Pad with zeros instead of spaces.
- *
- * - #### Optional Width and Precision:
- *     `*` : Width or precision specified by an integer argument.
- *     `.` : Precision specified by an integer argument.
- *
- * - #### Length Specifiers:
- *     `l` : For long integers.
- *     `h` : For short integers.
- *
- * - #### NOTE:
- *     If an unsupported specifier is encountered, it prints `%` followed by the unsupported specifier.
- */
-void ttyPrintFmt(const char *format, ...);
-
-
-/**
- * Print a pretty formatted output to the console (printf)
- */
-void ttyPrintOut(const char *prompt, const char *format, ...);
-
-
 void moveCursor(uint16_t col, uint16_t row);
-char getCharacter(void);
+
 
 #endif /* DRIVER_SCREEN_H_ */

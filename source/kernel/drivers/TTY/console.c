@@ -1,8 +1,8 @@
 #include "console.h"
-#include "VGA/video.h"
+#include "../VGA/video.h"
 
-#include "../CPU/HAL.h"
-#include "../memory/memory.h"
+#include "../../CPU/HAL.h"
+#include "../../memory/memory.h"
 
 
 /* TODO: OPTIMIZE THE SIZE FOR THIS FILE! */
@@ -293,198 +293,6 @@ static uint8_t parseScapeSequence(const char **string) {
 }
 
 
-static void parseVariadicFormat(const char *format, va_list args) {
-    // Flags and parameters for formatting
-    bool leftJustify, zeroPadding, precisionSpecified;
-    int minWidth, precision;
-
-    // Loop through the format string until the end
-    while (*format != '\0') {
-        if (*format == '%') { // Found a format specifier
-            format++; // Move past the '%'
-
-            // Reset flags and parameters for each format specifier
-            leftJustify = false; // Flag for left justification
-            zeroPadding = false; // Flag for zero padding
-            minWidth = 0; // Minimum field width
-            precision = 0; // Precision (number of digits for numeric types)
-            precisionSpecified = false; // Flag indicating if precision is specified
-
-            // Parse flags (such as '-' for left justify, '0' for zero padding)
-            while (*format == '-' || *format == '0') {
-                if (*format == '-') {
-                    leftJustify = true; // Enable left justification flag
-                } else if (*format == '0') {
-                    zeroPadding = true; // Enable zero padding flag
-                }
-                format++; // Move to the next character after parsing the flag
-            }
-
-            // Parse minimum field width (optional '*')
-            if (*format == '*') {
-                minWidth = va_arg(args, int); // Fetch width argument from va_list
-                format++; // Move past the '*'
-            } else if (*format >= '0' && *format <= '9') {
-                minWidth = atoi(format); // Convert string to integer for width
-                while (*format >= '0' && *format <= '9') {
-                    format++; // Move past the digits of the width
-                }
-            }
-
-            // Parse precision (optional '.')
-            if (*format == '.') {
-                format++; // Move past the '.'
-                precisionSpecified = true; // Precision is specified
-                if (*format == '*') {
-                    precision = va_arg(args, int); // Fetch precision argument
-                    format++; // Move past the '*'
-                } else if (*format >= '0' && *format <= '9') {
-                    precision = atoi(format); // Convert string to integer for precision
-                    while (*format >= '0' && *format <= '9') {
-                        format++; // Move past the digits of the precision
-                    }
-                } else {
-                    precision = 0; // Precision is zero if not specified
-                }
-            }
-
-            // Handle length specifier (e.g., 'l' for long, 'h' for short)
-            char length = '\0'; // Initialize length specifier
-            if (*format == 'l' || *format == 'h') {
-                length = *format; // Store length specifier
-                format++; // Move past the length specifier
-            }
-
-            // Handle format specifiers
-            switch (*format) {
-                case 'd': case 'i': { // Integer format specifier
-                    char buffer[16]; // Buffer for integer to string conversion
-
-                    /// Fetch and handle different integer types based on length specifier
-
-                    if (length == 'l') { // Long length:
-                        long value = va_arg(args, long); // Fetch long integer argument
-                        strint(value, buffer, 10); // Convert to decimal string
-                    } else if (length == 'h') { // Short length
-                        short value = (short) va_arg(args, int); // Fetch short integer argument
-                        strint(value, buffer, 10); // Convert to decimal string
-                    } else {
-                        int value = va_arg(args, int); // Fetch integer argument
-                        strint(value, buffer, 10); // Convert to decimal string
-                    }
-
-                    int length = strlen(buffer); // Calculate length of the string
-
-                    // Handle precision (padding with zeros)
-                    if (precisionSpecified && precision > length) {
-                        for (int i = 0; i < precision - length; i++) {
-                            ttyPutChar('0', -1, -1, (BG_BLACK | FG_DKGRAY)); // Output padding zeros
-                        }
-                    }
-
-                    // Handle justification and padding
-                    if (leftJustify) {
-                        ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output value
-                        for (int i = length; i < minWidth; i++) {
-                            ttyPutChar(' ', -1, -1, (BG_BLACK | FG_DKGRAY)); // Pad with spaces
-                        }
-                    } else {
-                        for (int i = length; i < minWidth; i++) {
-                            ttyPutChar(zeroPadding ? '0' : ' ', -1, -1, (BG_BLACK | FG_DKGRAY)); // Pad with zeros or spaces
-                        }
-                        ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output value
-                    }
-                    break;
-                }
-
-                case 'f': { // Float format specifier
-                    double value = va_arg(args, double); // Fetch double argument
-                    char *buffer = ftoa(value); // Convert double to string
-                    ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output value
-                    break;
-                }
-
-                case 'x': case 'X': { // Hexadecimal format specifier
-                    unsigned int value = va_arg(args, unsigned int); // Fetch unsigned integer argument
-                    char buffer[16]; // Buffer for integer to hexadecimal string conversion
-                    strint(value, buffer, 16); // Convert to hexadecimal string
-
-                    // Convert to lowercase or uppercase based on specifier ('x' or 'X')
-                    if (*format == 'x') {
-                        strlwr(buffer); // Convert to lowercase
-                    } else {
-                        strupr(buffer); // Convert to uppercase
-                    }
-
-                    ttyPutText("0x", -1, -1, (BG_BLACK | FG_DKGRAY)); // Output prefix "0x"
-                    ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output hexadecimal value
-                    break;
-                }
-
-                case 'p': { // Pointer format specifier
-                    void *value = va_arg(args, void *); // Fetch void pointer argument
-                    uintptr_t addr = (uintptr_t)value; // Cast pointer to uintptr_t
-                    char buffer[16]; // Buffer for pointer to hexadecimal string conversion
-                    strint(addr, buffer, 16); // Convert pointer to hexadecimal string
-                    strlwr(buffer); // Convert to lowercase
-                    ttyPutText("0x", -1, -1, (BG_BLACK | FG_DKGRAY)); // Output prefix "0x"
-                    ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output hexadecimal value
-                    break;
-                }
-
-                case 'o': { // Octal format specifier
-                    unsigned int value = va_arg(args, unsigned int); // Fetch unsigned integer argument
-                    char buffer[16]; // Buffer for integer to octal string conversion
-                    strint(value, buffer, 8); // Convert to octal string
-                    ttyPutText(buffer, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output octal value
-                    break;
-                }
-
-                case 's': { // String format specifier
-                    char *value = va_arg(args, char *); // Fetch string argument
-                    int length = strlen(value); // Calculate length of the string
-
-                    // Truncate string if precision is specified and shorter than actual length
-                    if (precisionSpecified && precision < length) {
-                        value[precision] = '\0'; // Truncate string
-                        length = precision; // Update length to truncated length
-                    }
-
-                    // Handle justification and padding
-                    if (leftJustify) {
-                        ttyPutText(value, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output value
-                        for (int i = length; i < minWidth; i++) {
-                            ttyPutChar(' ', -1, -1, (BG_BLACK | FG_DKGRAY)); // Pad with spaces
-                        }
-                    } else {
-                        for (int i = length; i < minWidth; i++) {
-                            ttyPutChar(zeroPadding ? '0' : ' ', -1, -1, (BG_BLACK | FG_DKGRAY)); // Pad with zeros or spaces
-                        }
-                        ttyPutText(value, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output value
-                    }
-                    break;
-                }
-
-                case 'c': { // Character format specifier
-                    int value = va_arg(args, int); // Fetch integer argument (char is promoted to int)
-                    ttyPutChar((char)value, -1, -1, (BG_BLACK | FG_DKGRAY)); // Output character
-                    break;
-                }
-
-                default: { // Unknown format specifier
-                    ttyPutChar('%', -1, -1, (BG_BLACK | FG_LTGRAY)); // Output '%'
-                    ttyPutChar(*format, -1, -1, (BG_BLACK | FG_LTGRAY)); // Output unknown specifier
-                    break;
-                }
-            }
-        } else {
-            ttyPutChar(*format, -1, -1, (BG_BLACK | FG_LTGRAY)); // Output regular character
-        }
-        format++; // Move to the next character in the format string
-    }
-}
-
-
 /**
  * Get and print all the avialible charaters from the BIOS charset
  */
@@ -596,67 +404,17 @@ void ttyPrintLog(const char *string) {
 }
 
 
-/*  If it weren't for VSCODE problems, I could had used doxygen here :(
- *  https://stackoverflow.com/questions/76471935/line-breaks-are-not-preserved-following-brief-and-similar-doxygen-keywords-in-t)
-*/
-
-/**
- * ### Prints formatted output to the screen (printf)
- *
- * - #### Arguments:
- *     `format`: The format string containing format specifiers.
- *     `...`   : Additional arguments corresponding to the format specifiers.
- *
- * - #### Supported format specifiers:
- *     `%d` or `%i` for integers.
- *     `%f` for floats.
- *     `%x` for hexadecimal (lowercase) and `%X` for hexadecimal (uppercase).
- *     `%o` for octal.
- *     `%s` for strings.
- *     `%c` for characters.
- *
- * - #### Flags:
- *     `-` : Left-justify within the given field width.
- *     `0` : Pad with zeros instead of spaces.
- *
- * - #### Optional Width and Precision:
- *     `*` : Width or precision specified by an integer argument.
- *     `.` : Precision specified by an integer argument.
- *
- * - #### Length Specifiers:
- *     `l` : For long integers.
- *     `h` : For short integers.
- *
- * - #### NOTE:
- *     If an unsupported specifier is encountered, it prints `%` followed by the unsupported specifier.
- */
-void ttyPrintFmt(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-
-    parseVariadicFormat(format, args);
-
-    va_end(args);
-}
 
 
 /**
- * Print a pretty formatted output to the console (printf)
- */
-void ttyPrintOut(const char *prompt, const char *format, ...) {
-    ttyPrintLog(prompt);
-
-    va_list args;
-    va_start(args, format);
-
-    parseVariadicFormat(format, args);
-
-    va_end(args);
-}
-
-
-/*
- * Updates the cursor position on screen
+ * @brief Moves the hardware cursor to the specified position in the text mode console
+ *
+ * @param col Number of columns to move right from current position (X offset)
+ * @param row Number of rows to move down from current position (Y offset)
+ *
+ * @note Position is bound-checked against TEXTMODE_WIDTH and TEXTMODE_HEIGHT.
+ * If the resulting position would be out of bounds, the function returns without
+ * moving the cursor.
  */
 void moveCursor(uint16_t col, uint16_t row) {
     writeByteToPort(0x3D4, 0x0F);
@@ -676,16 +434,4 @@ void moveCursor(uint16_t col, uint16_t row) {
     writeByteToPort(0x3D5, (uint8_t) (newpos & 0xFF));
     writeByteToPort(0x3D4, 0x0E);
     writeByteToPort(0x3D5, (uint8_t) ((newpos >> 8) & 0xFF));
-}
-
-
-/*
- * Get the last character from the video buffer
- */
-char getCharacter(void) {
-    writeByteToPort(0x3D4, 0x0F);
-    uint16_t pos = readByteFromPort(0x3D5);
-    writeByteToPort(0x3D4, 0x0E);
-    pos |= ((uint16_t) readByteFromPort(0x3D5)) << 8;
-    return ((uint16_t *) TEXTMODE_BUFFER)[pos] & 0xFF;
 }
