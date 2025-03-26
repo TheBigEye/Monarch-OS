@@ -1,0 +1,111 @@
+name: Build and Release
+
+on:
+  push:
+    paths:
+      - 'source/kernel/version.c'
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */12 * * *" # <---- We run this each 12 hours
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04  # Windows sucks for this >:V
+
+    steps:
+      ### CHECKOUT AND VERSION EXTRACTION ###
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get Kernel Version
+        id: get_version
+        run: |
+          version=$(grep -oP '__kernel_version\s*=\s*"\K[0-9]+\.[0-9]+\.[0-9]+' source/kernel/version.c)
+          if [ -n "$version" ]; then
+            echo "VERSION=$version" >> $GITHUB_ENV
+          else
+            echo "Kernel version not found in 'source/kernel/version.c'"
+            exit 1
+          fi
+
+      - name: Check if tag already exists
+        id: check_tag
+        run: |
+          tag="v${{ env.VERSION }}"
+          git fetch --tags
+          if git tag --list | grep -q "$tag"; then
+            echo "Tag '$tag' already exists. Exiting workflow."
+            echo "continue=false" >> $GITHUB_OUTPUT
+          else
+            echo "Tag '$tag' not found. Proceeding with release."
+            echo "continue=true" >> $GITHUB_OUTPUT
+          fi
+
+      ### SETUP ENVIRONMENT ###
+      - name: Install Required Packages
+        if: steps.check_tag.outputs.continue == 'true'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc-multilib \
+            libstdc++6:i386 \
+            libgcc-s1:i386 \
+            make \
+            nasm \
+            python3 \
+            python3-pip \
+            xorriso
+
+      - name: Download and Install ELF-GCC
+        if: steps.check_tag.outputs.continue == 'true'
+        run: |
+          url="https://github.com/lordmilko/i686-elf-tools/releases/download/7.1.0/i686-elf-tools-linux.zip"
+          temp_dir=$(mktemp -d)
+          wget $url -O "$temp_dir/i686-elf-tools-linux.zip"
+          unzip "$temp_dir/i686-elf-tools-linux.zip" -d "$temp_dir/extracted"
+          sudo cp -r "$temp_dir/extracted/"* /usr/local/
+          export PATH="/usr/local/bin:$PATH"
+          echo "/usr/local/bin" >> $GITHUB_PATH
+
+      - name: Install Python Dependencies
+        if: steps.check_tag.outputs.continue == 'true'
+        run: |
+          pip3 install -r "scripts/requirements.txt"
+
+      ### BUILD PROCESS ###
+      - name: Build the Project
+        if: steps.check_tag.outputs.continue == 'true'
+        run: |
+          nasm --version
+          make --version
+          make release
+          mv OS.iso Monarch-OS-i686.iso
+
+      ### RELEASE PROCESS ###
+      - name: Create GitHub Release
+        if: steps.check_tag.outputs.continue == 'true'
+        uses: softprops/action-gh-release@v2
+        
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Butterfly v${{ env.VERSION }}
+          
+          ### TODO: Use a txt for this ...
+          body: |
+            ### System Requirements:
+            - Legacy BIOS (also UEFI/CSM)
+            - At least 16 MB of RAM
+            - At least 300kb (or 1 MB) of video memory
+            - i686-compatible processor with:
+              - MMX support
+              - Integrated FPU and RTC
+            - PC Speaker (optional)
+            - No HDD required
+            - Minimum 4 MB available on boot medium (e.g., USB)
+            - IBM-compatible PS/2 keyboard (USB keyboards are also supported)
+            
+          files: Monarch-OS-i686.iso
+          
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
